@@ -6,7 +6,7 @@ import time
 
 POWER_CONTROL_PIN = 12
 BIG_JOINT_MAXIMUM_SPEED = 140
-DEFAULT_START_SPEED = 40
+DEFAULT_START_SPEED=40
 MS_PER_S=1000
 SOFT_START_TIME=1000
 HOME=(90, 90, 90, 90, 90, 73)
@@ -32,7 +32,7 @@ class Braccio:
         }
         for i,k in enumerate(self._joints.keys()):
             self._joints[k].write(HOME[i])
-        self.power_control.write(HIGH)
+        self.power_on()
 
 
     def _write_position(self, position):
@@ -48,14 +48,7 @@ class Braccio:
         self.power_control.write(HIGH)
 
     def soft_start(self):
-        for _ in range(8):
-            t = time.time()
-            self.power_control.write(1)
-            t = time.time()-t
-            print(t)
-            time.sleep(0.000001)
-            self.power_control.write(0)
-        self.power_control.write(1)
+        pass
 
     def __del__(self):
         ''' power off and set positions to home '''
@@ -68,4 +61,3 @@ if __name__ == "__main__":
     b = Braccio()
     for _ in range(10):
         time.sleep(0.1)
-    b.power_off()
