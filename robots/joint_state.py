@@ -2,26 +2,24 @@ import numpy as np
 from ikpy.chain import Chain
 
 class JointStates:
-    HOME = np.array((1.5708, 1.5708, 1.5708, 1.5708, 1.5708, 1.2740))
-    URDF_PATH = 'ros_braccio_urdf/urdf/braccio_arm.urdf'
-    def __init__(self):
-        self.chain = Chain.from_urdf_file(self.URDF_PATH)
-        self._angles = self.HOME.copy()
+    def __init__(self, home, joint_limits, urdf_path):
+        self.chain = Chain.from_urdf_file(urdf_path)
+        self.home = home
+        self._angles = self.home.copy()
         # taken from https://github.com/arduino-libraries/Braccio/blob/master/src/Braccio.cpp
-        self.joint_limits = np.array(((0.      , 3.1416),
-                                      (0.2618  , 2.8798),
-                                      (0.      , 3.1416),
-                                      (0.      , 3.1416),
-                                      (0.      , 3.1416),
-                                      (0.1745  , 1.2740)))
-        self.joint_names = ('base', 'shoulder', 'elbow', 'wrist',
-                            'wristRotation', 'gripper')
+        self.joint_limits = joint_limits
+        self.joint_names = {'base':0,
+                            'shoulder': 1,
+                            'elbow' : 2,
+                            'wrist' : 3,
+                            'wristRotation' : 4,
+                            'gripper' : (5,6)}
 
     def open_gripper(self):
         self._angles[-1] = self.joint_limits[-1,0]
 
     def close_gripper(self):
-        self._angles[-1] = self.joint_limits[-1,1]
+        self._angles[-2:] = self.joint_limits[-1,1]
 
     def set_gripper_position(self, position):
         '''sets angles to ik solution, returns actual achieved position'''
@@ -32,12 +30,12 @@ class JointStates:
         self.enforce_limits()
 
     def angles(self):
-        return self._angles
+        # the last two joints are the same, so ignore
+        return self._angles[:-1]
 
     def get_gripper_position(self):
         # return 3D position, 
-        pose_matrix = self.chain.forward_kinematics(list(self._angles) \
-                                                    + [self._angles[-1]])
+        pose_matrix = self.chain.forward_kinematics(self._angles)
         return pose_matrix[:3,3]
 
     def enforce_limits(self):
@@ -45,13 +43,14 @@ class JointStates:
 
     def __setitem__(self, key, newvalue):
         assert key in self.joint_names, 'incorrect joint name'
-        joint_id = self.joint_names.index(key)
+        joint_id = self.joint_names[key]
         self._angles[joint_id] = newvalue
-        self._angles.enforce_limits()
+        self.enforce_limits()
 
     def __getitem__(self, key):
         assert key in self.joint_names, 'incorrect joint name'
-        joint_id = self.joint_names.index(key)
+        joint_id = self.joint_names[key]
+        if isinstance(joint_id, tuple): joint_id = joint_id[0]
         return self._angles[joint_id]
 
     def to_degrees(self, round=False):
