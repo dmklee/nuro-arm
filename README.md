@@ -1,22 +1,26 @@
-# LowCostRobotics
+# learning robotics
 
-urdf and stl files for braccio robot taken from git@github.com:grassjelly/ros_braccio_urdf.git
+This repository is built to help students learn more about programming and robotics. 
+A high-level API is provided for interfacing with a lewansoul xArm robotic arm. 
 
-these might also be useful:
+Core Functionality:
+- Robotic Arm calibration
+- Camera calibration
+- Joint & End-effector positional control of the arm
+- Access to simulated enviroment
+- Pose Estimation for simple blocks
 
- - https://github.com/zakizadeh/ros_braccio_moveit/tree/master/config
- - https://github.com/grassjelly/ros_braccio_urdf
-    - need to add fixed base link
-    - need to fix limits on second gripper joint
- - https://github.com/stefangs/arduino-library-braccio-robot
+TODO:
+- GUI for calibration and simple arm movements
+- IK + joint control (w/ collision avoidance)
+- Closed Loop (keypoint) trajectories
+- Camera Calibration
+- Cube pose estimation
+- Testing across platform
+- Testing for failure modes/ hardware resets
 
-Steps to get it working
-1. Assemble Robot & write it up to arduino
-2. Download Arduino on computer
-3. Open arduino and set device to UNO and choose port
-4. Convert 'arduino-library-braccio-robot' into zip, add to arduino libraries
-5. Send braccio_serial example to arduino
-6. Download ros_braccio_urdf repo: change second gripper range
-7. Download ikpy
-8. Run python codes, sending commands over serial
 
+For getting lobot to show up in /dev/hidraw*
+- https://skyboo.net/2018/10/binding-unbinding-usb-drivers-a-k-a-who-stole-my-hidraw1-device-file/
+- use udevadm monitor to get the id to bind
+- you can check lsusb -t to check that it binds successfull
