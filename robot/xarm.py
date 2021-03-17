@@ -1,229 +1,243 @@
-# import numpy as np
-# import time
-# import serial
-
-# SIGNATURE = 0x55
-# CMD_SERVO_MOVE = 0x03
-# CMD_GET_BATTERY_VOLTAGE = 0x0f
-# CMD_SERVO_STOP = 0x14
-# CMD_GET_SERVO_POSITION  = 0x15
-
-# def try_serial():
-    # device = serial.Serial('/dev/ttyS0',
-                           # baudrate=9600,
-                           # parity=serial.PARITY_NONE,
-                           # stopbits=serial.STOPBITS_ONE,
-                           # bytesize=serial.EIGHTBITS,
-                           # timeout=1)
-    # device.flush()
-    # device.write([SIGNATURE, SIGNATURE, 2, CMD_GET_BATTERY_VOLTAGE])
-    # time.sleep(0.1)
-    # data = device.read(4)
-    # print(data)
-    # if data[0] == SIGNATURE and data[1] == SIGNATURE and data[3] == CMD_GET_BATTERY_VOLTAGE:
-        # length = data[2]
-        # data = device.read(length)
-    # print(data)
-# if __name__ == "__main__":
-    # vid=0x0483
-    # pid=0x5750
-    # import usb.core
-    # import usb.util
-
-    # dev = usb.core.find(idVendor=vid, idProduct=pid)
-
-    # dev.write(
-
-    # # intf = cfg[(0,0)]
-
-    # # print(intf)
-"""
-sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
-pip3 install --user hid
-Notes:
-- servos_off will power off the servos
-- sending a movement command wakes up unpowered servos
-- position readouts are sadly pretty slow, they can take up to 450ms
-"""
-
 import time
-import easyhid
+from enum import IntEnum
+import platform
+if platform.system() == 'Linux':
+    import easyhid
+elif platform.system() == 'Windows':
+    import serial
+elif platform.system() == 'Darwin':
+    pass
 import numpy as np
+import threading
 
 def itos(v):
     lsb = v & 0xFF
     msb = v >> 8
     return lsb, msb
 
-class XArm():
-    def __init__(self, pid=22352):
+class Servos(IntEnum):
+    base = 6
+    shoulder = 5
+    elbow = 4
+    wrist = 3
+    wristRotation = 2
+    gripper = 1
 
-        # Stores an enumeration of all the connected USB HID devices
+class xArmController():
+    SIGNATURE = 85
+    CMD_MOVE = 3
+    CMD_POWER_OFF = 20
+    CMD_POSITION_READ = 21
+    CMD_POSITION_WRITE = 22
+    CMD_OFFSET_READ = 23
+    CMD_OFFSET_WRITE = 24
+
+    LOWER_LIMIT = 0
+    UPPER_LIMIT = 1000
+    HOME = 500
+
+    BITS2RADIANS = np.pi / 180. * ( 240. / 1000. )
+    BITS_OFFSET = 500
+
+    def __init__(self):
+        self.device = self.connect()
+        self.servos = Servos
+        self.n_servos = len(self.servos)
+        self._lock = threading.RLock()
+        self.power_on()
+
+    def connect(self):
         en = easyhid.Enumeration()
-        for dev in en.find():
-           print(dev.description())
+        devices = en.find(vid=1155, pid=22352)
+        assert len(devices) == 1
+        device = devices[0]
+        device.open()
+        print('Connected to xArm')
+        return device
 
-        # return a list of devices based on the search parameters
-        devices = en.find(vid=1155, pid=pid)
+    def power_on(self):
+        '''Turns on servos'''
+        pos = self._read_all_servos_pos()
+        self._move_all_servos(pos, duration=1000)
 
-        # print a description of the devices found
-        for dev in devices:
-           print(dev.description())
+    def power_off(self):
+        '''Turns off servos'''
+        self._send(self.CMD_POWER_OFF, [6, 1,2,3,4,5,6])
 
-        assert len(devices) > 0
-        self.dev = devices[0]
+    def disconnect(self):
+        self.device.close()
+        print('Disconnected xArm')
 
-        # open a device
-        self.dev.open()
-        print('Connected to xArm device')
+    def _home(self):
+        home_pos = self.n_servos * [self.HOME]
+        self._move_all_servos(home_pos, duration=1000)
+        time.sleep(1)
+
+    def _move_servo(self, servo_id, pos, duration=1000):
+        data = [1, *itos(duration), servo_id, *itos(pos)]
+        self._send(self.CMD_MOVE, data)
+
+    def _move_all_servos(self, pos, duration=1000):
+        assert len(pos) == self.n_servos
+        for i,p in enumerate(pos):
+            self._move_servo(i+1, p, duration)
+
+    def _read_servo_pos(self, servo_id):
+        self._send(self.CMD_POSITION_READ, [1, servo_id])
+        pos = self._recv(self.CMD_POSITION_READ)[0]
+        return pos
+
+    def _read_all_servos_pos(self):
+        self._send(self.CMD_POSITION_READ,
+                   [self.n_servos, *range(1, self.n_servos+1)])
+        all_pos = self._recv(self.CMD_POSITION_READ)
+        # remember this is in order of the servo ids 1 -> 6
+        return all_pos
+
+    def _read_servo_offset(self, servo_id):
+        self._send(self.CMD_OFFSET_READ, [1, servo_id])
+        pos = self._recv(self.CMD_OFFSET_READ, ret_type='sbyte')[0]
+        return pos
+
+    def _write_servo_offset(self, servo_id, offset):
+        offset = int(np.clip(offset, -127, 127))
+        if offset < 0:
+            offset = 255 + offset
+        self._send(self.CMD_OFFSET_WRITE, [servo_id, offset])
+
+    def _joint_pos_to_angle(self, joint_pos):
+        return [(j-self.BITS_OFFSET)*self.BITS2RADIANS for j in joint_pos]
+
+    def _joint_angle_to_pos(self, joint_angle):
+        return [int(self.BITS_OFFSET+j/self.BITS2RADIANS) for j in joint_angle]
+
+    def _send(self, cmd, data=[]):
+        msg = bytearray([
+            self.SIGNATURE,
+            self.SIGNATURE,
+            len(data)+2,
+            cmd,
+            *data
+        ])
+        with self._lock:
+            self.device.write(msg)
+
+    def _recv(self, cmd, ret_type='ushort', timeout=1000):
+        assert ret_type in ('ushort', 'byte', 'sbyte')
+        with self._lock:
+            ret = self.device.read(timeout=timeout)
+        if ret is None:
+            # timed out
+            return ret
+        count = ret[4]
+
+        assert ret[3] == cmd
+
+        recv_data = []
+        packet_size = 3 if ret_type == 'ushort' else 2
+        for i in range(count):
+            servo_id = ret[5 + packet_size*i]
+            lsb = ret[5 + packet_size*i + 1]
+            msb = ret[5 + packet_size*i + 2]
+            if ret_type == 'ushort':
+                data = (msb << 8) + lsb
+            elif ret_type == 'byte':
+                data = lsb
+            else: # 'sbyte'
+                data = lsb if lsb < 128 else lsb-255
+            recv_data.append(data)
+        return recv_data
 
     def __del__(self):
-        print('Closing xArm device')
-        self.dev.close()
+        '''Makes sure servos are off before disconnecting'''
+        self.power_off()
+        self.disconnect()
 
-    def move_to(self, id, pos, time=0):
-        """
-        CMD_SERVO_MOVE
-        0x55 0x55 len 0x03 [time_lsb time_msb, id, pos_lsb pos_msb]
-        Servo position is in range [0, 1000]
-        """
+    def use_gui(self):
+        def move_joint_fn_generator(servo_id):
+            def foo(pos):
+                pos = int(pos)
+                print(f'moving to {pos}')
+                self._move_servo(servo_id, pos, duration=1000)
+            return foo
 
-        t_lsb, t_msb = itos(time)
-        p_lsb, p_msb = itos(pos)
-        self.dev.write([0x55, 0x55, 8, 0x03, 1, t_lsb, t_msb, id, p_lsb, p_msb])
+        def reset_servo_offsets():
+            print('Changing servo offsets...')
 
-    def move_all(self, poss, time=0):
-        """
-        Set the position of all servos at once
-        """
+            time.sleep(1)
+            servo_pos = self._read_all_servos_pos()
+            for servo in self.servos:
+                old_offset = self._read_servo_offset(servo.value)
+                true_HOME = self.HOME - old_offset
 
-        for i in range(6):
-            self.move_to(id=i+1, pos=poss[i], time=time)
+                pos = scales[servo.value].get()
+                new_offset = pos - true_HOME
 
-    def servos_off(self):
-        self.dev.write([0x55, 0x55, 9, 20, 6, 1, 2, 3, 4, 5, 6])
+                #preemptively send position command, otherwise the servo moves
+                # too rapidly when the offset is changed suddenly
+                self._move_servo(servo.value, pos-new_offset+old_offset)
+                self._write_servo_offset(servo.value, new_offset)
 
-    def read_pos(self):
-        """
-        Read the position of all 6 servos
-        ServoPositionRead 21 (byte)count { (byte)id }; (byte)count { (byte)id (ushort)position }
-        """
+                new_offset = self._read_servo_offset(servo.value)
+                print(f'\t{servo.name} offset changed from {old_offset} to {new_offset}')
+                new_pos = self._read_servo_pos(servo.value)
+                scales[servo.value].set(new_pos)
 
-        self.dev.write([
-            0x55, 0x55,
-            9,  # Len
-            21, # Cmd
-            6,  # Count
-            1,
-            2,
-            3,
-            4,
-            5,
-            6
-        ])
+            print('...moving to new home position')
+            time.sleep(1)
+            return
 
-        ret = self.dev.read()
-        count = ret[4]
-        assert count == 6
+        H,W = 600, 400
+        import tkinter as tk
+        window = tk.Tk()
+        heading = tk.Label(text="xArm GUI")
+        heading.pack()
 
-        poss = []
-        for i in range(6):
-            id = ret[5 + 3*i]
-            p_lsb = ret[5 + 3*i + 1]
-            p_msb = ret[5 + 3*i + 2]
-            pos = (p_msb << 8) + p_lsb
-            poss.append(pos)
+        main_frame = tk.Frame(master=window, width=W, height=H)
+        main_frame.pack(fill=tk.BOTH)
 
-        return np.array(poss)
+        # reverse order so base is at bottom
+        scales = dict()
+        for servo in reversed(self.servos):
+            servo_id = servo.value
+            servo_name = servo.name
+            row_frame = tk.Frame(master=main_frame, width=W, height=H//7, borderwidth=1)
+            row_frame.pack(fill=tk.X)
 
-    def rest(self):
-        self.move_all([500, 500, 200, 900, 800, 500], time=1500)
-        time.sleep(2)
-        self.servos_off()
+            col_frame_left = tk.Frame(master=row_frame, width=W//2)
+            col_frame_left.pack(side=tk.LEFT)
+            col_frame_right = tk.Frame(master=row_frame, width=W//2)
+            col_frame_right.pack(side=tk.RIGHT)
 
+            lbl_joint = tk.Label(master=col_frame_left, text=servo_name)
+            lbl_joint.pack()
 
-class SafeXArm:
-    """
-    Wrapper to limit motion range and speed to maximize durability
-    Also remaps joint angles into the [-1, 1] range
-    """
+            move_joint_fn = move_joint_fn_generator(servo_id)
+            scl_joint = tk.Scale(master=col_frame_right,
+                                 from_=0, to=1000,
+                                 orient=tk.HORIZONTAL,
+                                 command=move_joint_fn)
+            current_pos = self._read_servo_pos(servo_id)
+            scl_joint.set(current_pos)
+            scl_joint.pack()
+            scales[servo_id] = scl_joint
 
-    def __init__(self, **kwargs):
-        self.arm = XArm(**kwargs)
+        # Add button for changing servo offsets
+        row_frame = tk.Frame(master=main_frame,
+                             width=W,
+                             height=H//7,
+                             borderwidth=1)
+        row_frame.pack(fill=tk.X)
+        button_frame = tk.Frame(master=row_frame, width=W)
+        button_frame.pack()
 
-        self.min_pos = np.array([
-            100, # Base
-            200,
-            400,
-            100,
-            50,  # Wrist
-            200, # Gripper
-        ])
+        btn = tk.Button(master=button_frame,
+                        text='Reset HOME',
+                        fg='red',
+                        command=reset_servo_offsets)
+        btn.pack()
 
-        self.max_pos = np.array([
-            900, # Base
-            800,
-            900,
-            600,
-            850,  # Wrist
-            650,  # Gripper
-        ])
+        window.mainloop()
 
-        # Maximum movement speed in (range/second)
-        self.max_speed = 250
-
-        self.move_all([0] * 6)
-        time.sleep(2)
-
-    def read_pos(self):
-        return np.flip(self.arm.read_pos(), 0)
-
-    def rest(self):
-        return self.arm.rest()
-
-    def move_all(self, pos):
-        if not isinstance(pos, np.ndarray):
-            pos = np.array(pos)
-
-        # [-1, 1] => [0, 1]
-        pos = (pos + 1) / 2
-        target = self.min_pos + pos * (self.max_pos - self.min_pos)
-
-        target = np.flip(target, 0).astype(np.uint16)
-
-        # TODO: compute time needed based on last position
-        # Compute time needed to move each joint to target given max_speed
-        #cur_pos = self.arm.read_pos()
-        #time = (abs(cur_pos - target) / self.max_speed)
-        #time = (time * 1000).astype(np.uint16)
-
-        for i in range(6):
-            self.arm.move_to(id=i+1, pos=target[i], time=100)
-
-def demo():
-    arm = SafeXArm()
-
-    # To the right
-    arm.move_all([-1, 0, 0, 0, 0, 0])
-    time.sleep(2)
-
-    # To the left
-    arm.move_all([1, 0, 0, 0, 0, 0])
-    time.sleep(2)
-
-    # Default position
-    arm.move_all([0, 0, 0, 0, 0, 0])
-    time.sleep(2)
-
-    # Open gripper
-    arm.move_all([0, 0, 0, 0, 0, -1])
-    time.sleep(2)
-
-    # Close gripper
-    arm.move_all([0, 0, 0, 0, 0, 1])
-    time.sleep(2)
-
-    # Put the arm back in a resting position
-    arm.rest()
-
-demo()
+arm = xArmController()
+arm.use_gui()
