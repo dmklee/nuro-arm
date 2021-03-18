@@ -15,29 +15,29 @@ def itos(v):
     msb = v >> 8
     return lsb, msb
 
-class Servos(IntEnum):
-    base = 6
-    shoulder = 5
-    elbow = 4
-    wrist = 3
-    wristRotation = 2
-    gripper = 1
-
-class xArmController():
+class XArmController():
     SIGNATURE = 85
     CMD_MOVE = 3
     CMD_POWER_OFF = 20
     CMD_POSITION_READ = 21
-    CMD_POSITION_WRITE = 22
     CMD_OFFSET_READ = 23
     CMD_OFFSET_WRITE = 24
 
-    LOWER_LIMIT = 0
-    UPPER_LIMIT = 1000
-    HOME = 500
+    POS_LOWER_LIMIT = 0
+    POS_UPPER_LIMIT = 1000
+    POS_HOME = 500
+
+    MAX_SPEED = 0.5 # positional units per millisecond
 
     BITS2RADIANS = np.pi / 180. * ( 240. / 1000. )
-    BITS_OFFSET = 500
+
+    class Servos(IntEnum):
+        base = 6
+        shoulder = 5
+        elbow = 4
+        wrist = 3
+        wristRotation = 2
+        gripper = 1
 
     def __init__(self):
         self.device = self.connect()
@@ -69,13 +69,24 @@ class xArmController():
         print('Disconnected xArm')
 
     def _home(self):
-        home_pos = self.n_servos * [self.HOME]
+        home_pos = self.n_servos * [self.POS_HOME]
         self._move_all_servos(home_pos, duration=1000)
         time.sleep(1)
 
     def _move_servo(self, servo_id, pos, duration=1000):
+        # prevent motion outside of servo limits
+        pos = np.clip(pos, self.POS_LOWER_LIMIT, self.POS_UPPER_LIMIT)
+
+        current_pos = self._read_servo_pos(servo_id)
+        pos_delta = abs(pos - current_pos)
+
+        # ensure movement does not go above max speed
+        duration = int(max(duration, pos_delta / self.MAX_SPEED))
+
         data = [1, *itos(duration), servo_id, *itos(pos)]
         self._send(self.CMD_MOVE, data)
+
+        return duration
 
     def _move_all_servos(self, pos, duration=1000):
         assert len(pos) == self.n_servos
@@ -106,10 +117,11 @@ class xArmController():
         self._send(self.CMD_OFFSET_WRITE, [servo_id, offset])
 
     def _joint_pos_to_angle(self, joint_pos):
-        return [(j-self.BITS_OFFSET)*self.BITS2RADIANS for j in joint_pos]
+        # subtract home so all angles default to 0
+        return [(j-self.POS_HOME)*self.BITS2RADIANS for j in joint_pos]
 
     def _joint_angle_to_pos(self, joint_angle):
-        return [int(self.BITS_OFFSET+j/self.BITS2RADIANS) for j in joint_angle]
+        return [int(self.POS_HOME+j/self.BITS2RADIANS) for j in joint_angle]
 
     def _send(self, cmd, data=[]):
         msg = bytearray([
@@ -168,7 +180,7 @@ class xArmController():
             servo_pos = self._read_all_servos_pos()
             for servo in self.servos:
                 old_offset = self._read_servo_offset(servo.value)
-                true_HOME = self.HOME - old_offset
+                true_HOME = self.POS_HOME - old_offset
 
                 pos = scales[servo.value].get()
                 new_offset = pos - true_HOME
@@ -239,5 +251,6 @@ class xArmController():
 
         window.mainloop()
 
-arm = xArmController()
-arm.use_gui()
+if __name__ == "__main__":
+    arm = XArmController()
+    arm.use_gui()
