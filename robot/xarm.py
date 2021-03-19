@@ -10,12 +10,20 @@ elif platform.system() == 'Darwin':
 import numpy as np
 import threading
 
+#TODO:
+    # error handling on receiving/sending
+    # update gui to handle new units
+    # switch to passive servo-offset method
+    # add smart movements
+    # allow for calibration of joints using smart movements
+    # create and write config file for storing offsets + servo directions
+
 def itos(v):
     lsb = v & 0xFF
     msb = v >> 8
     return lsb, msb
 
-class XArm():
+class XArmController():
     SIGNATURE = 85
     CMD_MOVE = 3
     CMD_POWER_OFF = 20
@@ -49,6 +57,7 @@ class XArm():
         self.device = self.connect()
         self.servos = XArm.Servos
         self.n_servos = len(self.servos)
+        self._lock = threading.Lock()
         self.power_on()
 
     def connect(self):
@@ -138,11 +147,14 @@ class XArm():
             cmd,
             *data
         ])
-        self.device.write(msg)
+        with self._lock():
+            self.device.write(msg)
 
     def _recv(self, cmd, ret_type='ushort', timeout=1000):
         assert ret_type in ('ushort', 'byte', 'sbyte')
-        ret = self.device.read(timeout=timeout)
+        with self._lock():
+            ret = self.device.read(timeout=timeout)
+
         if ret is None:
             # timed out
             return ret
@@ -266,7 +278,7 @@ class XArm():
         window.mainloop()
 
 if __name__ == "__main__":
-    arm = XArm()
+    arm = XArmController()
     # while True:
         # print([f"{a:0.2f}" for a in arm._read_all_servos_pos_angle()])
         # time.sleep(0.1)
