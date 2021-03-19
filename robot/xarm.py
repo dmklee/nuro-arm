@@ -15,7 +15,7 @@ def itos(v):
     msb = v >> 8
     return lsb, msb
 
-class XArmController():
+class XArm():
     SIGNATURE = 85
     CMD_MOVE = 3
     CMD_POWER_OFF = 20
@@ -23,13 +23,14 @@ class XArmController():
     CMD_OFFSET_READ = 23
     CMD_OFFSET_WRITE = 24
 
-    POS_LOWER_LIMIT = 0
-    POS_UPPER_LIMIT = 1000
-    POS_HOME = 500
+    # in servo positional units
+    SERVO_LOWER_LIMIT = 0
+    SERVO_UPPER_LIMIT = 1000
+    SERVO_HOME = 500
+    SERVO_PRECISION = 10 # how accurate can we expect it to be
+    SERVO_MAX_SPEED = 0.5 # positional units per millisecond
 
-    MAX_SPEED = 0.5 # positional units per millisecond
-
-    BITS2RADIANS = np.pi / 180. * ( 240. / 1000. )
+    POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
     class Servos(IntEnum):
         base = 6
@@ -40,10 +41,14 @@ class XArmController():
         gripper = 1
 
     def __init__(self):
+        self._jpos_home = self.SERVO_HOME*self.POS2RADIANS
+        self._jpos_limits = (self.SERVO_LOWER_LIMIT*self.POS2RADIANS,
+                            self.SERVO_UPPER_LIMIT*self.POS2RADIANS)
+        self._max_speed = self.SERVO_MAX_SPEED*self.POS2RADIANS
+
         self.device = self.connect()
-        self.servos = Servos
+        self.servos = XArm.Servos
         self.n_servos = len(self.servos)
-        self._lock = threading.RLock()
         self.power_on()
 
     def connect(self):
@@ -57,8 +62,9 @@ class XArmController():
 
     def power_on(self):
         '''Turns on servos'''
-        pos = self._read_all_servos_pos()
-        self._move_all_servos(pos, duration=1000)
+        servo_ids = [s for s in self.servos]
+        jpos = self.read_jpos(self.servos)
+        self.move_jpos(jpos, servo_ids, duration=1000)
 
     def power_off(self):
         '''Turns off servos'''
@@ -68,60 +74,61 @@ class XArmController():
         self.device.close()
         print('Disconnected xArm')
 
-    def _home(self):
-        home_pos = self.n_servos * [self.POS_HOME]
-        self._move_all_servos(home_pos, duration=1000)
+    def home(self):
+        '''moves all servos to HOME_POS'''
+        home_pos = self.n_servos * [self._jpos_home]
+        self.move_servos(home_pos, self.servos, duration=1000)
         time.sleep(1)
 
-    def _move_servo(self, servo_id, pos, duration=1000):
+    def _move_servo(self, jpos, servo_id, duration=1000):
+        '''I have been unable to get multi-servo move command to work,
+        so each servo must be commanded separately
+        '''
         # prevent motion outside of servo limits
-        pos = np.clip(pos, self.POS_LOWER_LIMIT, self.POS_UPPER_LIMIT)
+        jpos = np.clip(jpos, *self._jpos_limits)
 
-        current_pos = self._read_servo_pos(servo_id)
-        pos_delta = abs(pos - current_pos)
+        current_jpos = self.read_jpos([servo_id])[0]
+        delta = abs(jpos - current_jpos)
 
         # ensure movement does not go above max speed
-        duration = int(max(duration, pos_delta / self.MAX_SPEED))
+        duration = int(max(duration, delta / self._max_speed))
 
+        # convert to positional units
+        pos = self._to_pos_units(jpos)
         data = [1, *itos(duration), servo_id, *itos(pos)]
         self._send(self.CMD_MOVE, data)
 
         return duration
 
-    def _move_all_servos(self, pos, duration=1000):
-        assert len(pos) == self.n_servos
-        for i,p in enumerate(pos):
-            self._move_servo(i+1, p, duration)
+    def move_jpos(self, jpos, servo_ids, duration=1000):
+        max_duration = 0
+        for jp, s_id in zip(jpos, servo_ids):
+            tmp_duration = self._move_servo(jp, s_id, duration)
+            max_duration = max(max_duration, tmp_duration)
+        return max_duration
 
-    def _read_servo_pos(self, servo_id):
-        self._send(self.CMD_POSITION_READ, [1, servo_id])
-        pos = self._recv(self.CMD_POSITION_READ)[0]
-        return pos
-
-    def _read_all_servos_pos(self):
+    def read_jpos(self, servo_ids, units='radians'):
+        n_servos = len(servo_ids)
         self._send(self.CMD_POSITION_READ,
-                   [self.n_servos, *range(1, self.n_servos+1)])
-        all_pos = self._recv(self.CMD_POSITION_READ)
-        # remember this is in order of the servo ids 1 -> 6
-        return all_pos
+                   [n_servos, *servo_ids])
+        pos = self._recv(self.CMD_POSITION_READ)
+
+        # convert to radians
+        jpos = [self._to_radians(p) for p in pos]
+        return jpos
 
     def _read_servo_offset(self, servo_id):
+        # returns in positional units
         self._send(self.CMD_OFFSET_READ, [1, servo_id])
         pos = self._recv(self.CMD_OFFSET_READ, ret_type='sbyte')[0]
         return pos
 
     def _write_servo_offset(self, servo_id, offset):
+        # operates in in positional units
         offset = int(np.clip(offset, -127, 127))
         if offset < 0:
             offset = 255 + offset
         self._send(self.CMD_OFFSET_WRITE, [servo_id, offset])
-
-    def _joint_pos_to_angle(self, joint_pos):
-        # subtract home so all angles default to 0
-        return [(j-self.POS_HOME)*self.BITS2RADIANS for j in joint_pos]
-
-    def _joint_angle_to_pos(self, joint_angle):
-        return [int(self.POS_HOME+j/self.BITS2RADIANS) for j in joint_angle]
 
     def _send(self, cmd, data=[]):
         msg = bytearray([
@@ -131,13 +138,11 @@ class XArmController():
             cmd,
             *data
         ])
-        with self._lock:
-            self.device.write(msg)
+        self.device.write(msg)
 
     def _recv(self, cmd, ret_type='ushort', timeout=1000):
         assert ret_type in ('ushort', 'byte', 'sbyte')
-        with self._lock:
-            ret = self.device.read(timeout=timeout)
+        ret = self.device.read(timeout=timeout)
         if ret is None:
             # timed out
             return ret
@@ -160,10 +165,19 @@ class XArmController():
             recv_data.append(data)
         return recv_data
 
+    def _to_radians(self, pos):
+        return (pos - self.SERVO_HOME) * self.POS2RADIANS
+
+    def _to_pos_units(self, jpos):
+        return int( jpos / self.POS2RADIANS + self.SERVO_HOME )
+
     def __del__(self):
-        '''Makes sure servos are off before disconnecting'''
-        self.power_off()
+        # '''Makes sure servos are off before disconnecting'''
+        # self.power_off()
         self.disconnect()
+
+    def get_pos_limits(self):
+        return [(self.POS_LOWER_LIMIT, self.POS_UPPER_LIMIT) for _ in range(self.n_servos)]
 
     def use_gui(self):
         def move_joint_fn_generator(servo_id):
@@ -252,5 +266,8 @@ class XArmController():
         window.mainloop()
 
 if __name__ == "__main__":
-    arm = XArmController()
-    arm.use_gui()
+    arm = XArm()
+    # while True:
+        # print([f"{a:0.2f}" for a in arm._read_all_servos_pos_angle()])
+        # time.sleep(0.1)
+    # arm.use_gui()
