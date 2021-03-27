@@ -12,9 +12,9 @@
 	<link name="base_link">
 		<visual>
 			<origin rpy="0 0 0.0" xyz="0 0 0.01"/>
-		  		<geometry>
-				<box size="0.16 0.16 0.01"/>
-				</geometry>
+            <geometry>
+                <box size="0.16 0.16 0.01"/>
+            </geometry>
 			<material name="blue">
 				<color rgba="0.3 0.5 0.9 1.0"/>
 		  	</material>
@@ -28,6 +28,10 @@
         		<color rgba="0.3 0.5 0.9 1.0"/>
       		</material>
     	</visual>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
   	</link>
 
   	<joint name="base" type="revolute">
@@ -66,6 +70,10 @@
 	    		<color rgba="0.2 0.2 0.2 1"/>
       		</material>
     	</visual>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
   	</link>
 
   	<joint name="shoulder" type="revolute">
@@ -140,6 +148,10 @@
 	    		<color rgba="0.3 0.5 0.9 1.0"/>
       		</material>
     	</visual>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
   	</link>
 
   	<joint name="elbow" type="revolute">
@@ -196,6 +208,10 @@
 	    		<color rgba="0.2 0.2 0.2 1"/>
       		</material>
     	</visual>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
   	</link>
 
   	<joint name="wrist" type="revolute">
@@ -243,6 +259,10 @@
 	    		<color rgba="0.3 0.5 0.9 1.0"/>
       		</material>
     	</visual>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
   	</link>
 
   	<joint name="wristRotation" type="revolute">
@@ -272,17 +292,10 @@
         		<color rgba="0.2 0.2 0.2 1"/>
       		</material>
     	</visual>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
   	</link>
 
-  	<link name="gripper_base" type="fixed">
-		<visual>
-      		<origin rpy="1.5708 0 1.5708" xyz="-0.015 0.0 0.022"/>
-      		<geometry>
-        		<box size="0.044 0.023 0.0285"/>
-      		</geometry>
-      		<material name="black">
-        		<color rgba="0.2 0.2 0.2 1"/>
-      		</material>
-		</visual>
-	</link>
 </robot>

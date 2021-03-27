@@ -12,9 +12,7 @@ import threading
 
 #TODO:
     # error handling on receiving/sending
-    # update gui to handle new units
     # switch to passive servo-offset method
-    # add smart movements
     # allow for calibration of joints using smart movements
     # create and write config file for storing offsets + servo directions
 
@@ -50,12 +48,13 @@ class XArmController():
 
     def __init__(self):
         self._jpos_home = self.SERVO_HOME*self.POS2RADIANS
-        self._jpos_limits = (self.SERVO_LOWER_LIMIT*self.POS2RADIANS,
-                            self.SERVO_UPPER_LIMIT*self.POS2RADIANS)
+        self._jpos_limits = (self._to_radians(self.SERVO_LOWER_LIMIT),
+                            self._to_radians(self.SERVO_UPPER_LIMIT))
         self._max_speed = self.SERVO_MAX_SPEED*self.POS2RADIANS
+        self._jpos_precision = self.SERVO_PRECISION * self.POS2RADIANS
 
         self.device = self.connect()
-        self.servos = XArm.Servos
+        self.servos = XArmController.Servos
         self.n_servos = len(self.servos)
         self._lock = threading.Lock()
         self.power_on()
@@ -116,7 +115,35 @@ class XArmController():
             max_duration = max(max_duration, tmp_duration)
         return max_duration
 
-    def read_jpos(self, servo_ids, units='radians'):
+    def safe_move_jpos(self, target_jpos, servo_ids, duration=1000,
+                       monitor_freq=200, jpos_atol=None):
+        '''Monitors motion to detect collisions. Returns success boolean
+
+        :monitor_freq: how often position is checked in ms
+
+        '''
+        if jpos_atol is None:
+            jpos_atol = self._jpos_precision
+        exp_duration = self.move_jpos(target_jpos, servo_ids, duration)
+
+        t_start = time.time()
+        old_jpos = self.read_jpos(servo_ids)
+        while time.time() - t_start < exp_duration:
+            time.sleep(monitor_freq)
+            new_jpos = self.read_jpos(servo_ids)
+
+            # check if motion has stopped
+            if np.allclose(old_jpos, new_jpos, atol=jpos_atol):
+                if np.allclose(target_jpos, new_jpos, atol=jpos_atol):
+                    return True
+                break
+
+        # target was not reached, set current jpos as target to prevent servos 
+        # from overworking
+        self.move_jpos(new_jpos, servo_ids, duration=0)
+        return False
+
+    def read_jpos(self, servo_ids):
         n_servos = len(servo_ids)
         self._send(self.CMD_POSITION_READ,
                    [n_servos, *servo_ids])
@@ -147,12 +174,12 @@ class XArmController():
             cmd,
             *data
         ])
-        with self._lock():
+        with self._lock:
             self.device.write(msg)
 
     def _recv(self, cmd, ret_type='ushort', timeout=1000):
         assert ret_type in ('ushort', 'byte', 'sbyte')
-        with self._lock():
+        with self._lock:
             ret = self.device.read(timeout=timeout)
 
         if ret is None:
@@ -184,8 +211,8 @@ class XArmController():
         return int( jpos / self.POS2RADIANS + self.SERVO_HOME )
 
     def __del__(self):
-        # '''Makes sure servos are off before disconnecting'''
-        # self.power_off()
+        '''Makes sure servos are off before disconnecting'''
+        self.power_off()
         self.disconnect()
 
     def get_pos_limits(self):
@@ -193,13 +220,14 @@ class XArmController():
 
     def use_gui(self):
         def move_joint_fn_generator(servo_id):
-            def foo(pos):
-                pos = int(pos)
-                print(f'moving to {pos}')
-                self._move_servo(servo_id, pos, duration=1000)
+            def foo(jpos):
+                jpos = float(jpos)
+                self.move_jpos([jpos], [servo_id], duration=500)
             return foo
 
         def reset_servo_offsets():
+            print('not supported currently')
+            return
             print('Changing servo offsets...')
 
             time.sleep(1)
@@ -252,33 +280,36 @@ class XArmController():
 
             move_joint_fn = move_joint_fn_generator(servo_id)
             scl_joint = tk.Scale(master=col_frame_right,
-                                 from_=0, to=1000,
+                                 from_=self._jpos_limits[0],
+                                 to=self._jpos_limits[1],
+                                 resolution=self._jpos_precision,
                                  orient=tk.HORIZONTAL,
                                  command=move_joint_fn)
-            current_pos = self._read_servo_pos(servo_id)
+            current_pos = self.read_jpos([servo_id])[0]
             scl_joint.set(current_pos)
             scl_joint.pack()
             scales[servo_id] = scl_joint
 
-        # Add button for changing servo offsets
-        row_frame = tk.Frame(master=main_frame,
-                             width=W,
-                             height=H//7,
-                             borderwidth=1)
-        row_frame.pack(fill=tk.X)
-        button_frame = tk.Frame(master=row_frame, width=W)
-        button_frame.pack()
+        # # Add button for changing servo offsets
+        # row_frame = tk.Frame(master=main_frame,
+                             # width=W,
+                             # height=H//7,
+                             # borderwidth=1)
+        # row_frame.pack(fill=tk.X)
+        # button_frame = tk.Frame(master=row_frame, width=W)
+        # button_frame.pack()
 
-        btn = tk.Button(master=button_frame,
-                        text='Reset HOME',
-                        fg='red',
-                        command=reset_servo_offsets)
-        btn.pack()
+        # btn = tk.Button(master=button_frame,
+                        # text='Reset HOME',
+                        # fg='red',
+                        # command=reset_servo_offsets)
+        # btn.pack()
 
         window.mainloop()
 
 if __name__ == "__main__":
     arm = XArmController()
+    arm.use_gui()
     # while True:
         # print([f"{a:0.2f}" for a in arm._read_all_servos_pos_angle()])
         # time.sleep(0.1)
