@@ -12,7 +12,7 @@ class MotionPlanner():
 
         # this path is where we find platform
         pb.setAdditionalSearchPath(pybullet_data.getDataPath())
-        pb.loadURDF('plane.urdf', [0,0,0])
+        pb.loadURDF('plane.urdf', [0,0.5,0])
 
         # add xarm urdf
         self.id = pb.loadURDF(self.URDF_FILE, [0,0,0],[0,0,0,1])
@@ -39,33 +39,76 @@ class MotionPlanner():
         [pb.resetJointState(self.id, i, jp) for i,jp in enumerate(jpos)]
 
 class XArmBase(ABC):
-    def close_gripper(self):
+    def __init__(self, mode):
+        assert mode in ('robot', 'simulator')
+        pb_client = {'robot' : pb.DIRECT,
+                     'simulator' : pb.GUI,
+                    }[mode]
+
+        self._pb_sim = MotionPlanner(pb_client)
+
+    def close_gripper(self) -> float:
         pass
 
-    def open_gripper(self):
+    def open_gripper(self) -> float:
         pass
 
-    def move_gripper(self, pos, rot=None):
+    def move_gripper(self, pos, rot=None) -> bool:
         pass
 
-    def move_to_jpos(self, jpos):
+    def move_to_jpos(self, jpos) -> bool:
+        """Move to a joint angle
+        """
+        pass
+
+    def get_gripper_pos(self):
+        pass
+
+    def get_jpos(self):
         pass
 
 class Robot(XArmBase):
-    pass
+    def gui(self):
+        """Control each joint with GUI"""
+        return
 
-class Simulator():
+    def calibrate(self):
+        """
+        Do HOME position by setting offsets in hardware
+        Handle any additional issues with software constraints on joint angles
+        Save all this in config file
+        Get gripper close/open positions
+        """
+        pass
+
+class Simulator(XArmBase):
+    GRIPPER_CLOSED = -0.2
+    GRIPPER_OPENED = 0.5
     def __init__(self):
-        self._pb_sim = MotionPlanner(pb.GUI)
+        super().__init__('simulator')
 
-    def move_to_jpos(self, jpos):
+    def close_gripper(self) -> float:
         pass
 
-    def close_gripper(self):
+    def open_gripper(self) -> float:
         pass
 
-    def 
+    def move_gripper(self, pos, rot=None) -> bool:
+        pass
+
+    def move_to_jpos(self, jpos) -> bool:
+        """Move to a joint angle
+        """
+        pass
+
+    def get_gripper_pos(self):
+        pass
+
+    def get_jpos(self):
+        pass
 
 if __name__ == "__main__":
-    robot = MotionPlanner()
-    print(robot.calculate_ik((1.,0,0)))
+    import time
+    robot = Simulator()
+    while True:
+        time.sleep(0.1)
