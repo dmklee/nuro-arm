@@ -18,7 +18,7 @@ TODO:
 - Cube pose estimation
 - Testing across platform
 - Testing for failure modes/ hardware resets
-- Get better measurements for urdf file, add gripper, fix inertia errors
+- Get better measurements for urdf file, add gripper
 
 
 For getting lobot to show up in /dev/hidraw:
