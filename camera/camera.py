@@ -1,13 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import os
 import yaml
 import time
 
+from camera.utils import calc_distortion_matrix
 #TODO:
 #   - handle error on connection, default to attempt reconnecting
-#   - write calibration for lens distortion, this can probably be held for all cameras, and will not be overwritten
 #   - write calc_camera_pose
 
 class Camera:
@@ -58,36 +57,7 @@ class Camera:
         self._cam.release()
 
     def _calc_distortion_matrix(self):
-        folder = "camera/checkerboard_calibration/"
-        positions = np.loadtxt(os.path.join(folder, "3dpositions.txt"),
-                                delimiter=',')
-        num_images = len(positions)
-
-        GW, GH = 7, 9
-        grid_size = 20 #mm
-        objp = np.zeros((GW*GH,3), np.float32)
-        objp[:,:2] = grid_size * np.mgrid[0:GW,0:GH].T.reshape(-1,2)
-
-        img_pts = []
-        obj_pts = []
-        for img_id in range(num_images):
-            img = cv2.imread(os.path.join(folder,f"{img_id}.jpg"))
-            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-            ret, corners = cv2.findChessboardCorners(gray, (GW,GH), None)
-
-            if ret:
-                # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-                # corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
-                img_pts.append(corners)
-                obj_pts.append(objp)
-
-        cv2.destroyAllWindows()
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_pts, img_pts, gray.shape[::-1], None, None)
-
-        h,  w = img.shape[:2]
-        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
-
+        mtx, newcameramtx, roi, dist = calc_distortion_matrix()
         self._write_configs({
             'mtx' : mtx.tolist(),
             'undistort_mtx' : newcameramtx.tolist(),
@@ -131,6 +101,7 @@ class Camera:
         cv2.namedWindow("Live Feed")
         while True:
             img = self.get_image()
+            img = self._undistort(img)
             cv2.imshow("Live Feed", img)
             cv2.waitKey(int(1000/frate))
 
