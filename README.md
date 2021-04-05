@@ -1,20 +1,38 @@
 # learning robotics
 
+![](data/xArm.png)
+
 This repository is built to help students learn more about programming and robotics. 
 A high-level API is provided for interfacing with a lewansoul xArm robotic arm. 
 
-Core Functionality:
-- Robotic Arm calibration
-- Camera calibration
-- Joint & End-effector positional control of the arm
-- Access to simulated enviroment
-- Pose Estimation for simple blocks
+## Hardware
+This project is built to use hardware that costs less than $250.  
+- Lewansoul xArm Robotic Arm ($200 on Amazon)_
+- ELP Megapixel 720p USB Camera ($30 on Amazon)
+- 3D Printed parts (stl files provided in 'src/assets')
+- Objects to play around with
+
+## Software
+### Robot [or Simulator]
+- Hard offset correction to servos
+- Enforce joint limits & maximum velocities
+- Forward and Inverse Kinematics
+- Collision detection
+- GUI for simple joint motion
+- Control of gripper
+
+### Camera
+- Lens Distortion correction
+- Camera ego pose calculation
+- Taking photos/videos
+- Basic computer vision on imagaes
+- Pose estimation of cubes
+
 
 TODO:
 - ~~GUI for calibration and simple arm movements~~
 - IK + joint control (w/ collision avoidance)
 - Closed Loop (keypoint) trajectories
-- Camera Calibration
 - Cube pose estimation
 - Testing across platform
 - Testing for failure modes/ hardware resets
