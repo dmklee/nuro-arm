@@ -2,10 +2,21 @@ import numpy as np
 import cv2
 import os
 
-def get_cube_poses():
-    pass
+def reshape_image(img, height, width=None):
+    if width is None:
+        width = height
+    reshaped = cv2.resize(img, (width, height))
+    return reshaped
 
-def detect_blobs(color_thresholds):
+def rescale_image(img, scale):
+    new_height = int(img.shape[0] * scale)
+    new_width = int(img.shape[1] * scale)
+    return reshape_image(img, new_height, new_width)
+
+def convert_gray(img):
+    return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+def get_cube_poses():
     pass
 
 def calc_distortion_matrix():

@@ -45,19 +45,6 @@ class Camera:
 
         return self._undistort(img)
 
-    def resize_image(self, image, height, width=None):
-        if width is None:
-            width = height
-        reshaped = cv2.resize(image, (width, height))
-        return reshaped
-
-    def rescale_image(self, image, scale):
-        new_height = int(image.shape[0] * scale)
-        new_width = int(image.shape[1] * scale)
-        return self.reshape_image(image, new_height, new_width)
-
-    def convert_gray(self, image):
-        return image.mean(axis=2, keepdims=True)
 
     def _disconnect(self):
         self._cam.release()
@@ -175,6 +162,9 @@ class Camera:
             doc = dict()
 
         return doc
+
+    def __call__(self):
+        return self.get_image()
 
     def __del__(self):
         self._disconnect()
