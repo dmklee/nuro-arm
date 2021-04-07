@@ -1,0 +1,289 @@
+<?xml version="1.0" ?>
+<robot name="xArm">
+
+ 	<link name="world"/>
+
+	<link name="base_link">
+		<visual>
+			<origin rpy="0 0 0.0" xyz="0 0 0"/>
+      		<geometry>
+                <mesh filename="src/assets/meshes/base.dae"/>
+      		</geometry>
+            <material name="blue">
+                <color rgba="0.3 0.5 0.9 1.0"/>
+            </material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0.0" xyz="0 0 0.025"/>
+      		<geometry>
+                <box size="0.154 0.14 0.04"/>
+      		</geometry>
+		</collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+  	</link>
+
+      <link name="base_swivel_link">
+        <visual>
+              <origin rpy="0 0 0" xyz="0.0 0.0 0.034"/>
+              <geometry>
+                <mesh filename="src/assets/meshes/lx225.dae"/>
+              </geometry>
+              <material name="black">
+                <color rgba="0.2 0.2 0.2 1.0"/>
+              </material>
+        </visual>
+        <visual>
+          <origin rpy="0 0 0" xyz="0 0 0"/>
+              <geometry>
+                <mesh filename="src/assets/meshes/base_swivel.dae"/>
+              </geometry>
+              <material name="blue">
+                <color rgba="0.3 0.5 0.9 1.0"/>
+              </material>
+        </visual>
+		<collision>
+			<origin rpy="0 0 0.0" xyz="0 0 0.0"/>
+      		<geometry>
+                <cylinder length="0.04" radius="0.06"/>
+      		</geometry>
+		</collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+      </link>
+
+      <link name="upperarm_link">
+        <visual>
+              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+              <geometry>
+                <mesh filename="src/assets/meshes/upperarm_link.dae"/>
+              </geometry>
+              <material name="blue">
+                <color rgba="0.3 0.5 0.9 1.0"/>
+              </material>
+        </visual>
+		<collision>
+			<origin rpy="0 0 0.0" xyz="0 0 0.055"/>
+      		<geometry>
+                <box size="0.055 0.04 0.11" />
+      		</geometry>
+		</collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+      </link>
+
+      <link name="forearm_link">
+        <visual>
+              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+              <geometry>
+                <mesh filename="src/assets/meshes/lx15d_double.dae"/>
+              </geometry>
+              <!--<material name="black">-->
+                <!--<color rgba="0.2 0.2 0.2 1.0"/>-->
+              <!--</material>-->
+        </visual>
+        <visual>
+              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+              <geometry>
+                <mesh filename="src/assets/meshes/forearm_link.dae"/>
+              </geometry>
+              <!--<material name="blue">-->
+                <!--<color rgba="0.3 0.5 0.9 1.0"/>-->
+              <!--</material>-->
+        </visual>
+        <visual>
+              <origin rpy="0 3.14159 0" xyz="0.0 0.0 0.095"/>
+              <geometry>
+                <mesh filename="src/assets/meshes/lx15d_double.dae"/>
+              </geometry>
+              <!--<material name="black">-->
+                <!--<color rgba="0.2 0.2 0.2 1.0"/>-->
+              <!--</material>-->
+        </visual>
+		<collision>
+			<origin rpy="0 0 0.0" xyz="0 0 0.05"/>
+      		<geometry>
+                <box size="0.04 0.03 0.11" />
+      		</geometry>
+		</collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+      </link>
+
+      <link name="wrist_link">
+        <visual>
+              <origin rpy="1.5708 1.5708 0" xyz="0.0 0.0 0.0365"/>
+              <geometry>
+                <mesh filename="src/assets/meshes/lx15d_double.dae"/>
+              </geometry>
+              <material name="black">
+                <color rgba="0.2 0.2 0.2 1.0"/>
+              </material>
+        </visual>
+        <visual>
+              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+              <geometry>
+                  <mesh filename="src/assets/meshes/wrist_link.dae"/>
+              </geometry>
+              <material name="blue">
+                <color rgba="0.3 0.5 0.9 1.0"/>
+              </material>
+        </visual>
+		<collision>
+			<origin rpy="0 0 0.0" xyz="0 -0.01 0.025"/>
+      		<geometry>
+                <box size="0.05 0.04 0.06" />
+      		</geometry>
+		</collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+      </link>
+
+      <link name="hand_link">
+        <visual>
+              <origin rpy="0 0 0.0" xyz="0 0 0"/>
+              <geometry>
+                <cylinder length="0.004" radius="0.01"/>
+              </geometry>
+              <material name="black">
+                <color rgba="0.2 0.2 0.2 1.0"/>
+              </material>
+        </visual>
+        <visual>
+              <origin rpy="0 0 1.5708" xyz="-0.015 0.0 0.022"/>
+              <geometry>
+                <box size="0.044 0.023 0.0285"/>
+              </geometry>
+              <material name="black">
+                <color rgba="0.2 0.2 0.2 1"/>
+              </material>
+        </visual>
+        <collision>
+              <origin rpy="0 0 1.5708" xyz="-0.015 0.0 0.022"/>
+              <geometry>
+                <box size="0.044 0.023 0.0285"/>
+              </geometry>
+        </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+      </link>
+
+      <link name="gripper_left_link">
+        <visual>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <geometry>
+                <cylinder length="0.05" radius="0.005"/>
+              </geometry>
+              <material name="black">
+                <color rgba="0.2 0.2 0.2 1.0"/>
+              </material>
+        </visual>
+        <collision>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <geometry>
+                <cylinder length="0.05" radius="0.005"/>
+              </geometry>
+        </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+      </link>
+    
+      <link name="gripper_right_link">
+        <visual>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <geometry>
+                <cylinder length="0.05" radius="0.005"/>
+              </geometry>
+              <material name="black">
+                <color rgba="0.2 0.2 0.2 1.0"/>
+              </material>
+        </visual>
+        <collision>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <geometry>
+                <cylinder length="0.05" radius="0.005"/>
+              </geometry>
+        </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+      </link>
+
+     <joint name="world_joint" type="fixed">
+        <parent link="world"/>
+        <child link="base_link"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.012"/>
+     </joint>
+
+      <joint name="base" type="revolute">
+        <parent link="base_link"/>
+        <child link="base_swivel_link"/>
+        <origin rpy="0.0 0.0 -1.5708" xyz="0.0 0.0 0.034"/>
+        <limit lower="-3" upper="3" velocity="2.09"/>
+        <axis xyz="0 0 1"/>
+      </joint>
+
+      <joint name="shoulder" type="revolute">
+        <parent link="base_swivel_link"/>
+        <child link="upperarm_link"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.031"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <axis xyz="1 0 0"/>
+      </joint>
+
+      <joint name="elbow" type="revolute">
+        <parent link="upperarm_link"/>
+        <child link="forearm_link"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.101"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <axis xyz="1 0 0"/>
+      </joint>
+
+      <joint name="wrist" type="revolute">
+        <parent link="forearm_link"/>
+        <child link="wrist_link"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0965"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <axis xyz="1 0 0"/>
+      </joint>
+
+      <joint name="wristRotation" type="revolute">
+        <parent link="wrist_link"/>
+        <child link="hand_link"/>
+        <origin rpy="0.0 0.0 1.5708" xyz="0.0 0.0 0.055"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <axis xyz="0 0 1"/>
+      </joint>
+
+      <joint name="gripper_left" type="revolute">
+        <parent link="hand_link"/>
+        <child link="gripper_left_link"/>
+        <origin rpy="0.0 0. 0.0" xyz="0.0 0.02 0.03"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <axis xyz="-1 0 0"/>
+      </joint>
+
+      <joint name="gripper_right" type="revolute">
+        <parent link="hand_link"/>
+        <child link="gripper_right_link"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.02 0.03"/>
+        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <axis xyz="1 0 0"/>
+      </joint>
+
+</robot>
