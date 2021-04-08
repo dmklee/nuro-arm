@@ -1,52 +1,180 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
-import yaml
+import threading
+import time
 
 from src.camera_utils import *
 import src.constants as constants
-#TODO:
-#   - handle error on connection, default to attempt reconnecting
-    # toggle between camera_ids
+
+class Capturer:
+    #TODO: add error handling if connection is dropped
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._started = False
+        self._frame_rate = 20
+
+    def set_camera_id(self, camera_id, run_async=True):
+        self._camera_id = camera_id
+        self._cap = cv2.VideoCapture(camera_id)
+        connected = self._cap.isOpened()
+        if connected and run_async:
+            self.start_async()
+        return connected
+
+    def start_async(self):
+        if self._started:
+            # we need to stop before starting a new one
+            self.stop_async()
+
+        self._started = True
+        self._ret, self._frame = self._cap.read()
+        self.thread = threading.Thread(target=self._update,
+                                       args=(),
+                                       daemon=True)
+        self.thread.start()
+
+    def _update(self):
+        while self._started:
+            ret, frame = self._cap.read()
+            with self._lock:
+                self._ret = ret
+                self._frame = frame
+            time.sleep(1./self._frame_rate)
+
+    def read(self):
+        if self._started:
+            with self._lock:
+                ret = self._ret
+                frame = self._frame.copy()
+        else:
+            ret, frame = self._cap.read()
+
+        return frame if ret else None
+
+    def set_frame_rate(self, frame_rate):
+        with self._lock:
+            self._frame_rate = frame_rate
+
+    def stop_async(self):
+        if self._started:
+            self._started = False
+            self.thread.join()
+
+    def __call__(self):
+        return self.read()
+
+    def __del__(self):
+        self.stop_async()
+        if self._cap.isOpened():
+            self._cap.release()
+
+class GUI:
+    def __init__(self, capturer):
+        self._lock = threading.Lock()
+        self._showing = False
+        self._cap = capturer
+        self._window_name = 'gui'
+
+    def show_async(self, window_name=None):
+        if self._showing:
+            self.hide()
+
+        if window_name is not None:
+            self.change_window_name(window_name)
+        self._showing = True
+        self._last_keypress = -1
+        self.thread = threading.Thread(target=self._update,
+                                       args=(),
+                                       daemon=True)
+        self.thread.start()
+
+    def show(self, img=None, window_name='', exit_keys=[]):
+        if img is None:
+            use_live = True
+        k = -1
+        while True:
+            if use_live:
+                img = self._cap.read()
+            cv2.imshow(window_name, img)
+            k = cv2.waitKey(int(1000/self._cap._frame_rate))
+            if k == 27 or k in exit_keys:
+                break
+            if cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE) < 1:
+                break
+        cv2.destroyAllWindows()
+        return k
+
+    def change_window_name(self, name):
+        with self._lock:
+            cv2.destroyWindow(self.change_window_name)
+            self._window_name = name
+
+    def get_last_keypress(self):
+        if self._showing:
+            with self._lock:
+                k = self._last_keypress
+        return k
+
+    def _update(self):
+        while self._showing:
+            frame = self._cap.read()
+            cv2.imshow(self._window_name, frame)
+            k = cv2.waitKey(int(1000/self._cap._frame_rate))
+            with self._lock:
+                self._last_keypress = k
+
+            if k == 27: # ESC 
+                self.hide()
+
+    def hide(self):
+        if self._showing:
+            self._showing = False
+            self.thread.join()
+            cv2.destroyAllWindows()
 
 class Camera:
     CONFIG_FILE = "src/configs/camera.npz"
     def __init__(self,
-                 camera_id=1,
+                 camera_id=None,
                  ):
-        self._cam_id = camera_id
-
-        self._cam = self._connect()
-
-        self._calc_distortion_matrix()
-        asdf
+        self.cap = Capturer()
+        self.gui = GUI(self.cap)
 
         self._configs = self._read_configs()
 
+        is_connected = self.connect(camera_id)
+        if not is_connected:
+            return
+
+        # self._calc_distortion_matrix()
+
         self._get_ego_pose()
 
-    def set_camera_id(self, camera_id):
-        self._cam_id = camera_id
-        self._cam = self._connect()
+    def connect(self, camera_id=None):
+        if camera_id is None:
+            print('Camera id not specified, searching for available cameras...')
+            for c_id in range(5):
+                is_valid = self.cap.set_camera_id(c_id)
+                if is_valid:
+                    name = f"Camera{c_id}: is this the camera you want to use? [y/n]"
+                    k = self.gui.show(window_name=name,
+                                      exit_keys=[ord('y'), ord('n')]
+                                     )
+                    if k == ord('y'):
+                        print(f'Video capture enabled with camera{camera_id}.')
+                        return True
+                else:
+                    print(f'  Camera{c_id} not available.')
+            print('[ERROR] No other cameras were found.')
+            return False
 
-    def _connect(self):
-        return cv2.VideoCapture(self._cam_id)
+        is_valid = self.cap.set_camera_id(c_id)
+        if is_valid:
+            print(f'Video capture enabled with camera{camera_id}.')
+            return True
 
-    def _raw_image(self):
-        ret, image = self._cam.read()
-        if not ret:
-            print('error, try reconnecting')
-            return
-        return image
-
-    def get_image(self):
-        img = self._raw_image()
-
-        return self._undistort(img)
-
-
-    def _disconnect(self):
-        self._cam.release()
+        print(f'Video capture failed with camera{camera_id}.')
+        return False
 
     def _calc_distortion_matrix(self):
         mtx, newcameramtx, roi, dist = calc_distortion_matrix()
@@ -139,6 +267,9 @@ class Camera:
 
     def _undistort(self, img):
         # undistort
+        if 'mtx' not in self._configs:
+            return img
+
         dst = cv2.undistort(img,
                             self._configs['mtx'],
                             self._configs['dist_coeffs'],
@@ -168,14 +299,10 @@ class Camera:
 
         configs.update(new_configs)
         np.savez(self.CONFIG_FILE, **configs)
-        # with open("src/configs/camera.yaml", "w") as f:
-            # yaml.safe_dump(doc, f, default_flow_style=False)
 
         return configs
 
     def _read_configs(self):
-        # with open("src/configs/camera.yaml") as f:
-            # doc = yaml.safe_load(f)
         configs = dict(np.load(self.CONFIG_FILE))
 
         if configs is None:
@@ -183,35 +310,12 @@ class Camera:
 
         return configs
 
+    def get_image(self):
+        img = self.cap.read()
+        return self._undistort(img)
+
     def __call__(self):
         return self.get_image()
 
-    def __del__(self):
-        self._disconnect()
-
-    def live_feed(self, frate=30):
-        cv2.namedWindow("Live Feed")
-        while True:
-            img = self.get_image()
-            cv2.imshow("Live Feed", img)
-            cv2.waitKey(int(1000/frate))
-
-        cv2.destroyAllWindows()
-
 if __name__ == "__main__":
-    camera = Camera(0)
-    pts = constants.tvec_world2rightfoot
-    grid = 20*np.mgrid[-7:2,1:8].T.reshape(-1,2)+constants.tvec_world2rightfoot[:2]
-    pts = np.zeros((len(grid),3))
-    pts[:,:2] = grid
-    pts = camera.project_world_points(pts)
-    img = camera.get_image()
-    plt.figure()
-    plt.imshow(img)
-    plt.plot(pts[...,0], pts[...,1], 'r.')
-    plt.axis('off')
-    plt.show()
-
-    # camera.calc_camera_pse()
-    # camera.live_feed()
-
+    camera = Camera()
