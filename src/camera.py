@@ -28,6 +28,11 @@ class Capturer:
 
         self._started = True
         self._ret, self._frame = self._cap.read()
+        self._img_shape = self._frame.shape
+        self._recording = False
+        self._record_buffer = None
+        self._record_id = None
+
         self.thread = threading.Thread(target=self._update,
                                        args=(),
                                        daemon=True)
@@ -39,7 +44,43 @@ class Capturer:
             with self._lock:
                 self._ret = ret
                 self._frame = frame
+                if self._recording:
+                    if self._record_id < len(self._record_buffer):
+                        self._record_buffer[self._record_id] = frame.copy()
+                        self._record_id += 1
+                    else:
+                        self._recording = False
             time.sleep(1./self._frame_rate)
+
+    def start_recording(self, duration, delay=0):
+        self.end_recording()
+
+        n_frames = self._frame_rate * duration
+        self._record_buffer = np.empty((n_frames, *self._img_shape),
+                                       dtype=np.uint8)
+        self._record_id = 0
+
+        time.sleep(delay)
+        with self._lock:
+            self._recording = True
+
+    def end_recording(self):
+        with self._lock:
+            self._recording = False
+
+    def is_recording(self):
+        with self._lock:
+            is_recording = self._recording
+
+        return is_recording
+
+    def get_recording(self):
+        if self._recording:
+            print('recording is still in progress')
+            return None
+        with self._lock:
+            recording = self._record_buffer.copy()
+        return recording
 
     def read(self):
         if self._started:
@@ -161,14 +202,14 @@ class Camera:
                                       exit_keys=[ord('y'), ord('n')]
                                      )
                     if k == ord('y'):
-                        print(f'Video capture enabled with camera{camera_id}.')
+                        print(f'Video capture enabled with camera{c_id}.')
                         return True
                 else:
                     print(f'  Camera{c_id} not available.')
             print('[ERROR] No other cameras were found.')
             return False
 
-        is_valid = self.cap.set_camera_id(c_id)
+        is_valid = self.cap.set_camera_id(camera_id)
         if is_valid:
             print(f'Video capture enabled with camera{camera_id}.')
             return True
@@ -264,6 +305,19 @@ class Camera:
         # cv2.imshow('img', img)
         # cv2.waitKey(5000)
         # cv2.destroyAllWindows()
+    def start_recording(self, duration, delay):
+        self.cap.start_recording(duration, delay)
+
+    def end_recording(self):
+        self.cap.end_recording()
+
+    def get_recording(self):
+        return self.cap.get_recording()
+
+    def wait_for_recording(self):
+        while self.cap.is_recording():
+            time.sleep(0.1)
+        return self.get_recording()
 
     def _undistort(self, img):
         # undistort
@@ -318,4 +372,11 @@ class Camera:
         return self.get_image()
 
 if __name__ == "__main__":
-    camera = Camera()
+    camera = Camera(0)
+    camera.start_recording(5, 1)
+    r = camera.wait_for_recording()
+    for i in range(len(r)):
+        cv2.imshow('sdaf', r[i])
+        cv2.waitKey(30)
+    cv2.destroyAllWindows()
+
