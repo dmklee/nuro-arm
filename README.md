@@ -7,7 +7,7 @@ A high-level API is provided for interfacing with a lewansoul xArm robotic arm.
 
 ## Hardware
 This project is built to use hardware that costs less than $250.  
-- Lewansoul xArm Robotic Arm ($200 on Amazon)_
+- Lewansoul xArm Robotic Arm ($200 on Amazon)
 - ELP Megapixel 720p USB Camera ($30 on Amazon)
 - 3D Printed parts (stl files provided in 'src/assets')
 - Objects to play around with
@@ -36,7 +36,7 @@ TODO:
 - Cube pose estimation
 - Testing across platform
 - Testing for failure modes/ hardware resets
-- Get better measurements for urdf file, add gripper
+- ~~Get better measurements for urdf file, add gripper~~
 
 
 For getting lobot to show up in /dev/hidraw:
