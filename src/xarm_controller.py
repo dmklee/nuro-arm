@@ -41,6 +41,8 @@ class XArmController():
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
+    CONFIG_FILE = "src/configs/robot.npz"
+
     class Servos(IntEnum):
         base = 6
         shoulder = 5
@@ -326,12 +328,8 @@ class XArmController():
 
         window.mainloop()
 
-    def calibrate(self):
-        # passive mode
-        self.power_off()
-
+    def arm_calibration(self):
         data = {}
-
         print('  =====================  ')
         print('  == Calibrating arm ==  ')
         print('  =====================  ')
@@ -351,10 +349,10 @@ class XArmController():
             plt.show()
             if input('  ready? [y/n]: ') != 'y':
                 print('Calibration terminated')
-                return False
+                return False, data
         else:
             print('Calibration terminated.')
-            return False
+            return False, data
 
         print('performing servo offset correction...')
         arm_servo_offsets = self._reset_servo_offsets()
@@ -363,14 +361,17 @@ class XArmController():
 
         # calibrate motor directions
         print('WARNING: motor directions are not yet calibrated')
+        return True, data
 
+    def gripper_calibration(self):
+        data = {}
         print('  =========================  ')
         print('  == Calibrating gripper ==  ')
         print('  =========================  ')
         print('Move gripper to fully closed position.')
         if input('   ready? [y/n]: ') != 'y':
             print('Calibration terminated.')
-            return False
+            return False, data
         gripper_closed = self.read_jpos([self.servos.gripper])[0]
         data.update({'gripper_closed' : gripper_closed})
         print(f"  gripper closed position is {gripper_closed:.2f} radians.")
@@ -378,15 +379,29 @@ class XArmController():
         print('Move gripper to fully opened position.')
         if input('   ready? [y/n]: ') != 'y':
             print('Calibration terminated.')
-            return False
+            return False, data
         gripper_opened = self.read_jpos([self.servos.gripper])[0]
         data.update({'gripper_opened' : gripper_opened})
         print(f"  gripper opened position is {gripper_opened:.2f} radians.")
+        return True, data
 
-        # dump to yaml
-        with open("src/configs/robot.yaml", 'w') as f:
-            yaml.safe_dump(data, f, default_flow_style=False)
-        return True
+    def full_calibration(self):
+        # passive mode
+        self.power_off()
+
+        data = {}
+        ret, new_data = self.arm_calibration()
+        if ret:
+            data.update(new_data)
+
+        ret, new_data = self.gripper_calibration()
+        if ret:
+            data.update(new_data)
+
+        np.savez(self.CONFIG_FILE, **data)
+
+        self.power_on()
+        return True, data
 
 if __name__ == "__main__":
     arm = XArmController()
