@@ -22,14 +22,14 @@ TODO:
 ## Installation
 ### Linux
 1. Install Python 3.6+
-2. Clone this repo    
+3. Clone this repo    
     ```
     git clone https://github.com/dmklee/neu-ro-arm.git
     cd neu-ro-arm
     ```
-3. Install dependencies
+3. Install dependencies for usb
     ```
-    pip install -r requirements.txt
+    sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
     ```
 5. Install this package
     ```
