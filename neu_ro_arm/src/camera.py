@@ -11,7 +11,7 @@ class Capturer:
     def __init__(self):
         self._lock = threading.Lock()
         self._started = False
-        self._frame_rate = 20
+        self._frame_rate = constants.frame_rate
 
     def set_camera_id(self, camera_id, run_async=True):
         self._camera_id = camera_id
@@ -115,6 +115,7 @@ class GUI:
         self._showing = False
         self._cap = capturer
         self._window_name = 'gui'
+        self._modifer_fns = []
 
     def show_async(self, window_name=None):
         if self._showing:
@@ -130,8 +131,8 @@ class GUI:
         self.thread.start()
 
     def show(self, img=None, window_name='', exit_keys=[]):
-        if img is None:
-            use_live = True
+        use_live = img is None
+
         k = -1
         while True:
             if use_live:
@@ -154,18 +155,35 @@ class GUI:
         if self._showing:
             with self._lock:
                 k = self._last_keypress
-        return k
+            return k
+        return -1
+
+    def add_modifiers(self, modifier_fns=[]):
+        if not isinstance(modifier_fns, list):
+            modifier_fns = [modifier_fns]
+        with self._lock:
+            self._modifer_fns.extend(modifier_fns)
+
+    def clear_modifiers(self):
+        with self._lock:
+            self._modifer_fns = []
 
     def _update(self):
         while self._showing:
             frame = self._cap.read()
+            original_img = frame.copy()
+            for fn in self._modifer_fns:
+                with self._lock:
+                    fn(original_img, frame)
+
             cv2.imshow(self._window_name, frame)
             k = cv2.waitKey(int(1000/self._cap._frame_rate))
             with self._lock:
                 self._last_keypress = k
 
-            if k == 27: # ESC 
-                self.hide()
+            #if k == 27: # ESC 
+                #self._showing = False
+                #cv2.destroyAllWindows()
 
     def hide(self):
         if self._showing:
@@ -189,7 +207,7 @@ class Camera:
 
         # self._calc_distortion_matrix()
 
-        self._get_ego_pose()
+        # self.calc_location()
 
     def connect(self, camera_id=None):
         if camera_id is None:
@@ -217,6 +235,10 @@ class Camera:
         print(f'Video capture failed with camera{camera_id}.')
         return False
 
+    @property
+    def frame_rate(self):
+        return self.cap._frame_rate
+
     def _calc_distortion_matrix(self):
         mtx, newcameramtx, roi, dist = calc_distortion_matrix()
         self._write_configs({
@@ -226,8 +248,8 @@ class Camera:
             'dist_coeffs' : dist.tolist(),
         })
 
-    def _get_ego_pose(self):
-        print('Calculating pose of camera...')
+    def _calc_location(self):
+        print('Calculating location of camera...')
         # vec that goes from world origin to where right suction cup touches grid
         gh, gw = constants.calibration_gridshape
         gsize = constants.calibration_gridsize
@@ -251,20 +273,6 @@ class Camera:
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
             corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
             ret, rvecs, tvecs = cv2.solvePnP(objp, corners2, mtx, dist)
-
-
-            # axis =  np.float32([[20,0,0],[0,20,0],[0,0,20],[0,0,0]]).reshape(-1,3)
-            # axis += constants.tvec_world2rightfoot
-            # imgpts, _ = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
-            # print(tuple(imgpts[-1].ravel()))
-            # def draw(img, corners, imgpts):
-                # img = cv2.line(img, tuple(imgpts[-1].ravel()), tuple(imgpts[0].ravel()), (255,0,0), 5)
-                # img = cv2.line(img, tuple(imgpts[-1].ravel()), tuple(imgpts[1].ravel()), (0,255,0), 5)
-                # img = cv2.line(img, tuple(imgpts[-1].ravel()), tuple(imgpts[2].ravel()), (0,0,255), 5)
-                # return img
-            # img = draw(img, corners2, imgpts)
-            # cv2.imshow('img', img)
-            # cv2.waitKey(3000)
 
             new_configs = {
                 'rvec' : rvecs,
@@ -305,6 +313,8 @@ class Camera:
         # cv2.imshow('img', img)
         # cv2.waitKey(5000)
         # cv2.destroyAllWindows()
+
+
     def start_recording(self, duration, delay):
         self.cap.start_recording(duration, delay)
 
@@ -318,6 +328,12 @@ class Camera:
         while self.cap.is_recording():
             time.sleep(0.1)
         return self.get_recording()
+
+    def wait_for_gui(self):
+        while self.gui._showing:
+            k = self.gui.get_last_keypress()
+            if k == 27:
+                break
 
     def _undistort(self, img):
         # undistort
@@ -337,16 +353,12 @@ class Camera:
 
     def project_world_points(self, pts_wframe):
         # transform world to camera frame
-        pts_cframe = coord_transform(self._configs['world2cam'],
-                                     pts_wframe)
-        # project from camera frame to 2d pixel space
-        img_pts, _ = cv2.projectPoints( pts_wframe,
-                                        self._configs['rvec'],
-                                        self._configs['tvec'],
-                                        self._configs['undistort_mtx'],
-                                        self._configs['dist_coeffs']
-                                       )
-        return img_pts
+        return project_world2pixel(pts_wframe,
+                                   self._configs['world2cam'],
+                                   self._configs['rvec'],
+                                   self._configs['tvec'],
+                                   self._configs['undistort_mtx'],
+                                   self._configs['dist_coeffs'])
 
     def _write_configs(self, new_configs):
         configs = self._read_configs()
@@ -364,6 +376,12 @@ class Camera:
 
         return configs
 
+    def show_feed(self):
+        self.gui.show_async()
+
+    def hide_feed(self):
+        self.gui.hide()
+
     def get_image(self):
         img = self.cap.read()
         return self._undistort(img)
@@ -371,12 +389,93 @@ class Camera:
     def __call__(self):
         return self.get_image()
 
+    def get_world_pose(self):
+        pos = self._configs['world2cam'][3,:3]
+        rot_mat = self._configs['world2cam'][:3,:3]
+        rot_euler = rotmat2euler(rot_mat)
+        return pos, rot_euler
+
+def show_apriltags(original, canvas):
+    tags = find_apriltags(original, cam_mtx)
+    for tag in tags:
+        for idx in range(len(tag.corners)):
+            cv2.line(canvas,
+                  tuple(tag.corners[idx-1, :].astype(int)),
+                  tuple(tag.corners[idx, :].astype(int)),
+                  (0, 255, 0))
+
+        text_org = tuple(np.mean(tag.corners, axis=0).astype(int))
+        cv2.putText(canvas, str(tag.tag_id),
+                    org=text_org,
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=0.6,
+                    thickness=2,
+                    color=(0, 0, 255))
+
+def show_cubes(original, canvas):
+    cubes = find_cubes(original, cam_mtx, dist_coeffs, cam2world)
+    for cube in cubes:
+        vert_px = project_world2pixel(cube['vertices'],
+                                      world2cam,
+                                      rvec,
+                                      tvec,
+                                      undistort_mtx,
+                                      dist_coeffs
+                                     ).astype(int)
+        for a, b in constants.cube_edges:
+            cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]), (255, 0, 0),
+                    thickness=2)
+
+def show_arucotags(original, canvas):
+    tags = find_arucotags(original, cam_mtx, dist_coeffs)
+    for tag in tags:
+        corners = tag['corners']
+        for c_id in range(len(corners)):
+            cv2.line(canvas,
+                  tuple(corners[c_id-1, :].astype(int)),
+                  tuple(corners[c_id, :].astype(int)),
+                  (0, 255, 0))
+
+        text_org = tuple(np.mean(corners, axis=0).astype(int))
+        cv2.putText(canvas, str(tag['tag_id']),
+                    org=text_org,
+                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                    fontScale=0.5,
+                    thickness=1,
+                    color=(0, 0, 255))
+
+def show_cam_z_vec(original, canvas):
+    z_vec = np.array(((0,0,1.),(0,0.4,1.)))
+    z_vec = coord_transform(cam2world, z_vec)
+    px = project_world2pixel(z_vec, world2cam, rvec, tvec,
+                             undistort_mtx, dist_coeffs)
+    for p in px:
+        cv2.circle(canvas, tuple(p.astype(int)), 2, (255,0,0), thickness=2)
+
+
 if __name__ == "__main__":
-    camera = Camera(0)
-    camera.start_recording(5, 1)
-    r = camera.wait_for_recording()
-    for i in range(len(r)):
-        cv2.imshow('sdaf', r[i])
-        cv2.waitKey(30)
-    cv2.destroyAllWindows()
+    camera = Camera(2)
+    #img = camera.get_image()
+
+    # camera._calc_location()
+    cam_mtx = camera._configs['undistort_mtx'].copy()
+    world2cam = camera._configs['world2cam']
+    cam2world = camera._configs['cam2world']
+    rvec = camera._configs['rvec']
+    tvec = camera._configs['tvec']
+    undistort_mtx = camera._configs['undistort_mtx']
+    dist_coeffs = camera._configs['dist_coeffs']
+
+    # camera.gui.add_modifiers(show_arucotags)
+    camera.gui.add_modifiers(show_cubes)
+    # camera.gui.add_modifiers(show_cam_z_vec)
+    camera.show_feed()
+    camera.wait_for_gui()
+    exit()
+
+    camera.show_feed()
+    # camera.gui.add_modifiers(show_cubes)
+    camera.gui.add_modifiers(show_apriltags)
+    time.sleep(100)
+    camera.hide_feed()
 

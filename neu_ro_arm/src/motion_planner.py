@@ -6,24 +6,24 @@ class MotionPlanner:
     '''Handles IK, FK, collision detection
     '''
     ROBOT_URDF_PATH = "src/assets/xarm.urdf"
-    # CAMERA_URDF_PATH = "src/assets/xarm.urdf"
+    CAMERA_URDF_PATH = "src/assets/camera.urdf"
     def __init__(self, connection_mode):
         self._init_pybullet(connection_mode)
         self.link_names = self._get_link_names()
         self.joint_names = self._get_joint_names()
-        self.end_effector_index = self.link_names.index('hand')
+        self.end_effector_link_index = self.link_names.index('hand')
         self.arm_joint_idxs = [1,2,3,4,5]
         self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
         self.gripper_joint_idxs = [6,7]
 
-    def calculate_ik(self, pos, rot=None):
+    def _calculate_ik(self, pos, rot=None):
         if rot is not None and len(rot) == 3:
             rot = pb.getQuaternionFromEuler(rot)
-        return pb.calculateInverseKinematics(self.id,
+        return pb.calculateInverseKinematics(self.robot_id,
                                              self.end_effector_link_index,
                                              pos, rot)[:self.end_effector_link_index]
 
-    def get_link_pose(self, link_name):
+    def _get_link_pose(self, link_name):
         assert link_name in self.link_names
         link_index = self.link_names.index(link_name)
         link_state = pb.getLinkState(self.robot_id, link_index)
@@ -42,6 +42,9 @@ class MotionPlanner:
         # add xarm urdf
         self.robot_id = pb.loadURDF(self.ROBOT_URDF_PATH, [0,0,0],[0,0,0,1],
                                   flags=pb.URDF_USE_SELF_COLLISION)
+
+        self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [.4,0,0.2],[0,0,0,1])
+        pb.resetJointState(self.camera_id, 3, 0.2)
 
     def _get_joint_names(self):
         num_joints = pb.getNumJoints(self.robot_id)
@@ -73,7 +76,6 @@ class MotionPlanner:
 
         old_jpos = read_fn()
         while not np.allclose(old_jpos, target, atol=atol):
-            pb.stepSimulation()
             it += 1
 
             jpos = read_fn()
@@ -89,3 +91,9 @@ class MotionPlanner:
 
     def _change_connection_mode(self, connection_mode):
         self._init_pybullet(connection_mode)
+
+if __name__ == "__main__":
+    mp = MotionPlanner(pb.GUI)
+    import time
+    while True:
+        time.sleep(1)
