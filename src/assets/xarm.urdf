@@ -230,7 +230,7 @@
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.012"/>
      </joint>
 
-      <joint name="base" type="revolute">
+      <joint name="base_joint" type="revolute">
         <parent link="base_link"/>
         <child link="base_swivel_link"/>
         <origin rpy="0.0 0.0 -1.5708" xyz="0.0 0.0 0.034"/>
@@ -238,7 +238,7 @@
         <axis xyz="0 0 1"/>
       </joint>
 
-      <joint name="shoulder" type="revolute">
+      <joint name="shoulder_joint" type="revolute">
         <parent link="base_swivel_link"/>
         <child link="upperarm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.031"/>
@@ -246,7 +246,7 @@
         <axis xyz="1 0 0"/>
       </joint>
 
-      <joint name="elbow" type="revolute">
+      <joint name="elbow_joint" type="revolute">
         <parent link="upperarm_link"/>
         <child link="forearm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.101"/>
@@ -254,7 +254,7 @@
         <axis xyz="1 0 0"/>
       </joint>
 
-      <joint name="wrist" type="revolute">
+      <joint name="wrist_joint" type="revolute">
         <parent link="forearm_link"/>
         <child link="wrist_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0965"/>
@@ -262,7 +262,7 @@
         <axis xyz="1 0 0"/>
       </joint>
 
-      <joint name="wristRotation" type="revolute">
+      <joint name="wristRotation_joint" type="revolute">
         <parent link="wrist_link"/>
         <child link="hand_link"/>
         <origin rpy="0.0 0.0 1.5708" xyz="0.0 0.0 0.055"/>
@@ -270,7 +270,7 @@
         <axis xyz="0 0 1"/>
       </joint>
 
-      <joint name="gripper_left" type="revolute">
+      <joint name="gripper_left_joint" type="revolute">
         <parent link="hand_link"/>
         <child link="gripper_left_link"/>
         <origin rpy="0.0 0. 0.0" xyz="0.0 0.02 0.03"/>
@@ -278,7 +278,7 @@
         <axis xyz="-1 0 0"/>
       </joint>
 
-      <joint name="gripper_right" type="revolute">
+      <joint name="gripper_right_joint" type="revolute">
         <parent link="hand_link"/>
         <child link="gripper_right_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.02 0.03"/>

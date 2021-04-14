@@ -1,4 +1,4 @@
-# learning robotics
+# NEU Robotics Outreach: Robotic Arm
 
 ![](data/xArm.png)
 

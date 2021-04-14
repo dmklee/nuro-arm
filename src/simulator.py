@@ -4,63 +4,70 @@ import pybullet_data
 
 from abc import abstractmethod, ABC
 
-# class BaseSimulator:
-    # # creates pybullet simulator and implements basic functionality needed for 
-    # # inverse/forward kinematics
-    # def __init__():
-        # # load urdf
 
-    # def calculate_ik():
-        # pass
+class BaseRobotArm(ABC):
+    '''Abtract base class to ensure that the simulator and real xArm are
+    controlled with the same interface
+    '''
+    def get_arm_jpos(self):
+        pass
 
-    # def teleport_arm():
-        # pass
+    def get_gripper_jpos(self):
+        pass
 
-    # def get_end_effector_pos():
-        # pass
+    def move_arm_jpos(self):
+        pass
 
-    # def get_end_effector_rot():
-        # pass
+    def move_hand_to(self, pos, rot):
+        pass
 
-    # def get_link_pos(link_name):
-        # pass
+    def open_gripper(self):
+        pass
 
-# class BaseController(ABC):
-    # def read_pos
-    # def send_command
+    def close_gripper(self):
+        pass
 
-# class BaseRobot(ABC):
-    # def __init__():
-        # pass
+    def add_camera(self, pos, rot):
+        pass
 
-    # def get_gripper_jpos():
-        # pass
+class SimulatedArm(BaseRobotArm, MotionPlanner):
+    def __init__(self):
+        super(MotionPlanner, self).__init__(pb.GUI)
 
-    # def get_arm_jpos():
-        # pass
+        # add default camera position
 
-    # def move_joint(joint_name, pos):
-        # pass
+class RobotArm(BaseRobotArm):
+    def __init__(self):
+        super(MotionPlanner, self).__init__(pb.DIRECT)
+        self.controller = XArmController()
 
-    # def close_gripper():
-        # pass
+    def get_arm_jpos(self):
+        pb.getJointState
+        pass
 
-    # def open_gripper():
-        # pass
+    def get_gripper_jpos(self):
+        pass
 
-    # def move_gripper(jpos):
-        # pass
+    def move_arm_jpos(self):
+        pass
 
-    # def move_arm(jpos):
-        # pass
+    def move_hand_to(self, pos, rot):
+        pass
 
-    # def timestep(jpos):
-        # # either time.sleep or pb.step
-        # pass
+    def open_gripper(self):
+        pass
 
+    def close_gripper(self):
+        pass
 
-# class SimulatedRobot():
-# class xArmRobot():
+    def add_camera(self, pos, rot):
+        pass
+
+    def _mirror_pybullet(self):
+        '''Make sure pybullet model reflects robot state.
+        This is important since calculating IK depends on current joint states
+        '''
+        pass
 
 class MotionPlanner():
     '''Use pybullet to handle IK, and collision checking'''
@@ -80,6 +87,10 @@ class MotionPlanner():
         self.end_effector_link_index = 5
         self.arm_joint_idxs = [0,1,2,3,4]
         self.gripper_joint_idxs = [6,7]
+
+    def add_camera(self, cam_pos, cam_rot):
+        '''Add collision object to the scene'''
+        pass
 
     def calculate_ik(self, pos, rot=None):
         if rot is not None and len(rot) == 3:
