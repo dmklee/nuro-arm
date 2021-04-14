@@ -1,7 +1,6 @@
 # NEU Robotics Outreach: Robotic Arm
 
-This repository is built to help students learn more about programming and robotics. 
-A high-level API is provided for interfacing with a lewansoul xArm robotic arm. 
+This repository is built to help students learn more about programming and robotics. It aims to provide a high-level interface for performing robotic manipulation tasks.
 
 TODO:
 - ~~GUI for calibration and simple arm movements~~
@@ -25,19 +24,19 @@ TODO:
 <a name="features"></a>
 ## Features
 ### Robot [or Simulator]
-- Hard offset correction to servos
-- Enforce joint limits & maximum velocities
+- Calibration of robot servos
+- Enforcement of joint limits & maximum velocities
 - Forward and Inverse Kinematics
 - Collision detection
-- GUI for simple joint motion
 - Control of gripper
+- GUI for simple joint motion
 
 ### Camera
-- Lens Distortion correction
-- Camera ego pose calculation
-- Taking photos/videos
-- Basic computer vision on imagaes
-- Pose estimation of cubes
+- Estimation of intrinsic/extrinsic parameters
+- Camera pose estimation 
+- GUI for visualizing or debugging
+- Taking photos and videos
+- Pose estimation of cubes using Aruco Tags
 
 <a name="parts-list"></a>
 ## Parts List
@@ -50,8 +49,8 @@ This project is built on hardware that is more accessible.  The entire cost of t
 - Aruco Tags (printable pdf available in 'src/configs')
 
 <a name="projects"></a>
-## Projects
-Projects, along with solution scripts, will be released in June 2021.
+## Tutorials and Projects
+This repo was created to facilitate an outreach program for high school students in the Boston area.  All curriculum materials, including project ideas and solutions, will be available upon request starting June 2021.
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
