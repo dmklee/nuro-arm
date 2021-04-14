@@ -13,11 +13,11 @@ TODO:
 - ~~Get better measurements for urdf file, add gripper~~
 
 ## Table of Contents
-1. [Installation] (#installation)
-2. [Features] (#features)
-3. [Parts List] (#parts-list)
-4. [Projects] (#projects)
-4. [Acknowledgements] (#acknowledgements)
+1. [Installation](#installation)
+2. [Features](#features)
+3. [Parts List](#parts-list)
+4. [Projects](#projects)
+4. [Acknowledgements](#acknowledgements)
 
 <a name="installation"></a>
 ## Installation
