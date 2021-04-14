@@ -1,6 +1,6 @@
 # NEU Robotics Outreach: Robotic Arm
 
-This repository is built to help students learn more about programming and robotics. It aims to provide a high-level interface for performing robotic manipulation tasks.
+This repository is built to help students learn more about programming and robotics. It aims to provide a high-level interface for performing basic robotic manipulation tasks.  The repo is meant to be accessible: the hardware is low cost; a simulator is provided for those who do not purchase the robot; the api is built to work on Windows, MacOS & Linux.
 
 TODO:
 - ~~GUI for calibration and simple arm movements~~
@@ -20,6 +20,21 @@ TODO:
 
 <a name="installation"></a>
 ## Installation
+### Linux
+1. Install Python 3.6+
+2. Clone this repo    
+    ```
+    git clone https://github.com/dmklee/neu-ro-arm.git
+    cd neu-ro-arm
+    ```
+3. Install dependencies
+    ```
+    pip install -r requirements.txt
+    ```
+5. Install this package
+    ```
+    pip install .
+    ```
 
 <a name="features"></a>
 ## Features
