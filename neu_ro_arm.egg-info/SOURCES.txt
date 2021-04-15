@@ -1,8 +1,0 @@
-README.md
-setup.py
-neu_ro_arm/__init__.py
-neu_ro_arm.egg-info/PKG-INFO
-neu_ro_arm.egg-info/SOURCES.txt
-neu_ro_arm.egg-info/dependency_links.txt
-neu_ro_arm.egg-info/requires.txt
-neu_ro_arm.egg-info/top_level.txt
