@@ -48,7 +48,7 @@ class MotionPlanner:
         # initialize camera far away so collisions dont occur
         self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [0,0,0],[0,0,0,1])
         self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, [0,0,0],[0,0,0,1])
-        self.rod_offset_vec = np.array((0.026, 0, 0))
+        self.rod_offset_vec = np.array((0.026, -0.012, -0.013))
 
         T = np.load('src/configs/camera.npz')['cam2world']
         self.set_camera_pose(T)

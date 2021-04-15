@@ -265,11 +265,9 @@ class Camera:
         if ret:
             objp = np.zeros((gh*gw,3), np.float32)
             objp[:,:2] = gsize * np.dstack(np.mgrid[1:-gw+1:-1,gh:0:-1]).reshape(-1,2)
-            # objp[:,0] += constants.tvec_world2rightfoot[1]
-            # objp[:,1] += constants.tvec_world2rightfoot[0]
             objp += constants.tvec_world2rightfoot
 
-            mtx = self._configs['undistort_mtx']
+            mtx = self._configs['mtx']
             dist = self._configs['dist_coeffs']
 
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -360,7 +358,7 @@ class Camera:
                                    self._configs['world2cam'],
                                    self._configs['rvec'],
                                    self._configs['tvec'],
-                                   self._configs['undistort_mtx'],
+                                   self._configs['mtx'],
                                    self._configs['dist_coeffs'])
 
     def _write_configs(self, new_configs):
@@ -385,8 +383,10 @@ class Camera:
     def hide_feed(self):
         self.gui.hide()
 
-    def get_image(self):
+    def get_image(self, raw=True):
         img = self.cap.read()
+        if raw:
+            return img
         return self._undistort(img)
 
     def __call__(self):

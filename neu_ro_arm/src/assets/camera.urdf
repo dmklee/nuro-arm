@@ -34,6 +34,6 @@
     <joint name="world_joint" type="fixed">
         <parent link="world"/>
         <child link="camera_link"/>
-        <origin rpy="0 1.5708 -1.5708" xyz="0.0 -0.013 -0.012"/>
+        <origin rpy="0 1.5708 -1.5708" xyz="0.0 -0.013 -0.013"/>
     </joint>
 </robot>

@@ -12,7 +12,6 @@ setup(
     setup_requires="wheel",
     install_requires=[
         "numpy",
-        "opencv-python",
         "opencv-contrib-python",
         "pybullet",
         "matplotlib",

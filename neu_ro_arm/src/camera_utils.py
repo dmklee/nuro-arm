@@ -50,7 +50,7 @@ def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
     return cubes
 
 def project_world2pixel(pts_wframe, world2cam,
-                       rvec, tvec, undistort_mtx, dist_coeffs):
+                       rvec, tvec, mtx, dist_coeffs):
     # transform world to camera frame
     pts_cframe = coord_transform(world2cam,
                                  pts_wframe)
@@ -58,7 +58,7 @@ def project_world2pixel(pts_wframe, world2cam,
     pixels, _ = cv2.projectPoints( pts_wframe,
                                     rvec,
                                     tvec,
-                                    undistort_mtx,
+                                    mtx,
                                     dist_coeffs
                                    )
     return pixels[:,0,:]
