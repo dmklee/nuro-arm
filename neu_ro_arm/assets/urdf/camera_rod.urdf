@@ -7,9 +7,12 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 .15"/>
               <geometry>
-                  <cylinder radius="0.01" length="0.3"/>
+                  <cylinder radius="0.005" length="0.3"/>
               </geometry>
         </visual>
+          <material name="gray">
+            <color rgba="0.4 0.4 0.4 1.0"/>
+          </material>
         <collision>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.15"/>
               <geometry>

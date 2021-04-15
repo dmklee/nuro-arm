@@ -3,8 +3,8 @@ import cv2
 import threading
 import time
 
-from src.camera_utils import *
-import src.constants as constants
+from camera.camera_utils import *
+import constants as constants
 
 class Capturer:
     #TODO: add error handling if connection is dropped

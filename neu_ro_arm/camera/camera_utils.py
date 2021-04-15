@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import os
 
-import src.constants as constants
+import constants as constants
 
 def find_arucotags(img, cam_mtx, dist_coeffs):
     gray = convert_gray(img)

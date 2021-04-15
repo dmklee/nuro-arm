@@ -19,6 +19,9 @@ class MotionPlanner:
         self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
         self.gripper_joint_idxs = [6,7]
 
+        self.gripper_closed = np.array([-0.3, -0.3])
+        self.gripper_opened = np.array([0.3, 0.3])
+
     def _calculate_ik(self, pos, rot=None):
         if rot is not None and len(rot) == 3:
             rot = pb.getQuaternionFromEuler(rot)
@@ -48,6 +51,10 @@ class MotionPlanner:
         # initialize camera far away so collisions dont occur
         if cam_pose_mtx is not None:
             self.add_camera(cam_pose_mtx)
+
+    def mirror_state(self, arm_jpos, gripper_state):
+        self._teleport_arm(arm_jpos)
+        self._teleport_gripper(gripper_state)
 
     def add_camera(self, cam_pose_mtx):
         self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [0,0,0],[0,0,0,1])
@@ -79,6 +86,11 @@ class MotionPlanner:
     def _teleport_arm(self, jpos):
         [pb.resetJointState(self.robot_id, i, jp)
             for i,jp in zip(self.arm_joint_idxs, jpos)]
+
+    def _teleport_gripper(self, gripper_state):
+        jpos = gripper_state*self.gripper_opened + (1-gripper_state)*self.gripper_closed
+
+        [pb.resetJointState(self.robot_id, i, jp) for i,jp in zip(self.gripper_joint_idxs, jpos)]
 
     def check_arm_trajectory(self, target_jpos, num_steps=10):
         '''Checks collision of arm links'''
@@ -136,13 +148,9 @@ class MotionPlanner:
 if __name__ == "__main__":
     import constants as constants
     mp = MotionPlanner(constants.default_cam_pose_mtx)
-    jpos = np.array([0,0,-np.pi/2,0,0])
-    mp._teleport_arm(jpos)
-    target = np.array([0,np.pi,-np.pi/2,0,0])
-    print(mp.check_arm_trajectory(target, num_steps=2))
-    sadf
     import time
+    state = True
     while True:
-        print(mp._get_collisions_at(jpos))
-        pb.stepSimulation()
-        time.sleep(0.1)
+        mp._teleport_gripper(state)
+        state = not state
+        time.sleep(1)

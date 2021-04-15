@@ -7,7 +7,7 @@
 		<visual>
 			<origin rpy="0 0 0.0" xyz="0 0 0"/>
       		<geometry>
-                <mesh filename="src/assets/meshes/base.dae"/>
+                <mesh filename="assets/meshes/base.dae"/>
       		</geometry>
             <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
@@ -29,7 +29,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.034"/>
               <geometry>
-                <mesh filename="src/assets/meshes/lx225.dae"/>
+                <mesh filename="assets/meshes/lx225.dae"/>
               </geometry>
               <material name="black">
                 <color rgba="0.2 0.2 0.2 1.0"/>
@@ -38,7 +38,7 @@
         <visual>
           <origin rpy="0 0 0" xyz="0 0 0"/>
               <geometry>
-                <mesh filename="src/assets/meshes/base_swivel.dae"/>
+                <mesh filename="assets/meshes/base_swivel.dae"/>
               </geometry>
               <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
@@ -60,7 +60,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                <mesh filename="src/assets/meshes/upperarm_link.dae"/>
+                <mesh filename="assets/meshes/upperarm_link.dae"/>
               </geometry>
               <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
@@ -82,7 +82,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                <mesh filename="src/assets/meshes/lx15d_double.dae"/>
+                <mesh filename="assets/meshes/lx15d_double.dae"/>
               </geometry>
               <!--<material name="black">-->
                 <!--<color rgba="0.2 0.2 0.2 1.0"/>-->
@@ -91,7 +91,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                <mesh filename="src/assets/meshes/forearm_link.dae"/>
+                <mesh filename="assets/meshes/forearm_link.dae"/>
               </geometry>
               <!--<material name="blue">-->
                 <!--<color rgba="0.3 0.5 0.9 1.0"/>-->
@@ -100,18 +100,18 @@
         <visual>
               <origin rpy="0 3.14159 0" xyz="0.0 0.0 0.095"/>
               <geometry>
-                <mesh filename="src/assets/meshes/lx15d_double.dae"/>
+                <mesh filename="assets/meshes/lx15d_double.dae"/>
               </geometry>
               <!--<material name="black">-->
                 <!--<color rgba="0.2 0.2 0.2 1.0"/>-->
               <!--</material>-->
         </visual>
-		<collision>
-			<origin rpy="0 0 0.0" xyz="0 0 0.05"/>
-      		<geometry>
-                <box size="0.04 0.03 0.11" />
-      		</geometry>
-		</collision>
+        <collision>
+            <origin rpy="0 0 0.0" xyz="0 0 0.05"/>
+              <geometry>
+                <box size="0.05 0.04 0.11" />
+              </geometry>
+        </collision>
         <inertial>
             <mass value="1"/>
             <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
@@ -122,7 +122,7 @@
         <visual>
               <origin rpy="1.5708 1.5708 0" xyz="0.0 0.0 0.0365"/>
               <geometry>
-                <mesh filename="src/assets/meshes/lx15d_double.dae"/>
+                <mesh filename="assets/meshes/lx15d_double.dae"/>
               </geometry>
               <material name="black">
                 <color rgba="0.2 0.2 0.2 1.0"/>
@@ -131,7 +131,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                  <mesh filename="src/assets/meshes/wrist_link.dae"/>
+                  <mesh filename="assets/meshes/wrist_link.dae"/>
               </geometry>
               <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
@@ -182,18 +182,18 @@
 
       <link name="gripper_left_link">
         <visual>
-              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.03"/>
               <geometry>
-                <cylinder length="0.05" radius="0.005"/>
+                <cylinder length="0.06" radius="0.005"/>
               </geometry>
               <material name="black">
                 <color rgba="0.2 0.2 0.2 1.0"/>
               </material>
         </visual>
         <collision>
-              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.03"/>
               <geometry>
-                <cylinder length="0.05" radius="0.005"/>
+                <cylinder length="0.06" radius="0.005"/>
               </geometry>
         </collision>
         <inertial>
@@ -204,18 +204,18 @@
     
       <link name="gripper_right_link">
         <visual>
-              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.03"/>
               <geometry>
-                <cylinder length="0.05" radius="0.005"/>
+                <cylinder length="0.06" radius="0.005"/>
               </geometry>
               <material name="black">
                 <color rgba="0.2 0.2 0.2 1.0"/>
               </material>
         </visual>
         <collision>
-              <origin rpy="0 0 0.0" xyz="0 0.0 0.025"/>
+              <origin rpy="0 0 0.0" xyz="0 0.0 0.03"/>
               <geometry>
-                <cylinder length="0.05" radius="0.005"/>
+                <cylinder length="0.06" radius="0.005"/>
               </geometry>
         </collision>
         <inertial>
