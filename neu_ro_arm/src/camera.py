@@ -265,6 +265,8 @@ class Camera:
         if ret:
             objp = np.zeros((gh*gw,3), np.float32)
             objp[:,:2] = gsize * np.dstack(np.mgrid[1:-gw+1:-1,gh:0:-1]).reshape(-1,2)
+            # objp[:,0] += constants.tvec_world2rightfoot[1]
+            # objp[:,1] += constants.tvec_world2rightfoot[0]
             objp += constants.tvec_world2rightfoot
 
             mtx = self._configs['undistort_mtx']
@@ -281,32 +283,33 @@ class Camera:
                 'cam2world' : inverse_transformation_matrix(rvecs, tvecs),
             }
             self._configs = self._write_configs(new_configs)
-            return
+            # return
 
-        print('ERROR: checkerboard pattern was not identified.')
+        # print('ERROR: checkerboard pattern was not identified.')
             # imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
+            import matplotlib.pyplot as plt
 
-            # fig = plt.figure()
-            # ax = plt.axes(projection='3d')
-            # origin = np.zeros(3)
-            # axis = 20*np.array(((1,0,0),(0,1,0),(0,0,1)))
-            # axis_colors = 'gbr'
-            # for a, c in zip(axis, axis_colors):
-                # x,y,z = zip(origin, a)
-                # ax.plot(x,y,z,'-', color=c)
+            fig = plt.figure()
+            ax = plt.axes(projection='3d')
+            origin = np.zeros(3)
+            axis = 20*np.array(((1,0,0),(0,1,0),(0,0,1)))
+            axis_colors = 'gbr'
+            for a, c in zip(axis, axis_colors):
+                x,y,z = zip(origin, a)
+                ax.plot(x,y,z,'-', color=c)
 
-            # # cam_rot_mat, jcb = cv2.Rodrigues(-rvecs)
-            # cam_axis = coord_transform(self._configs['cam2world'],
-                                       # axis)
-            # cam_origin = coord_transform(self._configs['cam2world'],
-                                         # origin)[0]
-            # for a, c in zip(cam_axis, axis_colors):
-                # x,y,z = zip(cam_origin, a)
-                # ax.plot(x,y,z,'-', color=c)
+            # cam_rot_mat, jcb = cv2.Rodrigues(-rvecs)
+            cam_axis = coord_transform(self._configs['cam2world'],
+                                       axis)
+            cam_origin = coord_transform(self._configs['cam2world'],
+                                         origin)[0]
+            for a, c in zip(cam_axis, axis_colors):
+                x,y,z = zip(cam_origin, a)
+                ax.plot(x,y,z,'-', color=c)
 
-            # ax.plot(*objp.T, 'k.')
+            ax.plot(*objp.T, 'k.')
 
-            # plt.show()
+            plt.show()
 
             # img = draw(img, corners2, imgpts)
             # cv2.drawChessboardCorners(img, (7,9), corners2, ret)
@@ -457,7 +460,10 @@ if __name__ == "__main__":
     camera = Camera(2)
     #img = camera.get_image()
 
-    # camera._calc_location()
+    camera.show_feed()
+    camera.wait_for_gui()
+    camera._calc_location()
+    exit()
     cam_mtx = camera._configs['undistort_mtx'].copy()
     world2cam = camera._configs['world2cam']
     cam2world = camera._configs['cam2world']

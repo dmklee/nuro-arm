@@ -2,13 +2,16 @@ import numpy as np
 import pybullet as pb
 import pybullet_data
 
+from src.camera_utils import rotmat2euler
+
 class MotionPlanner:
     '''Handles IK, FK, collision detection
     '''
     ROBOT_URDF_PATH = "src/assets/xarm.urdf"
     CAMERA_URDF_PATH = "src/assets/camera.urdf"
-    def __init__(self, connection_mode):
-        self._init_pybullet(connection_mode)
+    ROD_URDF_PATH = "src/assets/camera_rod.urdf"
+    def __init__(self):
+        self._init_pybullet()
         self.link_names = self._get_link_names()
         self.joint_names = self._get_joint_names()
         self.end_effector_link_index = self.link_names.index('hand')
@@ -31,9 +34,8 @@ class MotionPlanner:
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot
 
-    def _init_pybullet(self, connection_mode):
-        assert connection_mode in (pb.DIRECT, pb.GUI)
-        self._client = pb.connect(connection_mode)
+    def _init_pybullet(self):
+        self._client = pb.connect(pb.GUI)
 
         # this path is where we find platform
         pb.setAdditionalSearchPath(pybullet_data.getDataPath())
@@ -43,8 +45,13 @@ class MotionPlanner:
         self.robot_id = pb.loadURDF(self.ROBOT_URDF_PATH, [0,0,0],[0,0,0,1],
                                   flags=pb.URDF_USE_SELF_COLLISION)
 
-        self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [.4,0,0.2],[0,0,0,1])
-        pb.resetJointState(self.camera_id, 3, 0.2)
+        # initialize camera far away so collisions dont occur
+        self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [0,0,0],[0,0,0,1])
+        self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, [0,0,0],[0,0,0,1])
+        self.rod_offset_vec = np.array((0.026, 0, 0))
+
+        T = np.load('src/configs/camera.npz')['cam2world']
+        self.set_camera_pose(T)
 
     def _get_joint_names(self):
         num_joints = pb.getNumJoints(self.robot_id)
@@ -86,14 +93,18 @@ class MotionPlanner:
 
         return True
 
-    def _add_camera_collision_obj(self, pos, rot):
-        pass
+    def set_camera_pose(self, cam2world):
+        pos = cam2world[:3,3]/1000.
+        rotmat = cam2world[:3,:3]
+        quat = pb.getQuaternionFromEuler(rotmat2euler(rotmat))
+        pb.resetBasePositionAndOrientation(self.camera_id, pos, quat)
 
-    def _change_connection_mode(self, connection_mode):
-        self._init_pybullet(connection_mode)
+        rod_pos = pos + np.dot(rotmat, self.rod_offset_vec)
+        rod_pos[2] = 0
+        pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, (0,0,0,1))
 
 if __name__ == "__main__":
-    mp = MotionPlanner(pb.GUI)
+    mp = MotionPlanner()
     import time
     while True:
         time.sleep(1)

@@ -9,13 +9,12 @@ elif platform.system() == 'Darwin':
     pass
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 import threading
 from src.base_controller import BaseController
-import matplotlib.pyplot as plt
 
 #TODO:
     # error handling on receiving/sending
-    # switch to passive servo-offset method
     # allow for calibration of joints using smart movements
     # create and write config file for storing offsets + servo directions
 
@@ -72,11 +71,18 @@ class XArmController(BaseController):
         self.gripper_opened
 
     def connect(self):
-        en = easyhid.Enumeration()
-        devices = en.find(vid=1155, pid=22352)
-        assert len(devices) == 1
-        device = devices[0]
-        device.open()
+        if platform.system() == 'Linux':
+            en = easyhid.Enumeration()
+            devices = en.find(vid=1155, pid=22352)
+            assert len(devices) == 1
+            device = devices[0]
+            device.open()
+        elif platform.system() == 'Windows':
+            pass
+        elif platform.system() == 'Darwin':
+            pass
+        else:
+            raise TypeError('unsupported operating system')
         print('Connected to xArm')
         return device
 
@@ -96,7 +102,7 @@ class XArmController(BaseController):
     def home(self):
         '''moves all servos to HOME_POS'''
         home_pos = self.n_servos * [self._jpos_home]
-        self.move_command(self.servos, home_pos, duration=1000)
+        self.move_command(self.servos, home_pos)
         time.sleep(1)
 
     def move_command(self, j_idxs, jpos):
@@ -202,11 +208,11 @@ class XArmController(BaseController):
                 continue
             old_offset = self._read_servo_offset(servo)
             true_home = self.SERVO_HOME - old_offset
-            pos = self._to_pos_units(self.read_jpos([servo])[0])
+            pos = self._to_pos_units(self.read_command([servo])[0])
             new_offset = pos - true_home
             self._write_servo_offset(servo.value, new_offset)
             offsets[f"{servo.name}_offset"] = new_offset
-            # print(f'  {servo.name} offset set to {new_offset} servo units')
+            print(f'  {servo.name, pos} offset set from {old_offset} to {new_offset} servo units')
         return offsets
 
     def use_gui(self):
@@ -298,7 +304,7 @@ class XArmController(BaseController):
 
         window.mainloop()
 
-    def arm_calibration(self):
+    def calibrate_arm(self):
         data = {}
         print('  =====================  ')
         print('  == Calibrating arm ==  ')
@@ -329,11 +335,9 @@ class XArmController(BaseController):
         data.update(arm_servo_offsets)
         print('finished servo offset correction.')
 
-        # calibrate motor directions
-        print('WARNING: motor directions are not yet calibrated')
         return True, data
 
-    def gripper_calibration(self):
+    def calibrate_gripper(self):
         data = {}
         print('  =========================  ')
         print('  == Calibrating gripper ==  ')
@@ -355,7 +359,7 @@ class XArmController(BaseController):
         print(f"  gripper opened position is {gripper_opened:.2f} radians.")
         return True, data
 
-    def full_calibration(self):
+    def calibrate(self):
         # passive mode
         self.power_off()
 
@@ -375,6 +379,7 @@ class XArmController(BaseController):
 
 if __name__ == "__main__":
     arm = XArmController()
+    arm.home()
     arm.calibrate()
     # arm.use_gui()
     # while True:

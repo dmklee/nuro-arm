@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='neu-ro-arm',
@@ -7,6 +7,17 @@ setup(
     author='David Klee',
     author_email='klee.d@northeastern.edu',
     url='https://github.com/dmklee/neu-ro-arm',
-    packages=['neu_ro_arm'],
-    install_requires=['pybullet', 'numpy', 'gym']
+    packages=find_packages(include=['neu_ro_arm']),
+    python_requires='>3.6.0',
+    setup_requires="wheel",
+    install_requires=[
+        "numpy",
+        "opencv-python",
+        "opencv-contrib-python",
+        "pybullet",
+        "matplotlib",
+        "easyhid;platform_system=='Linux'",
+        "serial;platform_system=='Windows'",
+        # "pywin32 >= 1.0;platform_system=='Darwin'"
+    ],
 )

@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+<robot name="Camera">
+
+ 	<link name="world"/>
+
+    <link name="camera_link">
+        <visual>
+            <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+              <geometry>
+                  <mesh filename="src/assets/meshes/camera_with_holder.dae"/>
+              </geometry>
+              <material name="gray">
+                <color rgba="0.4 0.4 0.4 1.0"/>
+              </material>
+        </visual>
+        <collision>
+              <origin rpy="0 0 0" xyz="0.0 0.0 -0.01"/>
+              <geometry>
+                  <box size="0.06 0.04 0.04"/>
+              </geometry>
+        </collision>
+        <collision>
+              <origin rpy="1.5708 0 0" xyz="0.0 0.028 0.0"/>
+              <geometry>
+                  <cylinder radius="0.016" length="0.056"/>
+              </geometry>
+        </collision>
+        <inertial>
+            <mass value="1"/>
+            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+        </inertial>
+    </link>
+
+    <joint name="world_joint" type="fixed">
+        <parent link="world"/>
+        <child link="camera_link"/>
+        <origin rpy="0 1.5708 -1.5708" xyz="0.0 -0.013 -0.012"/>
+    </joint>
+</robot>

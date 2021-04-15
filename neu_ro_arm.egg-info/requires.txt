@@ -1,0 +1,11 @@
+matplotlib
+numpy
+opencv-contrib-python
+opencv-python
+pybullet
+
+[:platform_system == "Linux"]
+easyhid
+
+[:platform_system == "Windows"]
+serial
