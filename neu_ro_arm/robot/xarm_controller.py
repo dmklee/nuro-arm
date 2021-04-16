@@ -13,6 +13,11 @@ from robot.base_controller import BaseController
     # allow for calibration of joints using smart movements
     # create and write config file for storing offsets + servo directions
 
+class InvalidServoOffset(Exception):
+    def __init__(self, j_idx):
+        message = f"Servo offset is too large for motor id={j_idx}"
+        super().__init__(message)
+
 def itos(v):
     lsb = v & 0xFF
     msb = v >> 8
@@ -235,6 +240,9 @@ class XArmController(BaseController):
             true_home = self.SERVO_HOME - old_offset
             pos = self._to_pos_units(self.read_command([j_idx])[0])
             new_offset = pos - true_home
+            if abs(new_offset) > 127:
+                raise InvalidServoOffset(j_idx)
+
             self._move_servo(self._to_radians(pos-new_offset+old_offset),
                              j_idx)
             self._write_servo_offset(j_idx, new_offset)
