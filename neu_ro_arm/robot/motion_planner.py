@@ -4,6 +4,12 @@ import pybullet_data
 
 from camera.camera_utils import rotmat2euler
 
+class UnsafeTrajectoryError(Exception):
+    pass
+
+class UnsafeJointPosition(Exception):
+    pass
+
 class MotionPlanner:
     '''Handles IK, FK, collision detection
     '''
@@ -11,7 +17,7 @@ class MotionPlanner:
     CAMERA_URDF_PATH = "assets/urdf/camera.urdf"
     ROD_URDF_PATH = "assets/urdf/camera_rod.urdf"
     def __init__(self, cam_pose_mtx=None):
-        self._init_pybullet(cam_pose_mtx)
+        self._client = self._init_pybullet(cam_pose_mtx)
         self.link_names = self._get_link_names()
         self.joint_names = self._get_joint_names()
         self.end_effector_link_index = self.link_names.index('hand')
@@ -21,13 +27,22 @@ class MotionPlanner:
 
         self.gripper_closed = np.array([-0.3, -0.3])
         self.gripper_opened = np.array([0.3, 0.3])
+        self.camera_exists = False
 
     def _calculate_ik(self, pos, rot=None):
         if rot is not None and len(rot) == 3:
             rot = pb.getQuaternionFromEuler(rot)
-        return pb.calculateInverseKinematics(self.robot_id,
+        jpos = pb.calculateInverseKinematics(self.robot_id,
                                              self.end_effector_link_index,
-                                             pos, rot)[:self.end_effector_link_index]
+                                             pos,
+                                             rot,
+                                             physicsClientId=self._client,
+                                            )
+
+        arm_jpos = jpos[:self.end_effector_link_index]
+
+        is_collision = self._check_collisions(arm_jpos)
+        return is_collision, arm_jpos
 
     def _get_link_pose(self, link_name):
         assert link_name in self.link_names
@@ -37,30 +52,32 @@ class MotionPlanner:
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot
 
-    def _init_pybullet(self, cam_pose_mtx):
-        self._client = pb.connect(pb.GUI)
+    def _init_pybullet(self):
+        client = pb.connect(pb.GUI)
 
         # this path is where we find platform
         pb.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.plane_id = pb.loadURDF('plane.urdf', [0,0.5,0])
 
-        # add xarm urdf
         self.robot_id = pb.loadURDF(self.ROBOT_URDF_PATH, [0,0,0],[0,0,0,1],
                                   flags=pb.URDF_USE_SELF_COLLISION)
 
-        # initialize camera far away so collisions dont occur
-        if cam_pose_mtx is not None:
-            self.add_camera(cam_pose_mtx)
+        return client
 
-    def mirror_state(self, arm_jpos, gripper_state):
+    def mirror(self, arm_jpos=None, gripper_state=None, gripper_jpos=None):
         self._teleport_arm(arm_jpos)
-        self._teleport_gripper(gripper_state)
+        self._teleport_gripper(state=gripper_state,
+                               jpos=gripper_jpos
+                              )
 
     def add_camera(self, cam_pose_mtx):
-        self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [0,0,0],[0,0,0,1])
-        self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, [0,0,0],[0,0,0,1])
+        if self.camera_exists:
+            print('Camera already detected. Existing camera will be re-positioned.')
+        else:
+            self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [0,0,0],[0,0,0,1])
+            self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, [0,0,0],[0,0,0,1])
 
-        self.set_camera_pose(cam_pose_mtx)
+        self._set_camera_pose(cam_pose_mtx)
 
     def _get_joint_names(self):
         num_joints = pb.getNumJoints(self.robot_id)
@@ -83,41 +100,36 @@ class MotionPlanner:
 
         return link_names
 
-    def _teleport_arm(self, jpos):
-        [pb.resetJointState(self.robot_id, i, jp)
-            for i,jp in zip(self.arm_joint_idxs, jpos)]
+    def _teleport_arm(self, jpos=None):
+        if jpos is not None:
+            [pb.resetJointState(self.robot_id, i, jp)
+                for i,jp in zip(self.arm_joint_idxs, jpos)]
 
-    def _teleport_gripper(self, gripper_state):
-        jpos = gripper_state*self.gripper_opened + (1-gripper_state)*self.gripper_closed
+    def _teleport_gripper(self, state=None, jpos=None):
+        if state is not None:
+            jpos = gripper_state*self.gripper_opened \
+                    + (1-gripper_state)*self.gripper_closed
 
-        [pb.resetJointState(self.robot_id, i, jp) for i,jp in zip(self.gripper_joint_idxs, jpos)]
+        if jpos is not None:
+            [pb.resetJointState(self.robot_id, i, jp)
+                 for i,jp in zip(self.gripper_joint_idxs, jpos)]
 
     def check_arm_trajectory(self, target_jpos, num_steps=10):
         '''Checks collision of arm links'''
         assert len(target_jpos) == len(self.arm_joint_idxs)
         current_jpos = np.array([pb.getJointState(self.robot_id, j_idx)[0]
                                for j_idx in self.arm_joint_idxs])
-        inter_jpos = np.linspace(current_jpos, target_jpos, num=num_steps, endpoint=True)
 
+        inter_jpos = np.linspace(current_jpos, target_jpos,
+                                 num=num_steps, endpoint=True)
+
+        safe = True
         for jpos in inter_jpos[1:]:
             if self._check_collisions(jpos):
-                return False
+                safe = False
+                break
 
-        return True
-
-    def _monitor_movement(self, j_idxs, target, read_fn, max_iter=100, atol=1e-4):
-        it = 0
-
-        old_jpos = read_fn()
-        while not np.allclose(old_jpos, target, atol=atol):
-            it += 1
-
-            jpos = read_fn()
-            if it > max_iter or np.allclose(jpos, old_jpos):
-                # motion has stopped, so failure
-                return False
-            old_jpos = jpos
-
+        self._teleport_arm(current_jpos)
         return True
 
     def _check_collisions(self, jpos):
@@ -134,7 +146,7 @@ class MotionPlanner:
 
         return False
 
-    def set_camera_pose(self, cam2world):
+    def _set_camera_pose(self, cam2world):
         pos = cam2world[:3,3]/1000.
         rotmat = cam2world[:3,:3]
         quat = pb.getQuaternionFromEuler(rotmat2euler(rotmat))
