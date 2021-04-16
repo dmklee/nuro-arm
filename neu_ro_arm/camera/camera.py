@@ -114,7 +114,7 @@ class GUI:
         self._lock = threading.Lock()
         self._showing = False
         self._cap = capturer
-        self._window_name = 'gui'
+        self._window_name = 'GUI: press [ESC] to exit'
         self._modifer_fns = []
 
     def show_async(self, window_name=None):
@@ -192,7 +192,7 @@ class GUI:
             cv2.destroyAllWindows()
 
 class Camera:
-    CONFIG_FILE = "src/configs/camera.npz"
+    CONFIG_FILE = "camera/configs.npz"
     def __init__(self,
                  camera_id=None,
                  ):
@@ -457,13 +457,13 @@ def show_cam_z_vec(original, canvas):
 
 
 if __name__ == "__main__":
-    camera = Camera(2)
+    camera = Camera(1)
     #img = camera.get_image()
 
-    camera.show_feed()
-    camera.wait_for_gui()
-    camera._calc_location()
-    exit()
+    # camera.show_feed()
+    # camera.wait_for_gui()
+    # camera._calc_location()
+    # exit()
     cam_mtx = camera._configs['undistort_mtx'].copy()
     world2cam = camera._configs['world2cam']
     cam2world = camera._configs['cam2world']

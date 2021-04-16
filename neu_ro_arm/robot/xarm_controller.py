@@ -1,17 +1,18 @@
 import time
+import ctypes
 from enum import IntEnum
 import platform
 if platform.system() == 'Linux':
     import easyhid
 elif platform.system() == 'Windows':
-    import serial
+    import hid
 elif platform.system() == 'Darwin':
     pass
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import threading
-from src.base_controller import BaseController
+from robot.base_controller import BaseController
 
 #TODO:
     # error handling on receiving/sending
@@ -22,6 +23,7 @@ def itos(v):
     lsb = v & 0xFF
     msb = v >> 8
     return lsb, msb
+
 
 class XArmController(BaseController):
     # in servo positional units
@@ -63,8 +65,12 @@ class XArmController(BaseController):
         self.gripper_closed = None
         self.gripper_opened = None
         self._jpos_home = self._to_radians(self.SERVO_HOME)
-        self._jpos_limits = (self._to_radians(self.SERVO_LOWER_LIMIT),
-                            self._to_radians(self.SERVO_UPPER_LIMIT))
+        self.joint_limits = np.array(((-np.pi/2, np.pi/2),
+                            (-np.pi/2, np.pi/2),
+                            (-np.pi/2, np.pi/2),
+                            (-np.pi/2, np.pi/2),
+                            (-np.pi/2, np.pi/2)))
+                                        
 
         self.servos = XArmController.Servos
         self.n_servos = len(self.servos)
@@ -80,7 +86,8 @@ class XArmController(BaseController):
             device = devices[0]
             device.open()
         elif platform.system() == 'Windows':
-            pass
+            print('here')
+            device = hid.Device(vid=1155, pid=22352)
         elif platform.system() == 'Darwin':
             pass
         else:
@@ -124,7 +131,7 @@ class XArmController(BaseController):
         so each servo must be commanded separately
         '''
         # prevent motion outside of servo limits
-        jpos = np.clip(jpos, *self._jpos_limits)
+        jpos = np.clip(jpos, *self.joint_limits)
 
         current_jpos = self.read_command([servo_id])[0]
         delta = abs(jpos - current_jpos)
@@ -154,7 +161,9 @@ class XArmController(BaseController):
         self._send(self.cmd_lib.OFFSET_WRITE, [servo_id, offset])
 
     def _send(self, cmd, data=[]):
-        msg = bytearray([
+        # for linux, use bytearray not bytes
+        msg = bytes([
+            0, # only include 0 for windows
             self.cmd_lib.SIGNATURE,
             self.cmd_lib.SIGNATURE,
             len(data)+2,
@@ -167,8 +176,7 @@ class XArmController(BaseController):
     def _recv(self, cmd, ret_type='ushort', timeout=1000):
         assert ret_type in ('ushort', 'byte', 'sbyte')
         with self._lock:
-            ret = self.device.read(timeout=timeout)
-
+            ret = self.device.read(size=32, timeout=timeout)
         if ret is None:
             # timed out
             return ret
@@ -366,13 +374,13 @@ class XArmController(BaseController):
         self.power_off()
 
         data = {}
-        ret, new_data = self.arm_calibration()
+        ret, new_data = self.calibrate_arm()
         if ret:
             data.update(new_data)
         else:
             return False, None
 
-        ret, new_data = self.gripper_calibration()
+        ret, new_data = self.calibrate_gripper()
         if ret:
             data.update(new_data)
         else:
