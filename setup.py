@@ -16,7 +16,7 @@ setup(
         "pybullet",
         "matplotlib",
         "easyhid;platform_system=='Linux'",
-        "serial;platform_system=='Windows'",
+        "hid;platform_system=='Windows'",
         # "pywin32 >= 1.0;platform_system=='Darwin'"
     ],
 )
