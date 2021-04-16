@@ -15,7 +15,7 @@ from robot.base_controller import BaseController
 
 class InvalidServoOffset(Exception):
     def __init__(self, j_idx):
-        message = f"Servo offset is too large for motor id={j_idx}"
+        message = f"Servo offset is too large for motor id={j_idx}. Servo must be re-installed."
         super().__init__(message)
 
 def itos(v):
