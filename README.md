@@ -14,7 +14,7 @@ TODO:
 1. [Installation](#installation)
 2. [Features](#features)
 3. [Parts List](#parts-list)
-4. [Projects](#projects)
+4. [Tutorials and Projects](#projects)
 4. [Acknowledgements](#acknowledgements)
 
 <a name="installation"></a>
