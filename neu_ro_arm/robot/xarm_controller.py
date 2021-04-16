@@ -33,7 +33,7 @@ class XArmController(BaseController):
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
-    CONFIG_FILE = "src/configs/robot.npz"
+    CONFIG_FILE = "robot/configs.npz"
 
     class CommandLibrary:
         SIGNATURE = 85
@@ -53,22 +53,24 @@ class XArmController(BaseController):
 
     def __init__(self):
         self.cmd_lib = XArmController.CommandLibrary()
+        self._max_speed = self.SERVO_MAX_SPEED*self.POS2RADIANS
+
+        self.arm_joint_idxs = [6,5,4,3,2]
+        self.gripper_joint_idxs = [1]
+        self.joint_precision = self.SERVO_PRECISION * self.POS2RADIANS
+
+        # load params from config file
+        self.gripper_closed = None
+        self.gripper_opened = None
         self._jpos_home = self._to_radians(self.SERVO_HOME)
         self._jpos_limits = (self._to_radians(self.SERVO_LOWER_LIMIT),
                             self._to_radians(self.SERVO_UPPER_LIMIT))
-        self._max_speed = self.SERVO_MAX_SPEED*self.POS2RADIANS
-        self._jpos_precision = self.SERVO_PRECISION * self.POS2RADIANS
 
         self.servos = XArmController.Servos
         self.n_servos = len(self.servos)
         self._lock = threading.Lock()
         self.device = self.connect()
         self.power_on()
-
-        self.arm_joint_idxs = [6,5,4,3,2]
-        self.gripper_joint_idxs = [1]
-        self.gripper_closed
-        self.gripper_opened
 
     def connect(self):
         if platform.system() == 'Linux':
@@ -367,12 +369,15 @@ class XArmController(BaseController):
         ret, new_data = self.arm_calibration()
         if ret:
             data.update(new_data)
+        else:
+            return False, None
 
         ret, new_data = self.gripper_calibration()
         if ret:
             data.update(new_data)
+        else:
+            return False, None
 
-        np.savez(self.CONFIG_FILE, **data)
 
         self.power_on()
         return True, data

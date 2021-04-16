@@ -2,23 +2,23 @@ import numpy as np
 import pybullet as pb
 import pybullet_data
 
-from abc import abstractmethod, ABC
 import constants as constants
 from robot.motion_planner import MotionPlanner, UnsafeTrajectoryError
 from robot.simulator_controller import SimulatorController
 from robot.xarm_controller import XArmController
 
-class RobotArm(ABC):
+class RobotArm:
     '''Abtract base class to ensure that the simulator and real xArm are
     controlled with the same interface
     '''
     def __init__(self, controller_type):
         self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation')
 
+        #TODO: init controllers
         if controller_type == 'real':
-            self.controller = XArmController
+            self.controller = XArmController()
         elif controller_type == 'sim':
-            self.controller = SimulatorController
+            self.controller = SimulatorController()
         else:
             raise TypeError('invalid controller type')
 
@@ -46,7 +46,7 @@ class RobotArm(ABC):
         return success
 
     def move_hand_to(self, pos, rot):
-        is_collision, jpos = self.mp._calculate_ik(pos, rot)
+        is_collision, jpos, data = self.mp._calculate_ik(pos, rot)
         if is_collision:
             raise UnsafeJointPosition
 
@@ -121,28 +121,6 @@ class RobotArm(ABC):
         #TODO: add scale for gripper state
 
         window.main_loop()
-
-class RobotArm(BaseRobotArm):
-    def __init__(self, camera=None):
-        self.mp = MotionPlanner(pb.GUI)
-        self.controller = XArmController()
-
-        if camera is not None:
-            pos, rot = camera.get_world_pose()
-            self.set_camera_location(pos, rot)
-
-    def _mirror_simulator(self, arm_jpos):
-        self.mp._teleport_arm(arm_jpos)
-
-class SimulatorArm(BaseRobotArm):
-    def __init__(self):
-        self.mp = MotionPlanner(pb.GUI)
-        self.controller = SimulatorController(self.mp.robot_id)
-        pb.setRealTimeSimulation(1)
-
-        # add default camera position
-        self.set_camera_location(constants.default_cam_pos,
-                                 constants.default_cam_rot)
 
 if __name__ == "__main__":
     import time
