@@ -38,17 +38,21 @@ class Device:
             raise TypeError('unsupported operating system')
 
     def write(self, msg):
-        if self.type == "hid":
+        if self.type == "easyhid":
             self.device.write(bytearray(msg[1:]))
-        elif self.type == "easyhid":
+        elif self.type == "hid":
             self.device.write(bytes(msg))
 
     def read(self, timeout):
-        if self.type == "hid":
+        if self.type == "easyhid":
             return self.device.read(timeout)
-        elif self.type == "easyhid":
+        elif self.type == "hid":
             size = 32
             return self.device.read(size, timeout)
+
+    def close(self):
+        if self.type == "easyhid":
+            self.device.close()
 
 class XArmController(BaseController):
     # in servo positional units
@@ -91,10 +95,11 @@ class XArmController(BaseController):
         self.gripper_opened = None
         self._jpos_home = self._to_radians(self.SERVO_HOME)
         self.joint_limits = np.array(((-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2)))
+                                        (-np.pi/2, np.pi/2),
+                                        (-np.pi/2, np.pi/2),
+                                        (-np.pi/2, np.pi/2),
+                                        (-np.pi/2, np.pi/2),
+                                        (-np.pi/2, np.pi/2)))
 
         self.servos = XArmController.Servos
         self.n_servos = len(self.servos)
@@ -138,14 +143,14 @@ class XArmController(BaseController):
         j_pos = [self._to_radians(p) for p in pos]
         return j_pos
 
-    def _move_servo(self, jpos, servo_id, duration=1000):
+    def _move_servo(self, jpos, j_idx, duration=1000):
         '''I have been unable to get multi-servo move command to work,
         so each servo must be commanded separately
         '''
         # prevent motion outside of servo limits
-        jpos = np.clip(jpos, *self.joint_limits)
+        jpos = np.clip(jpos, *self.joint_limits[j_idx-1])
 
-        current_jpos = self.read_command([servo_id])[0]
+        current_jpos = self.read_command([j_idx])[0]
         delta = abs(jpos - current_jpos)
 
         # ensure movement does not go above max speed
@@ -153,7 +158,7 @@ class XArmController(BaseController):
 
         # convert to positional units
         pos = self._to_pos_units(jpos)
-        data = [1, *itos(duration), servo_id, *itos(pos)]
+        data = [1, *itos(duration), j_idx, *itos(pos)]
         self._send(self.cmd_lib.MOVE, data)
 
         return duration
@@ -224,19 +229,20 @@ class XArmController(BaseController):
     def _reset_servo_offsets(self):
         """Assumes robot is already in home position and servos are off"""
         offsets = {}
-        for servo in self.servos:
-            if servo.name == 'gripper':
-                continue
-            old_offset = self._read_servo_offset(servo)
+        # for servo in self.servos:
+        for j_idx in self.arm_joint_idxs:
+            old_offset = self._read_servo_offset(j_idx)
             true_home = self.SERVO_HOME - old_offset
-            pos = self._to_pos_units(self.read_command([servo])[0])
+            pos = self._to_pos_units(self.read_command([j_idx])[0])
             new_offset = pos - true_home
-            self._write_servo_offset(servo.value, new_offset)
-            offsets[f"{servo.name}_offset"] = new_offset
-            print(f'  {servo.name, pos} offset set from {old_offset} to {new_offset} servo units')
+            self._move_servo(self._to_radians(pos-new_offset+old_offset),
+                             j_idx)
+            self._write_servo_offset(j_idx, new_offset)
+            offsets[f"offset_j{j_idx}"] = new_offset
         return offsets
 
     def calibrate_arm(self):
+        self.power_off()
         data = {}
         print('  =====================  ')
         print('  == Calibrating arm ==  ')
@@ -267,9 +273,11 @@ class XArmController(BaseController):
         data.update(arm_servo_offsets)
         print('finished servo offset correction.')
 
+        self.power_on()
         return True, data
 
     def calibrate_gripper(self):
+        self.power_off()
         data = {}
         print('  =========================  ')
         print('  == Calibrating gripper ==  ')
@@ -289,12 +297,10 @@ class XArmController(BaseController):
         gripper_opened = self.read_command(self.gripper_joint_idxs)[0]
         data.update({'gripper_opened' : gripper_opened})
         print(f"  gripper opened position is {gripper_opened:.2f} radians.")
+        self.power_on()
         return True, data
 
     def calibrate(self):
-        # passive mode
-        self.power_off()
-
         data = {}
         ret, new_data = self.calibrate_arm()
         if ret:
@@ -309,7 +315,6 @@ class XArmController(BaseController):
             return False, None
 
 
-        self.power_on()
         return True, data
 
 if __name__ == "__main__":
