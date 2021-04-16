@@ -4,9 +4,8 @@ This repository is built to help students learn more about programming and robot
 
 TODO:
 - ~~GUI for calibration and simple arm movements~~
-- IK + joint control (w/ collision avoidance)
-- Closed Loop (keypoint) trajectories
-- Cube pose estimation
+- ~~IK + joint control (w/ collision avoidance)~~
+- ~~Cube pose estimation~~
 - Testing across platform
 - Testing for failure modes/ hardware resets
 - ~~Get better measurements for urdf file, add gripper~~
