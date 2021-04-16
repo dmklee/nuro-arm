@@ -194,7 +194,7 @@ class GUI:
 class Camera:
     CONFIG_FILE = "camera/configs.npz"
     def __init__(self,
-                 camera_id=None,
+                 camera_id=-1,
                  ):
         self.cap = Capturer()
         self.gui = GUI(self.cap)
@@ -457,7 +457,7 @@ def show_cam_z_vec(original, canvas):
 
 
 if __name__ == "__main__":
-    camera = Camera(1)
+    camera = Camera(-1)
     #img = camera.get_image()
 
     # camera.show_feed()
