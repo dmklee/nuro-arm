@@ -6,6 +6,7 @@ import time
 from camera.camera_utils import *
 import constants as constants
 
+
 class Capturer:
     #TODO: add error handling if connection is dropped
     def __init__(self):
@@ -194,46 +195,25 @@ class GUI:
 class Camera:
     CONFIG_FILE = "camera/configs.npz"
     def __init__(self,
-                 camera_id=-1,
+                 camera_id=None,
                  ):
         self.cap = Capturer()
         self.gui = GUI(self.cap)
 
-        self._configs = self._read_configs()
+        self.unpack_configs()
 
-        is_connected = self.connect(camera_id)
+        # override camera_id config
+        if camera_id is not None:
+            self._camera_id = camera_id
+
+        is_connected = self.connect()
         if not is_connected:
+            print(f'[ERROR] Failed to connect to camera{camer_id}.')
             return
 
-        # self._calc_distortion_matrix()
-
-        # self.calc_location()
-
-    def connect(self, camera_id=None):
-        if camera_id is None:
-            print('Camera id not specified, searching for available cameras...')
-            for c_id in range(5):
-                is_valid = self.cap.set_camera_id(c_id)
-                if is_valid:
-                    name = f"Camera{c_id}: is this the camera you want to use? [y/n]"
-                    k = self.gui.show(window_name=name,
-                                      exit_keys=[ord('y'), ord('n')]
-                                     )
-                    if k == ord('y'):
-                        print(f'Video capture enabled with camera{c_id}.')
-                        return True
-                else:
-                    print(f'  Camera{c_id} not available.')
-            print('[ERROR] No other cameras were found.')
-            return False
-
-        is_valid = self.cap.set_camera_id(camera_id)
-        if is_valid:
-            print(f'Video capture enabled with camera{camera_id}.')
-            return True
-
-        print(f'Video capture failed with camera{camera_id}.')
-        return False
+    def connect(self):
+        is_connected = self.cap.set_camera_id(self._camera_id)
+        return is_connected
 
     @property
     def frame_rate(self):
@@ -241,16 +221,14 @@ class Camera:
 
     def _calc_distortion_matrix(self):
         mtx, newcameramtx, roi, dist = calc_distortion_matrix()
-        self._write_configs({
+        self._update_config_file({
             'mtx' : mtx.tolist(),
             'undistort_mtx' : newcameramtx.tolist(),
             'undistort_roi' : roi,
             'dist_coeffs' : dist.tolist(),
         })
 
-    def _calc_location(self):
-        print('Calculating location of camera...')
-        # vec that goes from world origin to where right suction cup touches grid
+    def calc_location(self):
         gh, gw = constants.calibration_gridshape
         gsize = constants.calibration_gridsize
 
@@ -261,60 +239,25 @@ class Camera:
                                                 (gh,gw),
                                                 None)
 
-
         if ret:
+            # coordinates of grid corners in world coordinates
             objp = np.zeros((gh*gw,3), np.float32)
             objp[:,:2] = gsize * np.dstack(np.mgrid[1:-gw+1:-1,gh:0:-1]).reshape(-1,2)
             objp += constants.tvec_world2rightfoot
 
-            mtx = self._configs['mtx']
-            dist = self._configs['dist_coeffs']
-
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
             corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
-            ret, rvecs, tvecs = cv2.solvePnP(objp, corners2, mtx, dist)
 
-            new_configs = {
-                'rvec' : rvecs,
-                'tvec' : tvecs,
-                'world2cam' : transformation_matrix(rvecs, tvecs),
-                'cam2world' : inverse_transformation_matrix(rvecs, tvecs),
-            }
-            self._configs = self._write_configs(new_configs)
-            # return
+            mtx = self._configs['mtx']
+            dist = self._configs['dist_coeffs']
+            ret, rvec, tvec = cv2.solvePnP(objp, corners2, mtx, dist)
 
-        # print('ERROR: checkerboard pattern was not identified.')
-            # imgpts, jac = cv2.projectPoints(axis, rvecs, tvecs, mtx, dist)
-            import matplotlib.pyplot as plt
+            world2cam = transformation_matrix(rvec, tvec)
+            cam2world = inverse_transformation_matrix(rvec, tvec)
 
-            fig = plt.figure()
-            ax = plt.axes(projection='3d')
-            origin = np.zeros(3)
-            axis = 20*np.array(((1,0,0),(0,1,0),(0,0,1)))
-            axis_colors = 'gbr'
-            for a, c in zip(axis, axis_colors):
-                x,y,z = zip(origin, a)
-                ax.plot(x,y,z,'-', color=c)
+            return True, (rvec, tvec, world2cam, cam2world)
 
-            # cam_rot_mat, jcb = cv2.Rodrigues(-rvecs)
-            cam_axis = coord_transform(self._configs['cam2world'],
-                                       axis)
-            cam_origin = coord_transform(self._configs['cam2world'],
-                                         origin)[0]
-            for a, c in zip(cam_axis, axis_colors):
-                x,y,z = zip(cam_origin, a)
-                ax.plot(x,y,z,'-', color=c)
-
-            ax.plot(*objp.T, 'k.')
-
-            plt.show()
-
-            # img = draw(img, corners2, imgpts)
-            # cv2.drawChessboardCorners(img, (7,9), corners2, ret)
-        # cv2.imshow('img', img)
-        # cv2.waitKey(5000)
-        # cv2.destroyAllWindows()
-
+        return False, None
 
     def start_recording(self, duration, delay):
         self.cap.start_recording(duration, delay)
@@ -336,11 +279,7 @@ class Camera:
             if k == 27:
                 break
 
-    def _undistort(self, img):
-        # undistort
-        if 'mtx' not in self._configs:
-            return img
-
+    def undistort(self, img):
         dst = cv2.undistort(img,
                             self._configs['mtx'],
                             self._configs['dist_coeffs'],
@@ -361,21 +300,30 @@ class Camera:
                                    self._configs['mtx'],
                                    self._configs['dist_coeffs'])
 
-    def _write_configs(self, new_configs):
-        configs = self._read_configs()
+    def _update_config_file(self, new_configs):
+        # get existing configs
+        configs = np.load(self.CONFIG_FILE)
+        configs = dict(configs) if configs is not None else dict()
 
         configs.update(new_configs)
         np.savez(self.CONFIG_FILE, **configs)
 
-        return configs
-
-    def _read_configs(self):
+    def unpack_configs(self):
         configs = dict(np.load(self.CONFIG_FILE))
 
-        if configs is None:
-            configs = dict()
-
-        return configs
+        try:
+            self._camera_id = configs['camera_id']
+            self._rvec = configs['rvec']
+            self._tvec = configs['tvec']
+            self._mtx = configs['mtx']
+            self._undistort_mtx = configs['undistort_mtx']
+            self._undistort_roi = configs['undistort_roi']
+            self._dist_coeffs = configs['dist_coeffs']
+            self._world2cam = configs['world2cam']
+            self._cam2world = configs['cam2world']
+        except KeyError:
+            print('[ERROR] Some camera configs are missing. Run setup_camera.py '
+                  'to properly populate config file.')
 
     def show_feed(self):
         self.gui.show_async()
@@ -383,11 +331,9 @@ class Camera:
     def hide_feed(self):
         self.gui.hide()
 
-    def get_image(self, raw=True):
+    def get_image(self):
         img = self.cap.read()
-        if raw:
-            return img
-        return self._undistort(img)
+        return img
 
     def __call__(self):
         return self.get_image()

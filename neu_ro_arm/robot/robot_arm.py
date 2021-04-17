@@ -107,8 +107,8 @@ class RobotArm:
 
             move_joint_fn = move_joint_fn_generator(j_idx)
             scl_joint = tk.Scale(master=col_frame_right,
-                                 from_=self.controller.joint_limits[j_idx, 0],
-                                 to=self.controller.joint_limits[j_idxs,1],
+                                 from_=self.controller.joint_limits[j_idx-1, 0],
+                                 to=self.controller.joint_limits[j_idx-1,1],
                                  resolution=self.controller.joint_precision,
                                  orient=tk.HORIZONTAL,
                                  command=move_joint_fn)
