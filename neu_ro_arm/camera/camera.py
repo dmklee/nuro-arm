@@ -13,8 +13,12 @@ class Capturer:
         self._lock = threading.Lock()
         self._started = False
         self._frame_rate = constants.frame_rate
+        self._cap = None
 
     def set_camera_id(self, camera_id, run_async=True):
+        # release any old connections
+        self.release()
+
         self._camera_id = camera_id
         self._cap = cv2.VideoCapture(camera_id)
         connected = self._cap.isOpened()
@@ -105,10 +109,13 @@ class Capturer:
     def __call__(self):
         return self.read()
 
+    def release(self):
+        if self._cap is not None and self._cap.isOpened():
+            self._cap.release()
+
     def __del__(self):
         self.stop_async()
-        if self._cap.isOpened():
-            self._cap.release()
+        self.release()
 
 class GUI:
     def __init__(self, capturer):
@@ -208,7 +215,7 @@ class Camera:
 
         is_connected = self.connect()
         if not is_connected:
-            print(f'[ERROR] Failed to connect to camera{camer_id}.')
+            print(f'[ERROR] Failed to connect to camera{camera_id}.')
             return
 
     def connect(self):
@@ -223,9 +230,9 @@ class Camera:
         mtx, newcameramtx, roi, dist = calc_distortion_matrix()
         self._update_config_file({
             'mtx' : mtx.tolist(),
-            'undistort_mtx' : newcameramtx.tolist(),
+            'undistort_mtx' : newcameramtx,
             'undistort_roi' : roi,
-            'dist_coeffs' : dist.tolist(),
+            'dist_coeffs' : dist,
         })
 
     def calc_location(self):
@@ -248,9 +255,7 @@ class Camera:
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
             corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
 
-            mtx = self._configs['mtx']
-            dist = self._configs['dist_coeffs']
-            ret, rvec, tvec = cv2.solvePnP(objp, corners2, mtx, dist)
+            ret, rvec, tvec = cv2.solvePnP(objp, corners2, self._mtx, self._dist_coeffs)
 
             world2cam = transformation_matrix(rvec, tvec)
             cam2world = inverse_transformation_matrix(rvec, tvec)
@@ -321,7 +326,8 @@ class Camera:
             self._dist_coeffs = configs['dist_coeffs']
             self._world2cam = configs['world2cam']
             self._cam2world = configs['cam2world']
-        except KeyError:
+        except KeyError as e:
+            print(e)
             print('[ERROR] Some camera configs are missing. Run setup_camera.py '
                   'to properly populate config file.')
 

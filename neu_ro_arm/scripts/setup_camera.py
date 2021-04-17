@@ -1,6 +1,8 @@
+import time
 from camera.camera import Camera, Capturer, GUI
 
 def determine_camera_id():
+    print('Performing scan over available cameras...')
     cap = Capturer()
     gui = GUI(cap)
 
@@ -14,10 +16,12 @@ def determine_camera_id():
                              )
             if k == ord('y'):
                 print(f'Video capture enabled with camera{c_id}.')
+                cap.release()
                 return c_id
         # else:
             # print(f'  Camera{c_id} not available.')
     print('[ERROR] No other cameras were found.')
+    cap.release()
     return None
 
 def calc_camera_location(camera_id):
@@ -42,5 +46,6 @@ def calc_camera_location(camera_id):
         print('[ERROR] Checkerboard pattern was not identified. Please try again.')
 
 if __name__ == "__main__":
+    cap = Capturer()
     camera_id = determine_camera_id()
-    calc_camera_id(camera_id)
+    calc_camera_location(camera_id)
