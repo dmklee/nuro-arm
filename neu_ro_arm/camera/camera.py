@@ -163,6 +163,8 @@ class GUI:
         use_live = img is None
 
         k = -1
+        cv2.namedWindow(window_name)
+        cv2.startWindowThread()
         while True:
             if use_live:
                 img = self._cap.read()
@@ -170,7 +172,12 @@ class GUI:
             k = cv2.waitKey(int(1000/self._cap._frame_rate))
             if k == 27 or k in exit_keys:
                 break
+
+        # wait key is needed to get window to close on Mac
+        cv2.waitKey(1)
         cv2.destroyAllWindows()
+        cv2.waitKey(1)
+
         return k
 
     def change_window_name(self, name):
