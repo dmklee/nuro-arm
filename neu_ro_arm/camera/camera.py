@@ -6,7 +6,6 @@ import time
 from camera.camera_utils import *
 import constants as constants
 
-
 class Capturer:
     #TODO: add error handling if connection is dropped
     def __init__(self):
@@ -21,7 +20,10 @@ class Capturer:
 
         self._camera_id = camera_id
         self._cap = cv2.VideoCapture(camera_id)
+        self._cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 640)
+        self._cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 480)
         connected = self._cap.isOpened()
+        print('is opened', connected)
         if connected and run_async:
             self.start_async()
         return connected
@@ -117,6 +119,25 @@ class Capturer:
         self.stop_async()
         self.release()
 
+class SimCapturer(Capturer):
+    #TODO: find a good abstraction to unite the interface of simulated and real camera
+    # i think we just need to create a simulator camera "cap" class that has method
+    # "read"
+    img_width = 640
+    img_height = 480
+    def __init__(self, pb_client, camera_pose):
+        self._pb_client = pb_client
+        self.view_mtx
+        self.projection_mtx
+
+    def _snapshot(self):
+        return getCameraImage(width=img_width,
+                              height=img_height,
+                              viewMatrix = self.view_mtx,
+                              projectionMatrix=self.projection_mtx,
+                              physicsClientId=self._pb_client
+                             )[2]
+
 class GUI:
     def __init__(self, capturer):
         self._lock = threading.Lock()
@@ -148,8 +169,6 @@ class GUI:
             cv2.imshow(window_name, img)
             k = cv2.waitKey(int(1000/self._cap._frame_rate))
             if k == 27 or k in exit_keys:
-                break
-            if cv2.getWindowProperty(window_name, cv2.WND_PROP_VISIBLE) < 1:
                 break
         cv2.destroyAllWindows()
         return k
@@ -327,7 +346,6 @@ class Camera:
             self._world2cam = configs['world2cam']
             self._cam2world = configs['cam2world']
         except KeyError as e:
-            print(e)
             print('[ERROR] Some camera configs are missing. Run setup_camera.py '
                   'to properly populate config file.')
 
@@ -350,37 +368,6 @@ class Camera:
         rot_euler = rotmat2euler(rot_mat)
         return pos, rot_euler
 
-def show_apriltags(original, canvas):
-    tags = find_apriltags(original, cam_mtx)
-    for tag in tags:
-        for idx in range(len(tag.corners)):
-            cv2.line(canvas,
-                  tuple(tag.corners[idx-1, :].astype(int)),
-                  tuple(tag.corners[idx, :].astype(int)),
-                  (0, 255, 0))
-
-        text_org = tuple(np.mean(tag.corners, axis=0).astype(int))
-        cv2.putText(canvas, str(tag.tag_id),
-                    org=text_org,
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=0.6,
-                    thickness=2,
-                    color=(0, 0, 255))
-
-def show_cubes(original, canvas):
-    cubes = find_cubes(original, cam_mtx, dist_coeffs, cam2world)
-    for cube in cubes:
-        vert_px = project_world2pixel(cube['vertices'],
-                                      world2cam,
-                                      rvec,
-                                      tvec,
-                                      undistort_mtx,
-                                      dist_coeffs
-                                     ).astype(int)
-        for a, b in constants.cube_edges:
-            cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]), (255, 0, 0),
-                    thickness=2)
-
 def show_arucotags(original, canvas):
     tags = find_arucotags(original, cam_mtx, dist_coeffs)
     for tag in tags:
@@ -399,30 +386,36 @@ def show_arucotags(original, canvas):
                     thickness=1,
                     color=(0, 0, 255))
 
-def show_cam_z_vec(original, canvas):
-    z_vec = np.array(((0,0,1.),(0,0.4,1.)))
-    z_vec = coord_transform(cam2world, z_vec)
-    px = project_world2pixel(z_vec, world2cam, rvec, tvec,
-                             undistort_mtx, dist_coeffs)
-    for p in px:
-        cv2.circle(canvas, tuple(p.astype(int)), 2, (255,0,0), thickness=2)
+def show_cubes(original, canvas):
+    cubes = find_cubes(original, cam_mtx, dist_coeffs, cam2world)
+    for cube in cubes:
+        vert_px = project_world2pixel(cube['vertices'],
+                                      world2cam,
+                                      rvec,
+                                      tvec,
+                                      undistort_mtx,
+                                      dist_coeffs
+                                     ).astype(int)
+        for a, b in constants.cube_edges:
+            cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]), (255, 0, 0),
+                    thickness=2)
 
 
 if __name__ == "__main__":
-    camera = Camera(-1)
+    camera = Camera(2)
     #img = camera.get_image()
 
     # camera.show_feed()
     # camera.wait_for_gui()
     # camera._calc_location()
     # exit()
-    cam_mtx = camera._configs['undistort_mtx'].copy()
-    world2cam = camera._configs['world2cam']
-    cam2world = camera._configs['cam2world']
-    rvec = camera._configs['rvec']
-    tvec = camera._configs['tvec']
-    undistort_mtx = camera._configs['undistort_mtx']
-    dist_coeffs = camera._configs['dist_coeffs']
+    cam_mtx = camera._mtx
+    world2cam = camera._world2cam
+    cam2world = camera._cam2world
+    rvec = camera._rvec
+    tvec = camera._tvec
+    undistort_mtx = camera._undistort_mtx
+    dist_coeffs = camera._dist_coeffs
 
     # camera.gui.add_modifiers(show_arucotags)
     camera.gui.add_modifiers(show_cubes)
