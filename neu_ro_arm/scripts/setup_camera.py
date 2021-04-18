@@ -1,4 +1,3 @@
-import time
 from camera.camera import Camera, Capturer, GUI
 
 def determine_camera_id():
@@ -48,4 +47,5 @@ def calc_camera_location(camera_id):
 if __name__ == "__main__":
     cap = Capturer()
     camera_id = determine_camera_id()
-    calc_camera_location(camera_id)
+    if camera_id is not None:
+        calc_camera_location(camera_id)
