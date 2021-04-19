@@ -19,7 +19,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 	pip install opencv-contrib-python
 	pip install hidapi
 
-elif [[ "$OSTYPE" == "win32" ]]; then
+elif [[ "$OSTYPE" == "msys" ]]; then
 	conda env create -n robot python=3.8.5
 	conda activate robot
 
