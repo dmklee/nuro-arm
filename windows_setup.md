@@ -19,7 +19,7 @@
 	```
 3. Create virtual environment by entering the following command
 	```
-	conda env create -f environment.yml
+	conda env create -f environment_win.yml
 	```
 4. Install the Robot API so it exists in python path.
 	```
