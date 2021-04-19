@@ -34,3 +34,4 @@ elif [[ "$OSTYPE" == "win32" ]]; then
 	python_file=(where python)
 	python_path=(dirname "${python_file}")
 	mv hidapi-win/x64/* ${python_path}
+fi
