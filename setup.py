@@ -7,7 +7,7 @@ setup(
     author='David Klee',
     author_email='klee.d@northeastern.edu',
     url='https://github.com/dmklee/neu-ro-arm',
-    packages=find_packages(include=['neu_ro_arm']),
+    packages=find_packages(),
     python_requires='>3.6.0',
     setup_requires="wheel",
     install_requires=[

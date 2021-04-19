@@ -1,5 +1,6 @@
 import pybullet_data
 import pybullet as pb
+import numpy as np
 
 from camera.camera_utils import rotmat2euler
 
