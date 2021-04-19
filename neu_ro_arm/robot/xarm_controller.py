@@ -32,26 +32,29 @@ class Device:
             assert len(devices) == 1
             self.device = devices[0]
             self.device.open()
-            self.type = 'easyhid'
+            self.type = 0
         elif platform.system() == 'Windows':
             import hid
             self.device = hid.Device(vid=1155, pid=22352)
-            self.type = 'hid'
+            self.type = 1
         elif platform.system() == 'Darwin':
-            raise TypeError('unsupported operating system')
+            import hid
+            self.device = hid.device()
+            self.device.open(1155, 22352)
+            self.type = 0
         else:
             raise TypeError('unsupported operating system')
 
     def write(self, msg):
-        if self.type == "easyhid":
+        if self.type == 0:
             self.device.write(bytearray(msg[1:]))
-        elif self.type == "hid":
+        elif self.type == 1:
             self.device.write(bytes(msg))
 
     def read(self, timeout):
-        if self.type == "easyhid":
+        if self.type == 0:
             return self.device.read(timeout)
-        elif self.type == "hid":
+        elif self.type == 1:
             size = 32
             return self.device.read(size, timeout)
 
@@ -287,6 +290,7 @@ class XArmController(BaseController):
         print()
         print('Checking motor directions...')
         print('Please move robot into the configuration shown in the picture.')
+        self.power_off()
         img = cv2.imread('data/arm_motor_calibration.jpg')
         plt.figure()
         plt.imshow(img)
@@ -296,7 +300,7 @@ class XArmController(BaseController):
         if input('  ready? [y/n]: ') != 'y':
             print('Calibration terminated')
             return False, data
-        arm_jpos = self.get_arm_jpos()
+        arm_jpos = self.read_command(self.arm_joint_idxs)
         data['arm_motor_directions'] = np.sign(arm_jpos)
         print(np.sign(arm_jpos))
 
@@ -315,7 +319,8 @@ class XArmController(BaseController):
             return False, data
         gripper_closed = self.read_command(self.gripper_joint_idxs)
         data.update({'gripper_closed' : np.array(gripper_closed)})
-        print(f"  gripper closed position is {gripper_closed:.2f} radians.")
+        # print(f"  gripper closed position is {gripper_closed[0]:.2f} radians.")
+        print()
 
         print('Move gripper to fully opened position.')
         if input('   ready? [y/n]: ') != 'y':
@@ -323,7 +328,7 @@ class XArmController(BaseController):
             return False, data
         gripper_opened = self.read_command(self.gripper_joint_idxs)
         data.update({'gripper_opened' : np.array(gripper_opened)})
-        print(f"  gripper opened position is {gripper_opened:.2f} radians.")
+        # print(f"  gripper opened position is {gripper_opened[0]:.2f} radians.")
         self.power_on()
         return True, data
 
