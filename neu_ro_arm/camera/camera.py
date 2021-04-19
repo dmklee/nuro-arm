@@ -112,11 +112,11 @@ class Capturer:
         return self.read()
 
     def release(self):
+        self.stop_async()
         if self._cap is not None and self._cap.isOpened():
             self._cap.release()
 
     def __del__(self):
-        self.stop_async()
         self.release()
 
 class SimCapturer(Capturer):
