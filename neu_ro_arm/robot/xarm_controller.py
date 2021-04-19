@@ -99,12 +99,13 @@ class XArmController(BaseController):
         self.gripper_closed = None
         self.gripper_opened = None
         self._jpos_home = self._to_radians(self.SERVO_HOME)
-        self.joint_limits = np.array(((-np.pi/2, np.pi/2),
-                                        (-np.pi/2, np.pi/2),
-                                        (-np.pi/2, np.pi/2),
-                                        (-np.pi/2, np.pi/2),
-                                        (-np.pi/2, np.pi/2),
-                                        (-np.pi/2, np.pi/2)))
+        self.joint_limits = { 1 : (-np.pi/2, np.pi/2),
+                              2 : (-np.pi/2, np.pi/2),
+                              3 : (-np.pi/2, np.pi/2),
+                              4 : (-np.pi/2, np.pi/2),
+                              5 : (-np.pi/2, np.pi/2),
+                              6 : (-np.pi/2, np.pi/2)
+                            }
 
         self.servos = XArmController.Servos
         self.n_servos = len(self.servos)
@@ -153,7 +154,7 @@ class XArmController(BaseController):
         so each servo must be commanded separately
         '''
         # prevent motion outside of servo limits
-        jpos = np.clip(jpos, *self.joint_limits[j_idx-1])
+        jpos = np.clip(jpos, *self.joint_limits[j_idx])
 
         current_jpos = self.read_command([j_idx])[0]
         delta = abs(jpos - current_jpos)
