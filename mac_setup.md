@@ -21,14 +21,10 @@
 	```
 	conda env create -f environment_mac.yml
 	```
-
-[optional] conda update -n base defaults conda
-conda create -n robot python=3.8 anaconda
-conda activate robot
-cd neu-ro-arm/
-pip install .
-?brew install hidapi
-?brew install libusb
+4. Install Robot API so it exists in Python path
+	```
+	pip install .
+	```
 
 # install vs code
 1. Download VS Code for Mac by clicking this [link](https://code.visualstudio.com/download)
