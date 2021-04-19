@@ -59,7 +59,7 @@ class Device:
             return self.device.read(size, timeout)
 
     def close(self):
-        if self.type == "easyhid":
+        if self.type == 0:
             self.device.close()
 
 class XArmController(BaseController):
