@@ -97,9 +97,9 @@ class XArmController(BaseController):
 
         # load params from config file
         configs = np.load(self.CONFIG_FILE)
-        self.gripper_closed = configs['gripper_closed']
-        self.gripper_opened = configs['gripper_open']
-        self.arm_motor_directions = configs['arm_motor_directions']
+        self.gripper_closed = configs.get('gripper_closed', None)
+        self.gripper_opened = configs.get('gripper_open', None)
+        self.arm_motor_directions = configs.get('arm_motor_directions', None)
         self._jpos_home = self._to_radians(self.SERVO_HOME)
         self.joint_limits = { 1 : (-np.pi/2, np.pi/2),
                               2 : (-np.pi/2, np.pi/2),
