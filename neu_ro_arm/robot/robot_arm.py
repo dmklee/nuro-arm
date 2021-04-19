@@ -93,7 +93,7 @@ class RobotArm:
             self.controller.move_command(self.controller.gripper_joint_idxs,
                                          gripper_jpos)
 
-        H,W = 600, 400
+        H,W = 600, 600
         window = tk.Tk()
         heading = tk.Label(text="GUI")
         heading.pack()

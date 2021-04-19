@@ -4,7 +4,11 @@ from enum import IntEnum
 import platform
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
+
+import matplotlib
+matplotlib.use('TkAgg')
+from matplotlib import pyplot as plt
+
 import threading
 from robot.base_controller import BaseController
 
