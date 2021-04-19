@@ -89,10 +89,14 @@ class RobotArm:
                                          gripper_jpos)
 
         H,W = 600, 400
+        print('here')
         import tkinter as tk
+        print('here1')
         window = tk.Tk()
+        print('here2')
         heading = tk.Label(text="GUI")
         heading.pack()
+        print('here3')
 
         main_frame = tk.Frame(master=window, width=W, height=H)
         main_frame.pack(fill=tk.BOTH)
@@ -123,6 +127,7 @@ class RobotArm:
             scales.append(scl_joint)
 
         arm_jpos = self.get_arm_jpos()
+        print('here4')
         [scl.set(jp) for scl, jp in zip(scales, arm_jpos)]
 
         #gripper
@@ -142,22 +147,25 @@ class RobotArm:
                              resolution=0.1,
                              orient=tk.HORIZONTAL,
                              command=move_gripper_fn)
+        print('here5')
         scl_gripper.pack()
         scl_gripper.set(self.get_gripper_state())
 
+        print('here6')
         window.mainloop()
 
 if __name__ == "__main__":
     import time
     robot = RobotArm('sim')
+    print('here0')
     robot.move_with_gui()
-    robot.controller.move_command([1],[0.2])
-    robot.controller.move_command([1],[0.24])
-    robot.controller.move_command([1],[0.28])
-    robot.controller.move_command([1],[0.29])
-    robot.controller.move_command([1],[0.27])
-    while True:
-        time.sleep(0.1)
+    # robot.controller.move_command([1],[0.2])
+    # robot.controller.move_command([1],[0.24])
+    # robot.controller.move_command([1],[0.28])
+    # robot.controller.move_command([1],[0.29])
+    # robot.controller.move_command([1],[0.27])
+    # while True:
+        # time.sleep(0.1)
     # robot.move_with_gui()
     # while True:
         # time.sleep(0.1)
