@@ -4,7 +4,7 @@ import pybullet_data
 
 import matplotlib
 matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 import tkinter as tk
 
 import constants as constants
