@@ -19,10 +19,9 @@ def main():
 
 def main2():
     robot = RobotArm('real')
-    # robot.move_with_gui()
+    robot.move_with_gui()
 
 if __name__ == "__main__":
     main()
-    import time
-    time.sleep(10)
+    main2()
 

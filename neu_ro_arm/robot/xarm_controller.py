@@ -96,8 +96,10 @@ class XArmController(BaseController):
         self.joint_precision = self.SERVO_PRECISION * self.POS2RADIANS
 
         # load params from config file
-        self.gripper_closed = None
-        self.gripper_opened = None
+        configs = np.load(self.CONFIG_FILE)
+        self.gripper_closed = configs['gripper_closed']
+        self.gripper_opened = configs['gripper_open']
+        self.arm_motor_directions = configs['arm_motor_directions']
         self._jpos_home = self._to_radians(self.SERVO_HOME)
         self.joint_limits = { 1 : (-np.pi/2, np.pi/2),
                               2 : (-np.pi/2, np.pi/2),
@@ -282,6 +284,22 @@ class XArmController(BaseController):
         data.update(arm_servo_offsets)
         print('finished servo offset correction.')
 
+        print()
+        print('Checking motor directions...')
+        print('Please move robot into the configuration shown in the picture.')
+        img = cv2.imread('data/arm_motor_calibration.jpg')
+        plt.figure()
+        plt.imshow(img)
+        plt.axis('off')
+        plt.title('Move arm into this approximate position')
+        plt.show()
+        if input('  ready? [y/n]: ') != 'y':
+            print('Calibration terminated')
+            return False, data
+        arm_jpos = self.get_arm_jpos()
+        data['arm_motor_directions'] = np.sign(arm_jpos)
+        print(np.sign(arm_jpos))
+
         self.power_on()
         return True, data
 
@@ -295,16 +313,16 @@ class XArmController(BaseController):
         if input('   ready? [y/n]: ') != 'y':
             print('Calibration terminated.')
             return False, data
-        gripper_closed = self.read_command(self.gripper_joint_idxs)[0]
-        data.update({'gripper_closed' : gripper_closed})
+        gripper_closed = self.read_command(self.gripper_joint_idxs)
+        data.update({'gripper_closed' : np.array(gripper_closed)})
         print(f"  gripper closed position is {gripper_closed:.2f} radians.")
 
         print('Move gripper to fully opened position.')
         if input('   ready? [y/n]: ') != 'y':
             print('Calibration terminated.')
             return False, data
-        gripper_opened = self.read_command(self.gripper_joint_idxs)[0]
-        data.update({'gripper_opened' : gripper_opened})
+        gripper_opened = self.read_command(self.gripper_joint_idxs)
+        data.update({'gripper_opened' : np.array(gripper_opened)})
         print(f"  gripper opened position is {gripper_opened:.2f} radians.")
         self.power_on()
         return True, data

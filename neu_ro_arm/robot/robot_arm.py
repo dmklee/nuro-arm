@@ -82,6 +82,12 @@ class RobotArm:
                 self.controller.move_command([j_idx], [jpos])
             return move_joint_fn
 
+        def move_gripper_fn(state):
+            state = float(state)
+            gripper_jpos = self.controller.gripper_state_to_jpos(state)
+            self.controller.move_command(self.controller.gripper_joint_idxs,
+                                         gripper_jpos)
+
         H,W = 600, 400
         import tkinter as tk
         window = tk.Tk()
@@ -119,7 +125,25 @@ class RobotArm:
         arm_jpos = self.get_arm_jpos()
         [scl.set(jp) for scl, jp in zip(scales, arm_jpos)]
 
-        #TODO: add scale for gripper state
+        #gripper
+        row_frame = tk.Frame(master=main_frame, width=W,
+                             height=H//7, borderwidth=1)
+        row_frame.pack(fill=tk.X)
+        col_frame_left = tk.Frame(master=row_frame, width=W//2)
+        col_frame_left.pack(side=tk.LEFT)
+        col_frame_right = tk.Frame(master=row_frame, width=W//2)
+        col_frame_right.pack(side=tk.RIGHT)
+
+        tk.Label(master=col_frame_left, text="Gripper").pack()
+
+        scl_gripper = tk.Scale(master=col_frame_right,
+                             from_=0,
+                             to=1,
+                             resolution=0.1,
+                             orient=tk.HORIZONTAL,
+                             command=move_gripper_fn)
+        scl_gripper.pack()
+        scl_gripper.set(self.get_gripper_state())
 
         window.mainloop()
 

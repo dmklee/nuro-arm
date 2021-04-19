@@ -1,5 +1,3 @@
-import numpy as np
-import pybullet as pb
 import pybullet_data
 
 from camera.camera_utils import rotmat2euler
@@ -108,6 +106,7 @@ class MotionPlanner(PybulletBase):
     '''
     def __init__(self):
         super(MotionPlanner, self).__init__(pb.DIRECT)
+
     def _calculate_ik(self, pos, rot=None):
         #TODO: return data on achieved pos, rot, and error
         #       set max error thresholds maybe?

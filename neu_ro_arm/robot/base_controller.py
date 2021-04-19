@@ -9,6 +9,7 @@ class BaseController:
     arm_joint_idxs = None
     gripper_joint_idxs = None
     joint_limits = None
+    arm_motor_directions = None
     joint_precision = 1e-4
 
     @abstractmethod
@@ -24,13 +25,13 @@ class BaseController:
                 / (self.gripper_opened[0] - self.gripper_closed[0])
 
     def gripper_state_to_jpos(self, state):
-        return state*self.gripper_opened + (1-gripper_state)*self.gripper_closed
+        return state*self.gripper_opened + (1-state)*self.gripper_closed
 
     def monitor(self, j_idxs, target_jpos, max_iter=100, monitor_freq=10):
         it = 0
 
         jpos = self.read_command(j_idxs)
-        while not np.allclose(old_jpos, target_jpos, atol=self.joint_precision):
+        while not np.allclose(jpos, target_jpos, atol=self.joint_precision):
             it += 1
             time.sleep(1./monitor_freq)
 

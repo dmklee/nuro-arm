@@ -243,7 +243,7 @@
         <child link="upperarm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.031"/>
         <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
-        <axis xyz="1 0 0"/>
+        <axis xyz="-1 0 0"/>
       </joint>
 
       <joint name="elbow_joint" type="revolute">
@@ -251,7 +251,7 @@
         <child link="forearm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.101"/>
         <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
-        <axis xyz="1 0 0"/>
+        <axis xyz="-1 0 0"/>
       </joint>
 
       <joint name="wrist_joint" type="revolute">
