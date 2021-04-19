@@ -187,6 +187,10 @@ class GUI:
         with self._lock:
             cv2.destroyWindow(self._window_name)
             self._window_name = name
+        cv2.namedWindow(name)
+        cv2.startWindowThread()
+        cv2.setWindowProperty(name,
+                              cv2.WND_PROP_TOPMOST, 1)
 
     def get_last_keypress(self):
         if self._showing:
@@ -226,7 +230,10 @@ class GUI:
         if self._showing:
             self._showing = False
             self.thread.join()
-            cv2.destroyAllWindows()
+            
+        cv2.waitKey(1)
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)
 
 class Camera:
     CONFIG_FILE = "camera/configs.npz"
