@@ -29,9 +29,11 @@ elif [[ "$OSTYPE" == "msys" ]]; then
 	pip install hid
 
 	curl -LO https://github.com/libusb/hidapi/releases/download/hidapi-0.10.1/hidapi-win.zip --silent
-	unzip hidapi-win.zip
+	unzip hidapi-win.zip -d hidapi-win
 
 	python_file=(where python)
 	python_path=(dirname "${python_file}")
 	mv hidapi-win/x64/* ${python_path}
+	rm -rf hidapi-win.zip
+	rm -rf hidapi-win
 fi
