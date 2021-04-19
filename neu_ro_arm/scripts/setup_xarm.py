@@ -21,6 +21,6 @@ def main2():
     robot.move_with_gui()
 
 if __name__ == "__main__":
-    # main()
+    main()
     main2()
 
