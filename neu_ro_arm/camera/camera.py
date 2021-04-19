@@ -185,7 +185,7 @@ class GUI:
 
     def change_window_name(self, name):
         with self._lock:
-            cv2.destroyWindow(self.change_window_name)
+            cv2.destroyWindow(self._window_name)
             self._window_name = name
 
     def get_last_keypress(self):
