@@ -106,6 +106,7 @@ class Capturer:
     def stop_async(self):
         if self._started:
             self._started = False
+            self._recording = False
             self.thread.join()
 
     def __call__(self):
