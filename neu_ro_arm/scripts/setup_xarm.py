@@ -9,8 +9,7 @@ def main():
     # this calibrates the arm + gripper
     print('Calibration of the xarm will begin shortly.')
     print('Ensure the camera is not attached to the robot base')
-    success, data = xarm.calibrate_arm()
-    # success, data = xarm.calibrate()
+    success, data = xarm.calibrate()
 
     if success:
         np.savez(xarm.CONFIG_FILE, **data)
