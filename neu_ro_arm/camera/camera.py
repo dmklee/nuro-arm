@@ -165,6 +165,8 @@ class GUI:
         k = -1
         cv2.namedWindow(window_name)
         cv2.startWindowThread()
+        cv2.setWindowProperty(window_name,
+                              cv2.WND_PROP_TOPMOST, 1)
         while True:
             if use_live:
                 img = self._cap.read()
