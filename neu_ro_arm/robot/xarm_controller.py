@@ -2,12 +2,6 @@ import time
 import ctypes
 from enum import IntEnum
 import platform
-if platform.system() == 'Linux':
-    import easyhid
-elif platform.system() == 'Windows':
-    import hid
-elif platform.system() == 'Darwin':
-    pass
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -19,11 +13,51 @@ from robot.base_controller import BaseController
     # allow for calibration of joints using smart movements
     # create and write config file for storing offsets + servo directions
 
+class InvalidServoOffset(Exception):
+    def __init__(self, j_idx):
+        message = f"Servo offset is too large for motor id={j_idx}. Servo must be re-installed."
+        super().__init__(message)
+
 def itos(v):
     lsb = v & 0xFF
     msb = v >> 8
     return lsb, msb
 
+class Device:
+    def __init__(self):
+        if platform.system() == 'Linux':
+            import easyhid
+            en = easyhid.Enumeration()
+            devices = en.find(vid=1155, pid=22352)
+            assert len(devices) == 1
+            self.device = devices[0]
+            self.device.open()
+            self.type = 'easyhid'
+        elif platform.system() == 'Windows':
+            import hid
+            self.device = hid.Device(vid=1155, pid=22352)
+            self.type = 'hid'
+        elif platform.system() == 'Darwin':
+            raise TypeError('unsupported operating system')
+        else:
+            raise TypeError('unsupported operating system')
+
+    def write(self, msg):
+        if self.type == "easyhid":
+            self.device.write(bytearray(msg[1:]))
+        elif self.type == "hid":
+            self.device.write(bytes(msg))
+
+    def read(self, timeout):
+        if self.type == "easyhid":
+            return self.device.read(timeout)
+        elif self.type == "hid":
+            size = 32
+            return self.device.read(size, timeout)
+
+    def close(self):
+        if self.type == "easyhid":
+            self.device.close()
 
 class XArmController(BaseController):
     # in servo positional units
@@ -65,12 +99,13 @@ class XArmController(BaseController):
         self.gripper_closed = None
         self.gripper_opened = None
         self._jpos_home = self._to_radians(self.SERVO_HOME)
-        self.joint_limits = np.array(((-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2),
-                            (-np.pi/2, np.pi/2)))
-                                        
+        self.joint_limits = { 1 : (-np.pi/2, np.pi/2),
+                              2 : (-np.pi/2, np.pi/2),
+                              3 : (-np.pi/2, np.pi/2),
+                              4 : (-np.pi/2, np.pi/2),
+                              5 : (-np.pi/2, np.pi/2),
+                              6 : (-np.pi/2, np.pi/2)
+                            }
 
         self.servos = XArmController.Servos
         self.n_servos = len(self.servos)
@@ -79,19 +114,7 @@ class XArmController(BaseController):
         self.power_on()
 
     def connect(self):
-        if platform.system() == 'Linux':
-            en = easyhid.Enumeration()
-            devices = en.find(vid=1155, pid=22352)
-            assert len(devices) == 1
-            device = devices[0]
-            device.open()
-        elif platform.system() == 'Windows':
-            print('here')
-            device = hid.Device(vid=1155, pid=22352)
-        elif platform.system() == 'Darwin':
-            pass
-        else:
-            raise TypeError('unsupported operating system')
+        device = Device()
         print('Connected to xArm')
         return device
 
@@ -126,14 +149,14 @@ class XArmController(BaseController):
         j_pos = [self._to_radians(p) for p in pos]
         return j_pos
 
-    def _move_servo(self, jpos, servo_id, duration=1000):
+    def _move_servo(self, jpos, j_idx, duration=1000):
         '''I have been unable to get multi-servo move command to work,
         so each servo must be commanded separately
         '''
         # prevent motion outside of servo limits
-        jpos = np.clip(jpos, *self.joint_limits)
+        jpos = np.clip(jpos, *self.joint_limits[j_idx])
 
-        current_jpos = self.read_command([servo_id])[0]
+        current_jpos = self.read_command([j_idx])[0]
         delta = abs(jpos - current_jpos)
 
         # ensure movement does not go above max speed
@@ -141,7 +164,7 @@ class XArmController(BaseController):
 
         # convert to positional units
         pos = self._to_pos_units(jpos)
-        data = [1, *itos(duration), servo_id, *itos(pos)]
+        data = [1, *itos(duration), j_idx, *itos(pos)]
         self._send(self.cmd_lib.MOVE, data)
 
         return duration
@@ -161,22 +184,21 @@ class XArmController(BaseController):
         self._send(self.cmd_lib.OFFSET_WRITE, [servo_id, offset])
 
     def _send(self, cmd, data=[]):
-        # for linux, use bytearray not bytes
-        msg = bytes([
-            0, # only include 0 for windows
+        msg = [
+            0, # this will be deleted for easyhid
             self.cmd_lib.SIGNATURE,
             self.cmd_lib.SIGNATURE,
             len(data)+2,
             cmd,
             *data
-        ])
+        ]
         with self._lock:
             self.device.write(msg)
 
     def _recv(self, cmd, ret_type='ushort', timeout=1000):
         assert ret_type in ('ushort', 'byte', 'sbyte')
         with self._lock:
-            ret = self.device.read(size=32, timeout=timeout)
+            ret = self.device.read(timeout)
         if ret is None:
             # timed out
             return ret
@@ -213,108 +235,23 @@ class XArmController(BaseController):
     def _reset_servo_offsets(self):
         """Assumes robot is already in home position and servos are off"""
         offsets = {}
-        for servo in self.servos:
-            if servo.name == 'gripper':
-                continue
-            old_offset = self._read_servo_offset(servo)
+        # for servo in self.servos:
+        for j_idx in self.arm_joint_idxs:
+            old_offset = self._read_servo_offset(j_idx)
             true_home = self.SERVO_HOME - old_offset
-            pos = self._to_pos_units(self.read_command([servo])[0])
+            pos = self._to_pos_units(self.read_command([j_idx])[0])
             new_offset = pos - true_home
-            self._write_servo_offset(servo.value, new_offset)
-            offsets[f"{servo.name}_offset"] = new_offset
-            print(f'  {servo.name, pos} offset set from {old_offset} to {new_offset} servo units')
+            if abs(new_offset) > 127:
+                raise InvalidServoOffset(j_idx)
+
+            self._move_servo(self._to_radians(pos-new_offset+old_offset),
+                             j_idx)
+            self._write_servo_offset(j_idx, new_offset)
+            offsets[f"offset_j{j_idx}"] = new_offset
         return offsets
 
-    def use_gui(self):
-        def move_joint_fn_generator(servo_id):
-            def foo(jpos):
-                jpos = float(jpos)
-                self.move_command([jpos], [servo_id], duration=500)
-            return foo
-
-        def reset_servo_offsets():
-            print('not supported currently')
-            return
-            print('Changing servo offsets...')
-
-            time.sleep(1)
-            servo_pos = self._read_all_servos_pos()
-            for servo in self.servos:
-                old_offset = self._read_servo_offset(servo.value)
-                true_HOME = self.POS_HOME - old_offset
-
-                pos = scales[servo.value].get()
-                new_offset = pos - true_HOME
-
-                #preemptively send position command, otherwise the servo moves
-                # too rapidly when the offset is changed suddenly
-                self._move_servo(servo.value, pos-new_offset+old_offset)
-                self._write_servo_offset(servo.value, new_offset)
-
-                new_offset = self._read_servo_offset(servo.value)
-                print(f'\t{servo.name} offset changed from {old_offset} to {new_offset}')
-                new_pos = self._read_servo_pos(servo.value)
-                scales[servo.value].set(new_pos)
-
-            print('...moving to new home position')
-            time.sleep(1)
-            return
-
-        H,W = 600, 400
-        import tkinter as tk
-        window = tk.Tk()
-        heading = tk.Label(text="xArm GUI")
-        heading.pack()
-
-        main_frame = tk.Frame(master=window, width=W, height=H)
-        main_frame.pack(fill=tk.BOTH)
-
-        # reverse order so base is at bottom
-        scales = dict()
-        for servo in reversed(self.servos):
-            servo_id = servo.value
-            servo_name = servo.name
-            row_frame = tk.Frame(master=main_frame, width=W, height=H//7, borderwidth=1)
-            row_frame.pack(fill=tk.X)
-
-            col_frame_left = tk.Frame(master=row_frame, width=W//2)
-            col_frame_left.pack(side=tk.LEFT)
-            col_frame_right = tk.Frame(master=row_frame, width=W//2)
-            col_frame_right.pack(side=tk.RIGHT)
-
-            lbl_joint = tk.Label(master=col_frame_left, text=servo_name)
-            lbl_joint.pack()
-
-            move_joint_fn = move_joint_fn_generator(servo_id)
-            scl_joint = tk.Scale(master=col_frame_right,
-                                 from_=self._jpos_limits[0],
-                                 to=self._jpos_limits[1],
-                                 resolution=self._jpos_precision,
-                                 orient=tk.HORIZONTAL,
-                                 command=move_joint_fn)
-            current_pos = self.read_command([servo_id])[0]
-            scl_joint.set(current_pos)
-            scl_joint.pack()
-            scales[servo_id] = scl_joint
-
-        # # Add button for changing servo offsets
-        # row_frame = tk.Frame(master=main_frame,
-                             # width=W,
-                             # height=H//7,
-                             # borderwidth=1)
-        # row_frame.pack(fill=tk.X)
-        # button_frame = tk.Frame(master=row_frame, width=W)
-        # button_frame.pack()
-
-        # btn = tk.Button(master=button_frame,
-                        # text='Reset HOME',
-                        # fg='red',
-                        # command=reset_servo_offsets)
-        # btn.pack()
-
-        window.mainloop()
-
     def calibrate_arm(self):
+        self.power_off()
         data = {}
         print('  =====================  ')
         print('  == Calibrating arm ==  ')
@@ -345,9 +282,11 @@ class XArmController(BaseController):
         data.update(arm_servo_offsets)
         print('finished servo offset correction.')
 
+        self.power_on()
         return True, data
 
     def calibrate_gripper(self):
+        self.power_off()
         data = {}
         print('  =========================  ')
         print('  == Calibrating gripper ==  ')
@@ -367,12 +306,10 @@ class XArmController(BaseController):
         gripper_opened = self.read_command(self.gripper_joint_idxs)[0]
         data.update({'gripper_opened' : gripper_opened})
         print(f"  gripper opened position is {gripper_opened:.2f} radians.")
+        self.power_on()
         return True, data
 
     def calibrate(self):
-        # passive mode
-        self.power_off()
-
         data = {}
         ret, new_data = self.calibrate_arm()
         if ret:
@@ -387,7 +324,6 @@ class XArmController(BaseController):
             return False, None
 
 
-        self.power_on()
         return True, data
 
 if __name__ == "__main__":

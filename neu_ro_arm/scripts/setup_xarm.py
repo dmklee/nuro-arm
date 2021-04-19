@@ -9,7 +9,8 @@ def main():
     # this calibrates the arm + gripper
     print('Calibration of the xarm will begin shortly.')
     print('Ensure the camera is not attached to the robot base')
-    success, data = xarm.calibrate()
+    success, data = xarm.calibrate_arm()
+    # success, data = xarm.calibrate()
 
     if success:
         np.savez(xarm.CONFIG_FILE, **data)
@@ -18,8 +19,10 @@ def main():
 
 def main2():
     robot = RobotArm('real')
-    robot.move_with_gui()
+    # robot.move_with_gui()
 
 if __name__ == "__main__":
-    main2()
+    main()
+    import time
+    time.sleep(10)
 

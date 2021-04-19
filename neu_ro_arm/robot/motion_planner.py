@@ -22,6 +22,14 @@ class PybulletBase:
         self.arm_joint_idxs = [1,2,3,4,5]
         self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
         self.gripper_joint_idxs = [6,7]
+        self.joint_limits =  { 1 : (-3, 3),
+                               2 : (-np.pi, np.pi),
+                               3 : (-np.pi, np.pi),
+                               4 : (-np.pi, np.pi),
+                               5 : (-np.pi, np.pi),
+                               6 : (-0.3, 0.3),
+                               7 : (-0.3, 0.3),
+                             }
 
         self.gripper_closed = np.array([-0.3, -0.3])
         self.gripper_opened = np.array([0.3, 0.3])

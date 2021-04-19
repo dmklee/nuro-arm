@@ -8,7 +8,7 @@ class BaseController:
     gripper_closed = None
     arm_joint_idxs = None
     gripper_joint_idxs = None
-    arm_joint_limits = None
+    joint_limits = None
     joint_precision = 1e-4
 
     @abstractmethod

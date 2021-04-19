@@ -4,9 +4,8 @@ This repository is built to help students learn more about programming and robot
 
 TODO:
 - ~~GUI for calibration and simple arm movements~~
-- IK + joint control (w/ collision avoidance)
-- Closed Loop (keypoint) trajectories
-- Cube pose estimation
+- ~~IK + joint control (w/ collision avoidance)~~
+- ~~Cube pose estimation~~
 - Testing across platform
 - Testing for failure modes/ hardware resets
 - ~~Get better measurements for urdf file, add gripper~~
@@ -15,11 +14,27 @@ TODO:
 1. [Installation](#installation)
 2. [Features](#features)
 3. [Parts List](#parts-list)
-4. [Projects](#projects)
+4. [Tutorials and Projects](#projects)
 4. [Acknowledgements](#acknowledgements)
 
 <a name="installation"></a>
 ## Installation
+### Windows
+1. Install Anaconda. Download version for Python 8, 64-bit [here](https://www.anaconda.com/products/individual)
+2. Open Anaconda Prompt application
+3. Clone this repo
+    ```
+    git clone https://github.com/dmklee/neu-ro-arm.git
+    cd neu-ro-arm
+    ```
+2. Create conda env
+    ```
+    conda env create -f environment.yml
+    ```
+3.  Install dependencies for hid api.
+    1.  Download hidapi-win.zip from [here](https://github.com/libusb/hidapi/releases)
+    2.  Move contents of zip file to "C:\[]\Anaconda3\envs\robot\"
+
 ### Linux
 1. Install Python 3.6+
 3. Clone this repo    

@@ -78,6 +78,7 @@ class RobotArm:
     def move_with_gui(self):
         def move_joint_fn_generator(j_idx):
             def move_joint_fn(jpos):
+                jpos = float(jpos)
                 self.controller.move_command([j_idx], [jpos])
             return move_joint_fn
 
@@ -107,8 +108,8 @@ class RobotArm:
 
             move_joint_fn = move_joint_fn_generator(j_idx)
             scl_joint = tk.Scale(master=col_frame_right,
-                                 from_=self.controller.joint_limits[j_idx, 0],
-                                 to=self.controller.joint_limits[j_idxs,1],
+                                 from_=self.controller.joint_limits[j_idx][0],
+                                 to=self.controller.joint_limits[j_idx][1],
                                  resolution=self.controller.joint_precision,
                                  orient=tk.HORIZONTAL,
                                  command=move_joint_fn)
@@ -120,19 +121,28 @@ class RobotArm:
 
         #TODO: add scale for gripper state
 
-        window.main_loop()
+        window.mainloop()
 
 if __name__ == "__main__":
     import time
-    robot = SimulatorArm()
+    robot = RobotArm('sim')
+    robot.move_with_gui()
+    robot.controller.move_command([1],[0.2])
+    robot.controller.move_command([1],[0.24])
+    robot.controller.move_command([1],[0.28])
+    robot.controller.move_command([1],[0.29])
+    robot.controller.move_command([1],[0.27])
     while True:
         time.sleep(0.1)
-        robot.open_gripper()
-        time.sleep(0.1)
-        robot.close_gripper()
-        time.sleep(0.1)
-        pos = np.random.uniform(-1,1,size=3)
-        pos[2] = np.clip(pos[2], 0.1, 0.4)
-        rot = np.random.uniform(0, np.pi, size=3)
-        robot.move_hand_to(pos, rot)
-        time.sleep(1)
+    # robot.move_with_gui()
+    # while True:
+        # time.sleep(0.1)
+        # robot.open_gripper()
+        # time.sleep(0.1)
+        # robot.close_gripper()
+        # time.sleep(0.1)
+        # pos = np.random.uniform(-1,1,size=3)
+        # pos[2] = np.clip(pos[2], 0.1, 0.4)
+        # rot = np.random.uniform(0, np.pi, size=3)
+        # robot.move_hand_to(pos, rot)
+        # time.sleep(1)

@@ -15,6 +15,7 @@ class SimulatorController(BaseController, PybulletBase):
                                      j_idxs,
                                      pb.POSITION_CONTROL,
                                      jpos,
+                                     physicsClientId=self._client
                                     )
 
     def read_command(self, j_idxs):
