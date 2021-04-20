@@ -238,6 +238,9 @@ class XArmController(BaseController):
 
     def __del__(self):
         '''Makes sure servos are off before disconnecting'''
+        print('xArm shutting down, returning to home position momentarily...')
+        time.sleep(3)
+        self.home()
         self.power_off()
         self.disconnect()
 
