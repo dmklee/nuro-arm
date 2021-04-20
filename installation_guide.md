@@ -88,12 +88,13 @@ In order to calibrate the robot, you must first complete the [software installat
 4. Attach the camera to the camera holder part using the small nuts+bolts.  It is safe to touch the back panel of the camera, but you should avoid scratching it accidentally with your screwdriver.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_front.jpg" width="100"/>
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_back.jpg" width="100"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_front.jpg" width="140"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_back.jpg" width="150"/>
 </p>
 
 5. Attach the camera holder to the last 3D printed part by tightening the collar around it. Only tighten until snug, as you will adjust the configuration later during calibration.
-![Camera Top](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_top.jpg)
+
+[Camera Top](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_top.jpg)
 
 6. Place the parts from step 5 onto the aluminum rod, and tighten the collar such that the full assembly is snug in place.
 
