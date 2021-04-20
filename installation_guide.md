@@ -114,12 +114,21 @@ In order to calibrate the robot, you must first complete the [software installat
 
 ### Calibration
 In order to calibrate the camera, you must first complete the [software installation](#software) section. 
+
+To perform the calibration, follow the following steps. 
 1. In terminal, navigate to the neu-ro-arm directory
 2. Ensure the robot virtual environment is activated
 3. Run setup camera script:
 	```
 	python neu_ro_arm/scripts/setup_camera.py
 	```
+
+The setup camera script will first perform a scan over available cameras, prompting you to select the one used by the robot.  Next, you will be asked to place the checkerboard pattern in front of the robot and position the camera to view it.  Pictures illustrating the calibration and the proper camera view are shown below.
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_calibration_setup.jpg" width="250"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_calibration_view.jpg" width="250"/>
+</p>
+
 
 ## Cubes
 We provide you with some multi-colored cubes.  In order for the camera to identify these cubes, we need to attach Aruco tags. We give you two sheets of Aruco tags (they should look like simple QR codes).  The patterns are designed to be easily identified in the image. 
