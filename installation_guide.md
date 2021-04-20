@@ -29,11 +29,15 @@
 	```
 	conda env create -f environment_mac.yml
 	```
+4. Activate the virtual environment:
+	```
+	conda activate robot
+	```
 4. Install Robot API so it exists in Python path:
 	```
 	pip install .
 	```
-5. [Windows only] Add libraries for handling usb commands:
+5. [**Windows only**] Add libraries for handling usb commands:
 	1. Download this [zip file])https://github.com/libusb/hidapi/releases/download/hidapi-0.10.1/hidapi-win.zip)
 	2. In File Explorer, navigate into downloaded folder {your downloads location}\hidapi-win\x64
 	3. Copy the three files ("hidapi.dll","hidapi.lib","hidapi.pdb")
@@ -44,15 +48,40 @@
 2. With VS Code open, click the Extensions icon on the left panel.  Under the popular tab, click Install on the Python extension.
 
 <a name="hardware"></a>
-## Hardware
+## Hardware (estimated time 2.5 hrs)
 ### Robot
 #### Assembly Instructions
+The parts needed to assemble the robot will all be located in the Hiwonder box. To assemble the robot, watch the following instructional videos. 
+	1. [Assembly 01](https://www.youtube.com/watch?v=68N5oQAYfEI)
+	2. [Assembly 02](https://www.youtube.com/watch?v=BhTdgkRTBoE)
+	3. [Assembly 03](https://www.youtube.com/watch?v=ij0365iMALk): the portion 3:25+ is about cable management and is optional. If any wires are sticking out too much, you might want to fasten them down to avoid them getting caught during motion.
+
 #### Calibration
+In order to calibrate the robot, you must first complete the [software installation](#software) section.  For safety reasons, you should remove all obstacles from around the robot (including the camera stand if you already set that up) since the obstacle avoidance abilities do not work until it is calibrated.
+1. In terminal, navigate to the neu-ro-arm directory
+2. Ensure the robot virtual environment is activated
+3. Run setup camera script:
+	```
+	python neu_ro_arm/scripts/setup_xarm.py
+	```
 
 ### Camera
 #### Assembly Instructions
+The parts needed to set up the camera
 #### Calibration
+In order to calibrate the camera, you must first complete the [software installation](#software) section. 
+1. In terminal, navigate to the neu-ro-arm directory
+2. Ensure the robot virtual environment is activated
+3. Run setup camera script:
+	```
+	python neu_ro_arm/scripts/setup_camera.py
+	```
 
 ### Cubes
+We provide you with some multi-colored cubes.  In order for the camera to identify these cubes, we need to attach Aruco tags. We give you two sheets of Aruco tags (they should look like simple QR codes).  The patterns are designed to be easily identified in the image. 
+1. Cut out an individual tag (cut in the white region)
+2. Attach the tag to one side of the cube with tape or glue.  If you are using tape, you should avoid taping over the patterned area of the tag; the tape can produce glare which makes it difficult for the camera to see.
+3. Repeat for as many cubes as you want to use. Each cube should use a different tag number (this way the camera can differentiate between them).  We provide four copies of 12 different numbered tags so there will be plenty of leftovers.
+
 
 
