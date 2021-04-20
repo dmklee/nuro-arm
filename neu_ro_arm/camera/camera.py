@@ -5,6 +5,7 @@ import time
 
 from neu_ro_arm.camera.camera_utils import *
 import neu_ro_arm.constants as constants
+from neu_ro_arm.camera.gui import GUI
 
 class Capturer:
     #TODO: add error handling if connection is dropped
@@ -138,111 +139,6 @@ class SimCapturer(Capturer):
                               physicsClientId=self._pb_client
                              )[2]
 
-class GUI:
-    def __init__(self, capturer):
-        self._lock = threading.Lock()
-        self._showing = False
-        self._cap = capturer
-        self._window_name = 'GUI: press [ESC] to exit'
-        # self._modifer_fns = []
-
-    def show(self, img=None, window_name='',
-             exit_keys=[],
-             modifier_fns=[]):
-        use_live = img is None
-
-        k = -1
-        cv2.namedWindow(window_name)
-        cv2.startWindowThread()
-        cv2.setWindowProperty(window_name,
-                              cv2.WND_PROP_TOPMOST, 1)
-        while True:
-            if use_live:
-                img = self._cap.read()
-
-            canvas = img.copy()
-            for mod_fn in modifier_fns:
-                canvas = mod_fn(canvas, img)
-
-            cv2.imshow(window_name, img)
-            k = cv2.waitKey(int(1000/self._cap._frame_rate))
-            if k == 27 or k in exit_keys:
-                break
-
-        # wait key is needed to get window to close on Mac
-        cv2.waitKey(1)
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)
-
-        return k
-
-    def change_window_name(self, name):
-        with self._lock:
-            cv2.destroyWindow(self._window_name)
-            self._window_name = name
-        cv2.namedWindow(name)
-        cv2.startWindowThread()
-        cv2.setWindowProperty(name,
-                              cv2.WND_PROP_TOPMOST, 1)
-
-    # def show_async(self, window_name=None):
-        # print('[WARNING] async gui will fail on Mac')
-        # if self._showing:
-            # self.hide()
-
-        # if window_name is not None:
-            # self.change_window_name(window_name)
-        # self._showing = True
-        # self._last_keypress = -1
-        # self.thread = threading.Thread(target=self._update,
-                                       # args=(),
-                                       # daemon=True)
-        # self.thread.start()
-
-
-    # def get_last_keypress(self):
-        # if self._showing:
-            # with self._lock:
-                # k = self._last_keypress
-            # return k
-        # return -1
-
-    # def add_modifiers(self, modifier_fns=[]):
-        # if not isinstance(modifier_fns, list):
-            # modifier_fns = [modifier_fns]
-        # with self._lock:
-            # self._modifer_fns.extend(modifier_fns)
-
-    # def clear_modifiers(self):
-        # with self._lock:
-            # self._modifer_fns = []
-
-    # def _update(self):
-        # while self._showing:
-            # frame = self._cap.read()
-            # original_img = frame.copy()
-            # for fn in self._modifer_fns:
-                # with self._lock:
-                    # fn(original_img, frame)
-
-            # cv2.imshow(self._window_name, frame)
-            # k = cv2.waitKey(int(1000/self._cap._frame_rate))
-            # with self._lock:
-                # self._last_keypress = k
-
-            # #if k == 27: # ESC 
-                # #self._showing = False
-                # #cv2.destroyAllWindows()
-
-    # def hide(self):
-        # if self._showing:
-            # self._showing = False
-            # self.thread.join()
-            
-        # cv2.waitKey(1)
-        # cv2.destroyAllWindows()
-        # cv2.waitKey(1)
-
 class Camera:
     CONFIG_FILE = "neu_ro_arm/camera/configs.npz"
     def __init__(self,
@@ -322,12 +218,6 @@ class Camera:
             time.sleep(0.1)
         return self.get_recording()
 
-    def wait_for_gui(self):
-        while self.gui._showing:
-            k = self.gui.get_last_keypress()
-            if k == 27:
-                break
-
     def undistort(self, img):
         dst = cv2.undistort(img,
                             self._configs['mtx'],
@@ -374,12 +264,6 @@ class Camera:
             print('[ERROR] Some camera configs are missing. Run setup_camera.py '
                   'to properly populate config file.')
 
-    def show_feed(self):
-        self.gui.show_async()
-
-    def hide_feed(self):
-        self.gui.hide()
-
     def get_image(self):
         img = self.cap.read()
         return img
@@ -392,66 +276,3 @@ class Camera:
         rot_mat = self._configs['world2cam'][:3,:3]
         rot_euler = rotmat2euler(rot_mat)
         return pos, rot_euler
-
-def show_arucotags(original, canvas):
-    tags = find_arucotags(original, cam_mtx, dist_coeffs)
-    for tag in tags:
-        corners = tag['corners']
-        for c_id in range(len(corners)):
-            cv2.line(canvas,
-                  tuple(corners[c_id-1, :].astype(int)),
-                  tuple(corners[c_id, :].astype(int)),
-                  (0, 255, 0))
-
-        text_org = tuple(np.mean(corners, axis=0).astype(int))
-        cv2.putText(canvas, str(tag['tag_id']),
-                    org=text_org,
-                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=0.5,
-                    thickness=1,
-                    color=(0, 0, 255))
-
-def show_cubes(original, canvas):
-    cubes = find_cubes(original, cam_mtx, dist_coeffs, cam2world)
-    for cube in cubes:
-        vert_px = project_world2pixel(cube['vertices'],
-                                      world2cam,
-                                      rvec,
-                                      tvec,
-                                      undistort_mtx,
-                                      dist_coeffs
-                                     ).astype(int)
-        for a, b in constants.cube_edges:
-            cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]), (255, 0, 0),
-                    thickness=2)
-
-
-if __name__ == "__main__":
-    camera = Camera(2)
-    #img = camera.get_image()
-
-    # camera.show_feed()
-    # camera.wait_for_gui()
-    # camera._calc_location()
-    # exit()
-    cam_mtx = camera._mtx
-    world2cam = camera._world2cam
-    cam2world = camera._cam2world
-    rvec = camera._rvec
-    tvec = camera._tvec
-    undistort_mtx = camera._undistort_mtx
-    dist_coeffs = camera._dist_coeffs
-
-    # camera.gui.add_modifiers(show_arucotags)
-    camera.gui.add_modifiers(show_cubes)
-    # camera.gui.add_modifiers(show_cam_z_vec)
-    camera.show_feed()
-    camera.wait_for_gui()
-    exit()
-
-    camera.show_feed()
-    # camera.gui.add_modifiers(show_cubes)
-    camera.gui.add_modifiers(show_apriltags)
-    time.sleep(100)
-    camera.hide_feed()
-
