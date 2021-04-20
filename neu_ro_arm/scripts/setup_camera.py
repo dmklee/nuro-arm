@@ -26,13 +26,22 @@ def determine_camera_id():
 def calc_camera_location(camera_id=None):
     camera = Camera(camera_id)
 
+    print()
     print('Place checkerboard pattern in front of robot such that the semicircles'
           ' align with the suction cups')
     input('   hit enter when ready...')
 
+    print()
+    print('Position camera such that the view includes the checkerboard,'
+          ' this may require adjusting the bolts on the top camera assembly.')
+    print('Tighten collars firmly once camera view is good. We do not want'
+          ' the camera to move around after we have calibrated its location.')
+    camera.gui.show(window_name='Hit ESC once camera view is good.')
+
     ret, location_data = camera.calc_location()
     if ret:
-        print('Success! Camera location has been identified')
+        print()
+        print('[SUCCESS] Camera location has been identified!')
         rvec, tvec, world2cam, cam2world = location_data
         camera._update_config_file({'camera_id': camera_id,
                                     'rvec' : rvec,
