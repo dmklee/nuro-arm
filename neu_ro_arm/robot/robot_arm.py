@@ -90,9 +90,12 @@ class RobotArm:
             self.controller.move_command(self.controller.gripper_joint_idxs,
                                          gripper_jpos)
 
+        def go_home_fn():
+            self.controller.home()
+
         H,W = 500, 300
         window = tk.Tk()
-        heading = tk.Label(text="BE CAREFUL! There is no collision detection here.",
+        heading = tk.Label(text="BE CAREFUL!\nCollision detection is not running.",
                           fg="#FF0000")
         heading.pack()
 
@@ -154,11 +157,22 @@ class RobotArm:
         scl_gripper.pack_propagate(0)
         scl_gripper.set(self.get_gripper_state())
 
+        # home button
+        row_frame = tk.Frame(master=main_frame, width=W,
+                             height=H//7, borderwidth=1)
+        row_frame.pack(fill=tk.X)
+        btn_go_home = tk.Button(row_frame, text="Go to HOME position",
+                                fg="#0000FF", command = go_home_fn)
+        btn_go_home.pack()
+
         window.mainloop()
 
 if __name__ == "__main__":
     import time
-    robot = RobotArm('sim')
+    robot = RobotArm('real')
+    robot.controller.gripper_closed = np.array([0.5])
+    robot.controller.gripper_opened = np.array([-0.5])
+    robot.controller.home()
     robot.move_with_gui()
     # robot.controller.move_command([1],[0.2])
     # robot.controller.move_command([1],[0.24])

@@ -7,6 +7,7 @@ class BaseController:
     gripper_opened = None
     gripper_closed = None
     arm_joint_idxs = None
+    arm_jpos_home = None
     gripper_joint_idxs = None
     joint_limits = None
     arm_motor_directions = None
@@ -20,12 +21,16 @@ class BaseController:
     def read_command(self, j_idxs):
         return jpos
 
+    def home(self):
+        self.move_command(self.arm_joint_idxs, self.arm_jpos_home)
+
     def gripper_jpos_to_state(self, jpos):
         return (jpos - self.gripper_closed[0]) \
                 / (self.gripper_opened[0] - self.gripper_closed[0])
 
     def gripper_state_to_jpos(self, state):
         return state*self.gripper_opened + (1-state)*self.gripper_closed
+
 
     def monitor(self, j_idxs, target_jpos, max_iter=100, monitor_freq=10):
         it = 0

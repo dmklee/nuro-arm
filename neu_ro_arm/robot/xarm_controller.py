@@ -107,7 +107,9 @@ class XArmController(BaseController):
         self.gripper_closed = configs.get('gripper_closed', None)
         self.gripper_opened = configs.get('gripper_opened', None)
         self.arm_motor_directions = configs.get('arm_motor_directions', None)
-        self._jpos_home = self._to_radians(self.SERVO_HOME)
+        self.arm_jpos_home = np.full(len(self.arm_joint_idxs),
+                                     self._to_radians(self.SERVO_HOME)
+                                    )
         self.joint_limits = { 1 : (-np.pi/2, np.pi/2),
                               2 : (-np.pi/2, np.pi/2),
                               3 : (-np.pi/2, np.pi/2),
@@ -139,12 +141,6 @@ class XArmController(BaseController):
     def disconnect(self):
         self.device.close()
         print('Disconnected xArm')
-
-    def home(self):
-        '''moves all servos to HOME_POS'''
-        home_pos = self.n_servos * [self._jpos_home]
-        self.move_command(self.servos, home_pos)
-        time.sleep(1)
 
     def move_command(self, j_idxs, jpos):
         [self._move_servo(j_p, j_id) for j_p, j_id in zip(jpos, j_idxs)]
@@ -238,9 +234,9 @@ class XArmController(BaseController):
 
     def __del__(self):
         '''Makes sure servos are off before disconnecting'''
-        print('xArm shutting down, returning to home position momentarily...')
-        time.sleep(3)
-        self.home()
+        # print('xArm shutting down, returning to home position momentarily...')
+        # time.sleep(3)
+        # self.home()
         self.power_off()
         self.disconnect()
 
@@ -358,10 +354,12 @@ class XArmController(BaseController):
 
 if __name__ == "__main__":
     arm = XArmController()
-    arm.home()
-    arm.calibrate()
-    # arm.use_gui()
-    # while True:
+    arm.power_off()
+    names = ['base', 'shoulder', 'elbow', 'wrist', 'wristRotation']
+    while True:
+        jpos = arm.read_command(arm.arm_joint_idxs)
+        # pos = [arm._to_pos_units(jp) for jp in jpos]
+        # print([f"{n}:{p}" for p,n in zip(pos, names)])
+        print([f"{n}:{p}" for p,n in zip(pos, names)])
         # print([f"{a:0.2f}" for a in arm._read_all_servos_pos_angle()])
         # time.sleep(0.1)
-    # arm.use_gui()
