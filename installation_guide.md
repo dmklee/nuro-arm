@@ -57,7 +57,7 @@
 ## Hardware (estimated time 2.5 hrs)
 ### Robot
 #### Assembly Instructions
-The parts needed to assemble the robot will all be located in the Hiwonder box. To assemble the robot, watch the following instructional videos. 
+The parts needed to assemble the robot will all be located in the Hiwonder box. To assemble the robot, watch the following instructional videos. If you do not have access to pliers or wrenches, you should be able to hold nuts in place by hand (there is no need to tighten anything aggressively).
 1. [Assembly 01](https://www.youtube.com/watch?v=68N5oQAYfEI)
 2. [Assembly 02](https://www.youtube.com/watch?v=BhTdgkRTBoE)
 3. [Assembly 03](https://www.youtube.com/watch?v=ij0365iMALk): the portion 3:25+ is about cable management and is optional. If any wires are sticking out too much, you might want to fasten them down to avoid them getting caught during motion.
