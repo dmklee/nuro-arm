@@ -76,7 +76,7 @@ class XArmController(BaseController):
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
-    CONFIG_FILE = "robot/configs.npz"
+    CONFIG_FILE = "neu_ro_arm/robot/configs.npz"
 
     class CommandLibrary:
         SIGNATURE = 85

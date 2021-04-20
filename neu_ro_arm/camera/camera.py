@@ -236,7 +236,7 @@ class GUI:
         cv2.waitKey(1)
 
 class Camera:
-    CONFIG_FILE = "camera/configs.npz"
+    CONFIG_FILE = "neu_ro_arm/camera/configs.npz"
     def __init__(self,
                  camera_id=None,
                  ):
