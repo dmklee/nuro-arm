@@ -11,9 +11,9 @@ class UnsafeJointPosition(Exception):
     pass
 
 class PybulletBase:
-    ROBOT_URDF_PATH = "assets/urdf/xarm.urdf"
-    CAMERA_URDF_PATH = "assets/urdf/camera.urdf"
-    ROD_URDF_PATH = "assets/urdf/camera_rod.urdf"
+    ROBOT_URDF_PATH = "neu_ro_arm/assets/urdf/xarm.urdf"
+    CAMERA_URDF_PATH = "neu_ro_arm/assets/urdf/camera.urdf"
+    ROD_URDF_PATH = "neu_ro_arm/assets/urdf/camera_rod.urdf"
     def __init__(self, connection_mode):
         self._client = self._init_pybullet(connection_mode)
         self.link_names = self._get_link_names()
