@@ -6,7 +6,7 @@ TODO:
 - ~~GUI for calibration and simple arm movements~~
 - ~~IK + joint control (w/ collision avoidance)~~
 - ~~Cube pose estimation~~
-- Testing across platform
+- ~~Testing across platform~~
 - Testing for failure modes/ hardware resets
 - ~~Get better measurements for urdf file, add gripper~~
 
@@ -19,23 +19,7 @@ TODO:
 
 <a name="installation"></a>
 ## Installation
-See Software section in the [Installation Guide](https://github.com/dmklee/neu-ro-arm/blob/main/installation_guide.md) for details.
-
-#### Software installation for Linux
-1. Install Python 3.6+
-3. Clone this repo    
-    ```
-    git clone https://github.com/dmklee/neu-ro-arm.git
-    cd neu-ro-arm
-    ```
-3. Install dependencies for usb
-    ```
-    sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
-    ```
-5. Install this package
-    ```
-    pip install .
-    ```
+See the [Installation Guide](https://github.com/dmklee/neu-ro-arm/blob/main/installation_guide.md) for details on installing software and assemblying the parts.
 
 <a name="features"></a>
 ## Features
