@@ -74,15 +74,19 @@ In order to calibrate the robot, you must first complete the [software installat
 ### Camera
 #### Assembly Instructions
 1. Collect the parts shown in the photo below, the 3D printed parts and camera will be in camera box; the rod and screws will be in Hiwonder box.
+
 ![Camera Assembly Parts](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_parts.jpg)
 
 2. Attach the base part to the base plate of the robot. The part should be installed as shown in the picture below.
+
 ![Camera Base](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base.jpg)
 
 3. Install the aluminum rod by sliding it into the base part and then tightening the collar until the rod does not easily move around.
+
 ![Camera Base and Rod](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base_rod.jpg)
 
 4. Attach the camera to the camera holder part using the small nuts+bolts.  It is safe to touch the back panel of the camera, but you should avoid scratching it accidentally with your screwdriver.
+
 <p align="center">
   <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_front.jpg"/>
   <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_back.jpg"/>
@@ -92,6 +96,7 @@ In order to calibrate the robot, you must first complete the [software installat
 ![Camera Top](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_top.jpg)
 
 6. Place the parts from step 5 onto the aluminum rod, and tighten the collar such that the full assembly is snug in place.
+
 ![Camera Full](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_full.jpg)
 
 7.  All done! You are now ready to calibrate the camera.
@@ -110,5 +115,6 @@ We provide you with some multi-colored cubes.  In order for the camera to identi
 1. Cut out an individual tag (cut in the white region)
 2. Attach the tag to one side of the cube with tape or glue.  If you are using tape, you should avoid taping over the patterned area of the tag; the tape can produce glare which makes it difficult for the camera to see.
 3. Repeat for as many cubes as you want to use. Each cube should use a different tag number (this way the camera can differentiate between them).  We provide four copies of 12 different numbered tags so there will be plenty of leftovers.
+
 ![Cubes with Tags](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/cubes.jpg)
 
