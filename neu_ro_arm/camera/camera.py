@@ -144,22 +144,11 @@ class GUI:
         self._showing = False
         self._cap = capturer
         self._window_name = 'GUI: press [ESC] to exit'
-        self._modifer_fns = []
+        # self._modifer_fns = []
 
-    def show_async(self, window_name=None):
-        if self._showing:
-            self.hide()
-
-        if window_name is not None:
-            self.change_window_name(window_name)
-        self._showing = True
-        self._last_keypress = -1
-        self.thread = threading.Thread(target=self._update,
-                                       args=(),
-                                       daemon=True)
-        self.thread.start()
-
-    def show(self, img=None, window_name='', exit_keys=[]):
+    def show(self, img=None, window_name='',
+             exit_keys=[],
+             modifier_fns=[]):
         use_live = img is None
 
         k = -1
@@ -170,6 +159,11 @@ class GUI:
         while True:
             if use_live:
                 img = self._cap.read()
+
+            canvas = img.copy()
+            for mod_fn in modifier_fns:
+                canvas = mod_fn(canvas, img)
+
             cv2.imshow(window_name, img)
             k = cv2.waitKey(int(1000/self._cap._frame_rate))
             if k == 27 or k in exit_keys:
@@ -191,48 +185,63 @@ class GUI:
         cv2.setWindowProperty(name,
                               cv2.WND_PROP_TOPMOST, 1)
 
-    def get_last_keypress(self):
-        if self._showing:
-            with self._lock:
-                k = self._last_keypress
-            return k
-        return -1
+    # def show_async(self, window_name=None):
+        # print('[WARNING] async gui will fail on Mac')
+        # if self._showing:
+            # self.hide()
 
-    def add_modifiers(self, modifier_fns=[]):
-        if not isinstance(modifier_fns, list):
-            modifier_fns = [modifier_fns]
-        with self._lock:
-            self._modifer_fns.extend(modifier_fns)
+        # if window_name is not None:
+            # self.change_window_name(window_name)
+        # self._showing = True
+        # self._last_keypress = -1
+        # self.thread = threading.Thread(target=self._update,
+                                       # args=(),
+                                       # daemon=True)
+        # self.thread.start()
 
-    def clear_modifiers(self):
-        with self._lock:
-            self._modifer_fns = []
 
-    def _update(self):
-        while self._showing:
-            frame = self._cap.read()
-            original_img = frame.copy()
-            for fn in self._modifer_fns:
-                with self._lock:
-                    fn(original_img, frame)
+    # def get_last_keypress(self):
+        # if self._showing:
+            # with self._lock:
+                # k = self._last_keypress
+            # return k
+        # return -1
 
-            cv2.imshow(self._window_name, frame)
-            k = cv2.waitKey(int(1000/self._cap._frame_rate))
-            with self._lock:
-                self._last_keypress = k
+    # def add_modifiers(self, modifier_fns=[]):
+        # if not isinstance(modifier_fns, list):
+            # modifier_fns = [modifier_fns]
+        # with self._lock:
+            # self._modifer_fns.extend(modifier_fns)
 
-            #if k == 27: # ESC 
-                #self._showing = False
-                #cv2.destroyAllWindows()
+    # def clear_modifiers(self):
+        # with self._lock:
+            # self._modifer_fns = []
 
-    def hide(self):
-        if self._showing:
-            self._showing = False
-            self.thread.join()
+    # def _update(self):
+        # while self._showing:
+            # frame = self._cap.read()
+            # original_img = frame.copy()
+            # for fn in self._modifer_fns:
+                # with self._lock:
+                    # fn(original_img, frame)
+
+            # cv2.imshow(self._window_name, frame)
+            # k = cv2.waitKey(int(1000/self._cap._frame_rate))
+            # with self._lock:
+                # self._last_keypress = k
+
+            # #if k == 27: # ESC 
+                # #self._showing = False
+                # #cv2.destroyAllWindows()
+
+    # def hide(self):
+        # if self._showing:
+            # self._showing = False
+            # self.thread.join()
             
-        cv2.waitKey(1)
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)
+        # cv2.waitKey(1)
+        # cv2.destroyAllWindows()
+        # cv2.waitKey(1)
 
 class Camera:
     CONFIG_FILE = "neu_ro_arm/camera/configs.npz"
