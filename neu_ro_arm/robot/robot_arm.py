@@ -90,9 +90,10 @@ class RobotArm:
             self.controller.move_command(self.controller.gripper_joint_idxs,
                                          gripper_jpos)
 
-        H,W = 600, 600
+        H,W = 500, 300
         window = tk.Tk()
-        heading = tk.Label(text="GUI")
+        heading = tk.Label(text="BE CAREFUL! There is no collision detection here.",
+                          fg="#FF0000")
         heading.pack()
 
         main_frame = tk.Frame(master=window, width=W, height=H)
@@ -104,10 +105,12 @@ class RobotArm:
             row_frame = tk.Frame(master=main_frame, width=W,
                                  height=H//7, borderwidth=1)
             row_frame.pack(fill=tk.X)
+            row_frame.pack_propagate(0)
 
-            col_frame_left = tk.Frame(master=row_frame, width=W//2)
+            col_frame_left = tk.Frame(master=row_frame, width=W//3)
             col_frame_left.pack(side=tk.LEFT)
-            col_frame_right = tk.Frame(master=row_frame, width=W//2)
+
+            col_frame_right = tk.Frame(master=row_frame, width=2*W//3)
             col_frame_right.pack(side=tk.RIGHT)
 
             lbl_joint = tk.Label(master=col_frame_left, text=j_name)
@@ -119,8 +122,10 @@ class RobotArm:
                                  to=self.controller.joint_limits[j_idx][1],
                                  resolution=self.controller.joint_precision,
                                  orient=tk.HORIZONTAL,
+                                 length=2*W//3,
                                  command=move_joint_fn)
             scl_joint.pack()
+            scl_joint.pack_propagate(0)
             scales.append(scl_joint)
 
         arm_jpos = self.get_arm_jpos()
@@ -130,20 +135,23 @@ class RobotArm:
         row_frame = tk.Frame(master=main_frame, width=W,
                              height=H//7, borderwidth=1)
         row_frame.pack(fill=tk.X)
-        col_frame_left = tk.Frame(master=row_frame, width=W//2)
+        row_frame.pack_propagate(0)
+        col_frame_left = tk.Frame(master=row_frame, width=W//3)
         col_frame_left.pack(side=tk.LEFT)
-        col_frame_right = tk.Frame(master=row_frame, width=W//2)
+        col_frame_right = tk.Frame(master=row_frame, width=2*W//3)
         col_frame_right.pack(side=tk.RIGHT)
 
-        tk.Label(master=col_frame_left, text="Gripper").pack()
+        tk.Label(master=col_frame_left, text="gripper").pack()
 
         scl_gripper = tk.Scale(master=col_frame_right,
                              from_=0,
                              to=1,
                              resolution=0.1,
                              orient=tk.HORIZONTAL,
+                             length=2*W//3,
                              command=move_gripper_fn)
         scl_gripper.pack()
+        scl_gripper.pack_propagate(0)
         scl_gripper.set(self.get_gripper_state())
 
         window.mainloop()
