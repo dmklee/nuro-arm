@@ -75,15 +75,21 @@ In order to calibrate the robot, you must first complete the [software installat
 #### Assembly Instructions
 1. Collect the parts shown in the photo below, the 3D printed parts and camera will be in camera box; the rod and screws will be in Hiwonder box.
 
-![Camera Assembly Parts](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_parts.jpg)
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_parts.jpg"/>
+</p>
 
 2. Attach the base part to the base plate of the robot. The part should be installed as shown in the picture below.
 
-![Camera Base](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base.jpg)
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base.jpg"/>
+</p>
 
 3. Install the aluminum rod by sliding it into the base part and then tightening the collar until the rod does not easily move around.
 
-![Camera Base and Rod](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base_rod.jpg)
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base_rod.jpg"/>
+</p>
 
 4. Attach the camera to the camera holder part using the small nuts+bolts.  It is safe to touch the back panel of the camera, but you should avoid scratching it accidentally with your screwdriver.
 
@@ -94,11 +100,15 @@ In order to calibrate the robot, you must first complete the [software installat
 
 5. Attach the camera holder to the last 3D printed part by tightening the collar around it. Only tighten until snug, as you will adjust the configuration later during calibration.
 
-![Camera Top](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_top.jpg)
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_top.jpg"/>
+</p>
 
 6. Place the parts from step 5 onto the aluminum rod, and tighten the collar such that the full assembly is snug in place.
 
-![Camera Full](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_full.jpg)
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_full.jpg"/>
+</p>
 
 7.  All done! You are now ready to calibrate the camera.
 
