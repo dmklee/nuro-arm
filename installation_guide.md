@@ -60,13 +60,16 @@
 The parts needed to assemble the robot will all be located in the Hiwonder box. To assemble the robot, watch the following instructional videos. If you do not have access to pliers or wrenches, you should be able to hold nuts in place by hand (there is no need to tighten anything aggressively).
 1. [Assembly 01](https://www.youtube.com/watch?v=68N5oQAYfEI)
 2. [Assembly 02](https://www.youtube.com/watch?v=BhTdgkRTBoE): self-tapping means the screws will have a pointy end.
-3. [Assembly 03](https://www.youtube.com/watch?v=ij0365iMALk): the portion after 3:25 is about cable management and is optional. If any wires are sticking out too much, you might want to fasten them down to avoid them getting caught during motion.
+3. [Assembly 03](https://www.youtube.com/watch?v=ij0365iMALk): it may take some force to fit the blue parts over the servo horns;  the portion after 3:25 is about cable management and is optional. If any wires are sticking out too much, you might want to fasten them down to avoid them getting caught during motion.
 
 #### Calibration
 In order to calibrate the robot, you must first complete the [software installation](#software) section.  For safety reasons, you should remove all obstacles from around the robot (including the camera stand if you already set that up) since the obstacle avoidance abilities do not work until it is calibrated.
 1. In terminal, navigate to the neu-ro-arm directory
 2. Ensure the robot virtual environment is activated
-3. Run setup camera script:
+	```
+	conda activate robot
+	```
+3. Run setup xarm script:
 	```
 	python neu_ro_arm/scripts/setup_xarm.py
 	```
@@ -118,6 +121,9 @@ In order to calibrate the camera, you must first complete the [software installa
 To perform the calibration, follow the following steps. 
 1. In terminal, navigate to the neu-ro-arm directory
 2. Ensure the robot virtual environment is activated
+	```
+	conda activate robot
+	```
 3. Run setup camera script:
 	```
 	python neu_ro_arm/scripts/setup_camera.py
