@@ -7,7 +7,7 @@
         <visual>
             <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                  <mesh filename="assets/meshes/camera_with_holder.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/camera_with_holder.dae"/>
               </geometry>
               <material name="gray">
                 <color rgba="0.4 0.4 0.4 1.0"/>

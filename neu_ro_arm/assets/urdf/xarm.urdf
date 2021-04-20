@@ -7,7 +7,7 @@
 		<visual>
 			<origin rpy="0 0 0.0" xyz="0 0 0"/>
       		<geometry>
-                <mesh filename="assets/meshes/base.dae"/>
+                <mesh filename="neu_ro_arm/assets/meshes/base.dae"/>
       		</geometry>
             <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
@@ -29,7 +29,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.034"/>
               <geometry>
-                <mesh filename="assets/meshes/lx225.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/lx225.dae"/>
               </geometry>
               <material name="black">
                 <color rgba="0.2 0.2 0.2 1.0"/>
@@ -38,7 +38,7 @@
         <visual>
           <origin rpy="0 0 0" xyz="0 0 0"/>
               <geometry>
-                <mesh filename="assets/meshes/base_swivel.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/base_swivel.dae"/>
               </geometry>
               <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
@@ -60,7 +60,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                <mesh filename="assets/meshes/upperarm_link.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/upperarm_link.dae"/>
               </geometry>
               <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
@@ -82,7 +82,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                <mesh filename="assets/meshes/lx15d_double.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/lx15d_double.dae"/>
               </geometry>
               <!--<material name="black">-->
                 <!--<color rgba="0.2 0.2 0.2 1.0"/>-->
@@ -91,7 +91,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                <mesh filename="assets/meshes/forearm_link.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/forearm_link.dae"/>
               </geometry>
               <!--<material name="blue">-->
                 <!--<color rgba="0.3 0.5 0.9 1.0"/>-->
@@ -100,7 +100,7 @@
         <visual>
               <origin rpy="0 3.14159 0" xyz="0.0 0.0 0.095"/>
               <geometry>
-                <mesh filename="assets/meshes/lx15d_double.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/lx15d_double.dae"/>
               </geometry>
               <!--<material name="black">-->
                 <!--<color rgba="0.2 0.2 0.2 1.0"/>-->
@@ -122,7 +122,7 @@
         <visual>
               <origin rpy="1.5708 1.5708 0" xyz="0.0 0.0 0.0365"/>
               <geometry>
-                <mesh filename="assets/meshes/lx15d_double.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/lx15d_double.dae"/>
               </geometry>
               <material name="black">
                 <color rgba="0.2 0.2 0.2 1.0"/>
@@ -131,7 +131,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
               <geometry>
-                  <mesh filename="assets/meshes/wrist_link.dae"/>
+                  <mesh filename="neu_ro_arm/assets/meshes/wrist_link.dae"/>
               </geometry>
               <material name="blue">
                 <color rgba="0.3 0.5 0.9 1.0"/>
