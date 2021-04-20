@@ -23,7 +23,6 @@ class Capturer:
         self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
         self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         connected = self._cap.isOpened()
-        print('is opened', connected)
         if connected and run_async:
             self.start_async()
         return connected
