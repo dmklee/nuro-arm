@@ -3,8 +3,8 @@ import cv2
 import threading
 import time
 
-from camera.camera_utils import *
-import constants as constants
+from neu_ro_arm.camera.camera_utils import *
+import neu_ro_arm.constants as constants
 
 class Capturer:
     #TODO: add error handling if connection is dropped

@@ -1,8 +1,8 @@
 import numpy as np
-from robot.xarm_controller import XArmController
-from robot.robot_arm import RobotArm
+from neu_ro_arm.robot.xarm_controller import XArmController
+from neu_ro_arm.robot.robot_arm import RobotArm
 
-def main():
+def calibrate():
     # this tests the connection
     xarm = XArmController()
 
@@ -16,11 +16,11 @@ def main():
     else:
         print('Calibration failed. Please try again.')
 
-def main2():
+def move_with_gui():
     robot = RobotArm('real')
     robot.move_with_gui()
 
 if __name__ == "__main__":
-    main()
-    main2()
+    calibrate()
+    move_with_gui()
 

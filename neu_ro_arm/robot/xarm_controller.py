@@ -10,7 +10,7 @@ matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 
 import threading
-from robot.base_controller import BaseController
+from neu_ro_arm.robot.base_controller import BaseController
 
 #TODO:
     # error handling on receiving/sending

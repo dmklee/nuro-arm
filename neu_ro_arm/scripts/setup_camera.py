@@ -1,4 +1,4 @@
-from camera.camera import Camera, Capturer, GUI
+from neu_ro_arm.camera.camera import Camera, Capturer, GUI
 
 def determine_camera_id():
     print('Performing scan over available cameras...')
@@ -23,7 +23,7 @@ def determine_camera_id():
     cap.release()
     return None
 
-def calc_camera_location(camera_id):
+def calc_camera_location(camera_id=None):
     camera = Camera(camera_id)
 
     print('Place checkerboard pattern in front of robot such that the semicircles'
@@ -45,7 +45,6 @@ def calc_camera_location(camera_id):
         print('[ERROR] Checkerboard pattern was not identified. Please try again.')
 
 if __name__ == "__main__":
-    cap = Capturer()
     camera_id = determine_camera_id()
     if camera_id is not None:
         calc_camera_location(camera_id)

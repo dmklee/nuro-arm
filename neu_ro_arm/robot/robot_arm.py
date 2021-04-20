@@ -7,16 +7,13 @@ matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import tkinter as tk
 
-import constants as constants
-from robot.motion_planner import MotionPlanner, UnsafeTrajectoryError
-from robot.simulator_controller import SimulatorController
-from robot.xarm_controller import XArmController
+import neu_ro_arm.constants as constants
+from neu_ro_arm.robot.motion_planner import MotionPlanner, UnsafeTrajectoryError
+from neu_ro_arm.robot.simulator_controller import SimulatorController
+from neu_ro_arm.robot.xarm_controller import XArmController
 
 class RobotArm:
-    '''Abtract base class to ensure that the simulator and real xArm are
-    controlled with the same interface
-    '''
-    def __init__(self, controller_type):
+    def __init__(self, controller_type='real'):
         self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation')
 
         #TODO: init controllers
