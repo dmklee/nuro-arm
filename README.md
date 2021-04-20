@@ -19,23 +19,9 @@ TODO:
 
 <a name="installation"></a>
 ## Installation
-### Windows
-1. Install Anaconda. Download version for Python 8, 64-bit [here](https://www.anaconda.com/products/individual)
-2. Open Anaconda Prompt application
-3. Clone this repo
-    ```
-    git clone https://github.com/dmklee/neu-ro-arm.git
-    cd neu-ro-arm
-    ```
-2. Create conda env
-    ```
-    conda env create -f environment.yml
-    ```
-3.  Install dependencies for hid api.
-    1.  Download hidapi-win.zip from [here](https://github.com/libusb/hidapi/releases)
-    2.  Move contents of zip file to "C:\[]\Anaconda3\envs\robot\"
+See Software section in the [Installation Guide](https://github.com/dmklee/neu-ro-arm/blob/main/installation_guide.md) for details.
 
-### Linux
+#### Software installation for Linux
 1. Install Python 3.6+
 3. Clone this repo    
     ```
@@ -74,9 +60,9 @@ This project is built on hardware that is more accessible.  The entire cost of t
 - [Lewansoul xArm Robotic Arm ($200)](https://www.amazon.com/LewanSoul-Programmable-Feedback-Parameter-Programming/dp/B0793PFGCY/ref=sr_1_3?dchild=1&keywords=lewansoul+xarm&qid=1618417178&sr=8-3)
 - [ELP Megapixel 720p USB Camera 100 deg lens ($30)](https://www.amazon.com/ELP-megapixel-Camera-Module-120degree/dp/B01DRJXDEA/ref=sr_1_1?crid=12SN0I987B5WH&dchild=1&keywords=elp+megapixel+super+mini+720p+usb+camera+module+with+120degree+lens&qid=1618417242&sprefix=elp+camera+megapix%2Caps%2C157&sr=8-1)
 - Small toy cubes (1" is the default size used here)
-- 3D Printed parts (stl files provided in 'src/assets')
-- Calibration sheet (printable pdf available in 'src/configs')
-- Aruco Tags (printable pdf available in 'src/configs')
+- 3D Printed parts (stl files provided in 'neu_ro_arm/assets/meshes/')
+- Calibration sheet (printable pdf available: 'neu_ro_arm/data/checkerboard.pdf')
+- Aruco Tags (printable pdf available in 'neu_ro_arm/data/arugo_tags.pdf')
 
 <a name="projects"></a>
 ## Tutorials and Projects
@@ -90,10 +76,3 @@ The xarm controller code is an amalgam of the following repos:
 - https://gist.github.com/maximecb/7fd42439e8a28b9a74a4f7db68281071
 - https://github.com/adeguet1/lewansoul-xarm
 
-For getting lobot to show up in /dev/hidraw:
-- https://skyboo.net/2018/10/binding-unbinding-usb-drivers-a-k-a-who-stole-my-hidraw1-device-file/ 
-- use udevadm monitor to get the id to bind
-- you can check lsusb -t to check that it binds successfull
-
-Known Issues:
-- (Linux) if hidraw device does not show up after reboot, run "sudo service fwupd stop"
