@@ -8,14 +8,36 @@ import neu_ro_arm.constants as constants
 from neu_ro_arm.camera.gui import GUI
 
 class Capturer:
-    #TODO: add error handling if connection is dropped
     def __init__(self):
+        '''Class to allow asynchronous video capture from camera
+        '''
         self._lock = threading.Lock()
         self._started = False
         self._frame_rate = constants.frame_rate
         self._cap = None
 
     def set_camera_id(self, camera_id, run_async=True):
+        '''Changes video capture to a different camera id number
+
+        Captured images are forced to a height of 480, width of 640. This class
+        can only handle a single camera at a time, so it will release an existing
+        connection before creating the new one.
+
+        Parameters
+        ----------
+        camera_id: int
+            Camera number used to open cv2.VideoCapture instance
+        run_async: bool, default True
+            flag indicating whether another thread should be spawned to capture
+            frames asynchronously from the camera
+
+        Returns
+        -------
+        bool
+            flag indicating if a connection was made to the camera.  a value of
+            False suggests either an invalid camera id or the camera is already 
+            being used by another application
+        '''
         # release any old connections
         self.release()
 
@@ -29,6 +51,10 @@ class Capturer:
         return connected
 
     def start_async(self):
+        '''Launches thread that captures frames from the camera.
+
+        Resets all settings so recordings will be lost
+        '''
         if self._started:
             # we need to stop before starting a new one
             self.stop_async()
@@ -46,6 +72,8 @@ class Capturer:
         self.thread.start()
 
     def _update(self):
+        '''Asynchronous reading of frames from camera, handles recording to buffer
+        '''
         while self._started:
             ret, frame = self._cap.read()
             with self._lock:
@@ -59,7 +87,17 @@ class Capturer:
                         self._recording = False
             time.sleep(1./self._frame_rate)
 
-    def start_recording(self, duration, delay=0):
+    def start_recording(self, duration):
+        '''Begins recording frames from camera
+
+        Any existing recording will be ended and immediately overwritten.  The
+        number of frames taken is based on the frame rate
+
+        Parameters
+        ----------
+        duration: float
+            Seconds of recording to take
+        '''
         self.end_recording()
 
         n_frames = self._frame_rate * duration
@@ -72,24 +110,47 @@ class Capturer:
             self._recording = True
 
     def end_recording(self):
+        '''Stops recording frames in during thread update
+        '''
         with self._lock:
             self._recording = False
 
     def is_recording(self):
+        '''Checks if thread is recording frames
+
+        Returns
+        -------
+        bool
+            True if currently recording frames in thread, False otherwise
+        '''
         with self._lock:
             is_recording = self._recording
 
         return is_recording
 
     def get_recording(self):
-        if self._recording:
-            print('recording is still in progress')
-            return None
+        '''Returns recorded frames if recording is over. Returns None if recording
+        still in progress.
+
+        Returns
+        -------
+        ndarray
+            sequence of images
+        '''
         with self._lock:
             recording = self._record_buffer.copy()
         return recording
 
     def read(self):
+        '''Reads last frame from camera
+
+        Returns None if camera failed to return a frame.
+
+        Returns
+        -------
+        ndarray
+            sequence of images
+        '''
         if self._started:
             with self._lock:
                 ret = self._ret
@@ -100,10 +161,19 @@ class Capturer:
         return frame if ret else None
 
     def set_frame_rate(self, frame_rate):
+        '''Changes frame rate used by asynchronous thread
+
+        Parameters
+        ----------
+        frame_rate: int
+            Number of frames to capture per second
+        '''
         with self._lock:
             self._frame_rate = frame_rate
 
     def stop_async(self):
+        '''Closes thread that captures frames asynchronously
+        '''
         if self._started:
             self._started = False
             self._recording = False
@@ -113,6 +183,8 @@ class Capturer:
         return self.read()
 
     def release(self):
+        '''Closes connection to current camera if it is open
+        '''
         self.stop_async()
         if self._cap is not None and self._cap.isOpened():
             self._cap.release()
@@ -141,9 +213,23 @@ class SimCapturer(Capturer):
 
 class Camera:
     CONFIG_FILE = "neu_ro_arm/camera/configs.npz"
-    def __init__(self,
-                 camera_id=None,
-                 ):
+    def __init__(self, camera_id=None):
+        '''Changes video capture to a different camera id number
+
+        Parameters
+        ----------
+        camera_id: int, optional
+            Camera number to read frames from.  The default value is None,
+            meaning that the camera number will be taken from the config file.
+            Use this parameter to override the config file
+
+        Attributes
+        ----------
+        cap : obj
+            Capturer instance used to read frames from camera
+        gui : obj
+            GUI instance used for plotting frames
+        '''
         self.cap = Capturer()
         self.gui = GUI(self.cap)
 
@@ -159,11 +245,25 @@ class Camera:
             return
 
     def connect(self):
+        '''Sets up connection to camera
+
+        Returns
+        -------
+        bool
+            True if connection was successful, False otherwise
+        '''
         is_connected = self.cap.set_camera_id(self._camera_id)
         return is_connected
 
     @property
     def frame_rate(self):
+        '''Frame rate of the Capturer attribute
+
+        Returns
+        -------
+        int
+            Frames per second
+        '''
         return self.cap._frame_rate
 
     def _calc_distortion_matrix(self):
@@ -176,6 +276,26 @@ class Camera:
         })
 
     def calc_location(self):
+        '''Determine camera pose in world frame by localizing checkerboard pattern
+
+        Returns
+        -------
+        bool
+            True if location was determined, False otherwise.  Failure will occur
+            if camera did not return frame or if checkerboard pattern could
+            not be identified in the image.
+        tuple
+            rvec : ndarray
+                see cv2.Rodrigues for info on rotation vector
+            tvec : ndarray
+                translation vector
+            world2cam : ndarray
+                4x4 transformation matrix that transforms homogeneous vector from
+                world coordinate frame to camera coordinate frame
+            cam2world : ndarray
+                4x4 transformation matrix that transforms homogeneous vector from
+                camera coordinate frame to world coordinate frame
+        '''
         gh, gw = constants.calibration_gridshape
         gsize = constants.calibration_gridsize
 
@@ -204,67 +324,138 @@ class Camera:
 
         return False, None
 
-    def start_recording(self, duration, delay):
-        self.cap.start_recording(duration, delay)
+    def start_recording(self, duration):
+        '''Starts recording on camera
+
+        Parameters
+        ----------
+        duration : float
+            Seconds to record camera feed
+        '''
+        self.cap.start_recording(duration)
 
     def end_recording(self):
+        '''Ends recording on camera
+        '''
         self.cap.end_recording()
 
-    def get_recording(self):
-        return self.cap.get_recording()
-
     def wait_for_recording(self):
+        '''Waits until camera is done recording, then returns recorded frames
+
+        Returns
+        -------
+        ndarray
+            sequence of images
+        '''
         while self.cap.is_recording():
             time.sleep(0.1)
-        return self.get_recording()
+        return self.cap.get_recording()
 
     def undistort(self, img):
+        '''Corrects for distortion in image
+
+        Parameters
+        ----------
+        img : ndarray
+            2D or 3D image
+
+        Returns
+        -------
+        ndarray
+            image that will be strictly smaller in height/width than input image
+        '''
         dst = cv2.undistort(img,
-                            self._configs['mtx'],
-                            self._configs['dist_coeffs'],
+                            self._mtx,
+                            self._dist_coeffs,
                             None,
-                            self._configs['undistort_mtx']
+                            self._undistort_mtx
                            )
         # crop the image
-        x, y, w, h = self._configs['undistort_roi']
+        x, y, w, h = self._undistort_roi
         cropped = dst[y:y+h, x:x+w]
         return cropped
 
     def project_world_points(self, pts_wframe):
+        '''Projects 3D world points to pixel locations in camera feed
+
+        Parameters
+        ----------
+        pts_wframe : ndarray
+            sequence of 3D arrays representing x,y,z location in world
+            coordinate frame
+
+        Returns
+        -------
+        ndarray
+            sequence of 2D pixel indices
+        '''
         # transform world to camera frame
         return project_world2pixel(pts_wframe,
-                                   self._configs['world2cam'],
-                                   self._configs['rvec'],
-                                   self._configs['tvec'],
-                                   self._configs['mtx'],
-                                   self._configs['dist_coeffs'])
+                                   self._world2cam,
+                                   self._rvec,
+                                   self._tvec,
+                                   self._mtx,
+                                   self._dist_coeffs)
 
     def _update_config_file(self, new_configs):
-        # get existing configs
+        '''Adds new configs to config file, or updates those that already exist.
+
+        Parameters
+        ----------
+        new_configs : dict
+            Dictionary of configs.  Values should be ndarray type
+        '''
         configs = np.load(self.CONFIG_FILE)
         configs = dict(configs) if configs is not None else dict()
 
         configs.update(new_configs)
         np.savez(self.CONFIG_FILE, **configs)
 
-    def unpack_configs(self):
+    def unpack_configs(self, write=True):
+        '''Reads config file, writing to private attributes if desired
+
+        Parameters
+        ----------
+        write : bool, default to True
+            True if configs should be written to private attributes
+
+        Raises
+        ------
+        KeyError
+            If one of the private attributes does not exist in the config
+            file.
+
+        Returns
+        -------
+        dict
+            configs that were found in config file
+        '''
         configs = dict(np.load(self.CONFIG_FILE))
 
-        try:
-            self._camera_id = configs['camera_id']
-            self._rvec = configs['rvec']
-            self._tvec = configs['tvec']
-            self._mtx = configs['mtx']
-            self._undistort_mtx = configs['undistort_mtx']
-            self._undistort_roi = configs['undistort_roi']
-            self._dist_coeffs = configs['dist_coeffs']
-            self._world2cam = configs['world2cam']
-            self._cam2world = configs['cam2world']
-        except KeyError as e:
-            print('[ERROR] Some camera configs are missing. Run setup_camera.py '
-                  'to properly populate config file.')
+        if write:
+            try:
+                self._camera_id = configs['camera_id']
+                self._rvec = configs['rvec']
+                self._tvec = configs['tvec']
+                self._mtx = configs['mtx']
+                self._undistort_mtx = configs['undistort_mtx']
+                self._undistort_roi = configs['undistort_roi']
+                self._dist_coeffs = configs['dist_coeffs']
+                self._world2cam = configs['world2cam']
+                self._cam2world = configs['cam2world']
+            except KeyError as e:
+                print(f'[ERROR] Some camera configs [{e}] are missing. Run setup_camera.py '
+                      'to properly populate config file.')
+
+        return configs
 
     def get_image(self):
+        '''Get frame from capturer
+
+        Returns
+        -------
+        img : ndarray
+        '''
         img = self.cap.read()
         return img
 
@@ -272,7 +463,19 @@ class Camera:
         return self.get_image()
 
     def get_world_pose(self):
+        '''Get translation vector and euler angles that describe position of
+        camera in world coordinate frame.
+
+        Used by pybullet to position camera object in simulator
+
+        Returns
+        -------
+        pos : ndarray
+            array of shape (3,). dtype=float
+        euler : ndarray
+            array of shape (3,). dtype=float
+        '''
         pos = self._configs['world2cam'][3,:3]
         rot_mat = self._configs['world2cam'][:3,:3]
-        rot_euler = rotmat2euler(rot_mat)
-        return pos, rot_euler
+        euler = rotmat2euler(rot_mat)
+        return pos, euler

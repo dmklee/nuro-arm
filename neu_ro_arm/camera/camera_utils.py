@@ -5,6 +5,30 @@ import os
 import neu_ro_arm.constants as constants
 
 def find_arucotags(img, cam_mtx, dist_coeffs):
+    '''Locates aruco tags in image, recording info on ID, corner pixels, and tag pose
+
+    Parameters
+    ----------
+    img: ndarray
+        image taken by camera, will be converted to gray within the method
+    cam_mtx: ndarray
+        camera matrix; 2D array of shape (3,3); dtype=float
+    dist_coeffs: ndarray
+        distortion coefficients; array of length 5; dtype=float
+
+    Returns
+    -------
+    dict
+        tag_id : int
+            Unique identifier for a tag, based on the pattern.  Multiple tags of
+            the same id can be detected at the same time.
+        corners: ndarray
+            four pixel locations where corners of tag are located in image;
+            shape=(4,2); dtype=float
+        tag2cam: ndarray
+            transformation matrix that converts from coordinate frame of the tag
+            to the coordinate frame of the camera; shape=(4,2); dtype=float
+    '''
     gray = convert_gray(img)
     corners, ids, rejected = cv2.aruco.detectMarkers(
                                 gray,
@@ -19,10 +43,10 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
                                                           cam_mtx, dist_coeffs)
     tags = []
     for i in range(len(corners)):
-        cube2cam = transformation_matrix(rvecs[i], tvecs[i])
+        tag2cam = transformation_matrix(rvecs[i], tvecs[i])
         tags.append({'tag_id' : ids[i][0],
                      'corners' : corners[i].reshape((4,2)),
-                     'cube2cam' : cube2cam,
+                     'tag2cam' : tag2cam,
                      # 'rvec' : rvecs[i],
                      # 'tvec' : tvecs[i],
                     })
@@ -30,6 +54,34 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
     return tags
 
 def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
+    '''Locates cubes in image by detecting aruco tags
+
+    Parameters
+    ----------
+    img: ndarray
+        image taken by camera, will be converted to gray within the method
+    cam_mtx: ndarray
+        camera matrix; 2D array of shape (3,3); dtype=float
+    dist_coeffs: ndarray
+        distortion coefficients; array of length 5; dtype=float
+    cam2world: ndarray
+        transformation matrix that converts from coordinate frame of the camera
+        to the coordinate frame of the camera; shape=(4,2); dtype=float
+
+    Returns
+    -------
+    dict
+        pos: ndarray
+            xyz position of cube; shape (3,); dtype=float
+        rot: ndarray
+            euler angles of cube; shape (3,); dtype=float
+        tag_id : int
+            Unique identifier for a tag, based on the pattern.  Multiple tags of
+            the same id can be detected at the same time.
+        vertices: ndarray
+            eight 3D positions in world frame where vertices of cube are located
+            in image; shape=(8,3); dtype=float
+    '''
     tags = find_arucotags(img, cam_mtx, dist_coeffs)
 
     cubes = []
@@ -37,11 +89,11 @@ def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
     vertices[:,2] -= 0.5*constants.cube_size
 
     for tag in tags:
-        cube2world = np.dot(cam2world, tag['cube2cam'])
+        cube2world = np.dot(cam2world, tag['tag2cam'])
         tmp_vertices = coord_transform(cube2world, vertices)
         cube = {'pos' : cube2world[:3,3],
                 'rot' : rotmat2euler(cube2world[:3,:3]),
-                'id' : tag['tag_id'],
+                'tag_id' : tag['tag_id'],
                 'vertices' : tmp_vertices,
                 'center' : tmp_vertices.mean(axis=0),
                }
@@ -64,13 +116,34 @@ def project_world2pixel(pts_wframe, world2cam,
     return pixels[:,0,:]
 
 def rvec2euler(rvec):
+    '''Converts rotation vector (Rodrigues) to euler angles
+
+    Returns
+    -------
+    ndarray
+        euler angles; shape=(3,); dtype=float
+    '''
     return rotmat2euler(cv2.Rodrigues(rvec)[0])
 
 def rvec2quat(rvec):
+    '''Converts rotation vector (Rodrigues) to quaternion
+
+    Returns
+    -------
+    ndarray
+        quaternion; shape=(4,); dtype=float
+    '''
     euler = rvec2euler(rvec)
     return euler2quat(euler)
 
 def euler2quat(euler):
+    '''Converts euler angles to quaternion
+
+    Returns
+    -------
+    ndarray
+        quaternion; shape=(4,); dtype=float
+    '''
     cy = np.cos(0.5 * euler[0])
     sy = np.sin(0.5 * euler[0])
     cp = np.cos(0.5 * euler[1])
@@ -84,6 +157,13 @@ def euler2quat(euler):
                      cr*cp*sy-sr*sp*cy))
 
 def rotmat2euler(R):
+    '''Converts rotation matrix to euler angles
+
+    Returns
+    -------
+    ndarray
+        euler angles; shape=(3,); dtype=float
+    '''
     sy = np.sqrt(R[0,0]*R[0,0]+R[1,1]*R[1,1])
 
     singular = sy < 1e-6
