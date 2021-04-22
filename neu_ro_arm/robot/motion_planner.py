@@ -311,13 +311,3 @@ class MotionPlanner(PybulletBase):
                     return True
 
         return False
-
-if __name__ == "__main__":
-    import constants as constants
-    mp = MotionPlanner(constants.default_cam_pose_mtx)
-    import time
-    state = True
-    while True:
-        mp._teleport_gripper(state)
-        state = not state
-        time.sleep(1)
