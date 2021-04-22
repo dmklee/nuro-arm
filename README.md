@@ -41,7 +41,7 @@ Description  | Price
 ------------ | ----- 
 [Lewansoul xArm Robotic Arm](https://www.amazon.com/LewanSoul-Programmable-Feedback-Parameter-Programming/dp/B0793PFGCY/ref=sr_1_3?dchild=1&keywords=lewansoul+xarm&qid=1618417178&sr=8-3) | $200
 [ELP Megapixel 720p USB Camera 100 deg lens](https://www.amazon.com/ELP-megapixel-Camera-Module-120degree/dp/B01DRJXDEA/ref=sr_1_1?crid=12SN0I987B5WH&dchild=1&keywords=elp+megapixel+super+mini+720p+usb+camera+module+with+120degree+lens&qid=1618417242&sprefix=elp+camera+megapix%2Caps%2C157&sr=8-1) | $30
-[Small (~1") toy cubes](https://www.amazon.com/ETA-hand2mind-1-inch-Color-Cubes/dp/B01J6GC83U/ref=sr_1_13?dchild=1&keywords=wooden+cubes+color&qid=1619112911&sr=8-13) | $19 (or use whatever you have at home)
+[Small (~1") toy cubes](https://www.amazon.com/ETA-hand2mind-1-inch-Color-Cubes/dp/B01J6GC83U/ref=sr_1_13?dchild=1&keywords=wooden+cubes+color&qid=1619112911&sr=8-13) or find similar items around the house | $19 (or free)
 3D Printed parts ([stl files](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/assets/meshes/)) | ~$10
 Calibration sheet ([printable pdf](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/checkerboard.pdf)) | $0
 Aruco Tags ([printable pdf](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/aruco_tags.pdf)) | $0
