@@ -36,7 +36,7 @@ See the [Installation Guide](https://github.com/dmklee/neu-ro-arm/blob/main/inst
 
 <a name="parts-list"></a>
 ## Parts List
-This project is built on hardware that is more accessible.  The entire cost of the kit is about$250, and items can be ordered conveniently on Amazon.
+This project is built on hardware that is more accessible.  The entire cost of the kit is about $250, and items can be ordered conveniently on Amazon.
 Description  | Price 
 ------------ | ----- 
 [Lewansoul xArm Robotic Arm](https://www.amazon.com/LewanSoul-Programmable-Feedback-Parameter-Programming/dp/B0793PFGCY/ref=sr_1_3?dchild=1&keywords=lewansoul+xarm&qid=1618417178&sr=8-3) | $200
