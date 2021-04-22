@@ -48,7 +48,7 @@ Aruco Tags ([printable pdf](https://github.com/dmklee/neu-ro-arm/blob/main/neu_r
 
 <a name="projects"></a>
 ## Tutorials and Projects
-This repo was created to facilitate an outreach program for high school students in the Boston area.  All curriculum materials, including project ideas and solutions, will be available upon request starting June 2021.
+This repo was created to facilitate an outreach program for high school students in the Boston area (in partnership with Northeastern University's Center of STEM Education).  All curriculum materials, including project ideas and solutions, will be available upon request starting June 2021.
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
