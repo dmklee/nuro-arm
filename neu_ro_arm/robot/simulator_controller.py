@@ -8,8 +8,30 @@ class SimulatorController(BaseController, PybulletBase):
     def __init__(self):
         PybulletBase.__init__(self, pb.GUI)
         pb.setRealTimeSimulation(1, self._client)
+        self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
+        self.joint_limits =  { 1 : (-3, 3),
+                               2 : (-np.pi, np.pi),
+                               3 : (-np.pi, np.pi),
+                               4 : (-np.pi, np.pi),
+                               5 : (-np.pi, np.pi),
+                               6 : (-0.3, 0.3),
+                               7 : (-0.3, 0.3),
+                             }
 
     def move_command(self, j_idxs, jpos):
+        '''Issue move command to specified joint indices
+
+        This simulator runs realtime and I have not tried to mimic the movement
+        speed of the real robot.  The movements are meant to be linear in joint
+        space to reflect movements of xArm.
+
+        Parameters
+        ----------
+        j_idxs : array_like of int
+            joint indices to be moved
+        jpos : array_like of float
+            target joint positions corresponding to the joint indices
+        '''
         num_joints = len(j_idxs)
         pb.setJointMotorControlArray(self.robot_id,
                                      j_idxs,
@@ -19,6 +41,18 @@ class SimulatorController(BaseController, PybulletBase):
                                     )
 
     def read_command(self, j_idxs):
+        '''Read some joint positions
+
+        Parameters
+        ----------
+        j_idxs : array_like of int
+            joint indices whose position should be read
+
+        Returns
+        -------
+        jpos : list of float
+            joint positions in radians, will be same length as j_idxs
+        '''
         jpos = [pb.getJointState(self.robot_id, j_idx, physicsClientId=self._client)[0]
                            for j_idx in j_idxs]
         return jpos

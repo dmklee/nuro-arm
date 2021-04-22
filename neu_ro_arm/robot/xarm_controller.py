@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 
-import threading
+import theeading
 from neu_ro_arm.robot.base_controller import BaseController
 
 #TODO:
@@ -135,17 +135,45 @@ class XArmController(BaseController):
         self.move_command(self.servos, jpos)
 
     def power_off(self):
-        '''Turns off servos'''
+        '''Powers off servos, used to enable passive mode or before disconnecting
+        '''
         self._send(self.cmd_lib.POWER_OFF, [6, 1,2,3,4,5,6])
 
     def disconnect(self):
+        '''Closes HID connection to xArm
+        '''
         self.device.close()
         print('Disconnected xArm')
 
     def move_command(self, j_idxs, jpos):
+        '''Issue move command to specified joint indices
+
+        This simulator runs realtime and I have not tried to mimic the movement
+        speed of the real robot.  The movements are meant to be linear in joint
+        space to reflect movements of xArm.
+
+        Parameters
+        ----------
+        j_idxs : array_like of int
+            joint indices to be moved
+        jpos : array_like of float
+            target joint positions corresponding to the joint indices
+        '''
         [self._move_servo(j_p, j_id) for j_p, j_id in zip(jpos, j_idxs)]
 
     def read_command(self, j_idxs):
+        '''Read some joint positions
+
+        Parameters
+        ----------
+        j_idxs : array_like of int
+            joint indices whose position should be read
+
+        Returns
+        -------
+        jpos : list of float
+            joint positions in radians, will be same length as j_idxs
+        '''
         self._send(self.cmd_lib.POSITION_READ,
                    [len(j_idxs), *j_idxs])
         pos = self._recv(self.cmd_lib.POSITION_READ)
