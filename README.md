@@ -1,4 +1,7 @@
 # NEU Robotics Outreach: Robotic Arm
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/xarm.png"/>
+</p>
 
 This repository is built to help students learn more about programming and robotics. It aims to provide a high-level interface for performing basic robotic manipulation tasks.  The repo is meant to be accessible: the hardware is low cost; a simulator is provided for those who do not purchase the robot; the api is built to work on Windows, MacOS & Linux.
 
