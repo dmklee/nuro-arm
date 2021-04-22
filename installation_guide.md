@@ -140,7 +140,7 @@ The setup camera script will first perform a scan over available cameras, prompt
 We provide you with some multi-colored cubes.  In order for the camera to identify these cubes, we need to attach Aruco tags. We give you two sheets of Aruco tags (they should look like simple QR codes).  The patterns are designed to be easily identified in the image. 
 1. Cut out an individual tag (cut in the white region)
 2. Attach the tag to one side of the cube with tape or glue.  If you are using tape, you should avoid taping over the patterned area of the tag; the tape can produce glare which makes it difficult for the camera to see.
-3. Repeat for as many cubes as you want to use. Each cube should use a different tag number (this way the camera can differentiate between them).  We provide four copies of 12 different numbered tags so there will be plenty of leftovers.
+3. Repeat for as many cubes as you want to use. **Each cube should use a different tag number** (this way the camera can differentiate between them).  We provide four copies of 12 different numbered tags so there will be plenty of leftovers.
 
 <p align="center">
   <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/cubes.jpg"/>
