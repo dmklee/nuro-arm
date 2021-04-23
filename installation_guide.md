@@ -78,7 +78,7 @@ In order to calibrate the robot, you must first complete the [software installat
 Safety is a priority when working with robots.  While the software is built to prevent collisions or unsafe velocities, you should still be careful to ensure you and the robot are safe.  
 - **Safe Workspace**. Before issuing any movement commands, make sure there are no objects within reach of the arm. The robot is only aware of itself, the ground, and the camera so it will not know to avoid other objects.  When you are operating the robot, keep any siblings or pets away.
 - **Kill Switch**.  You should be aware that the robot's motion can be stopped at any moment by either unplugging the power cable, or flipping the switch on the control board. 
-- **Caring for the robot**. To preserve the lifetime of the robot, unplug it when not in use.  Do not try to force the robot joints to move as this can ruin the gears in the motors.
+- **Caring for the robot**. To preserve the lifetime of the robot, unplug it when not in use.  Do not force the robot joints to move as this can ruin the gears in the motors; when the robot is in passive mode, there should not be any resistance to motion.
 
 
 ### Camera
