@@ -74,6 +74,9 @@ In order to calibrate the robot, you must first complete the [software installat
 	python neu_ro_arm/scripts/setup_xarm.py
 	```
 
+#### General Guidelines
+When not using the camera, use the lens cover to keep it safe.  Ensure that the robot is made aware of the camera in the software for collision detection purposes (we will walk you through this). The camera circuit board may get hot if used for extended periods of time. 
+
 ### Camera
 #### Assembly Instructions
 1. Collect the parts shown in the photo below, the 3D printed parts and camera will be in camera box; the rod and screws will be in Hiwonder box.
@@ -115,7 +118,7 @@ In order to calibrate the robot, you must first complete the [software installat
 
 7.  All done! You are now ready to calibrate the camera.
 
-### Calibration
+#### Calibration
 In order to calibrate the camera, you must first complete the [software installation](#software) section. 
 
 To perform the calibration, follow the following steps. 
@@ -134,6 +137,12 @@ The setup camera script will first perform a scan over available cameras, prompt
   <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_calibration_setup.jpg" width="250"/>
   <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_calibration_view.png" width="250"/>
 </p>
+
+#### General Guidelines
+Safety is a priority when working with robots.  While the software is built to prevent collisions or unsafe velocities, you should still be careful to ensure you and the robot are safe.  
+- **Safe Workspace**. Before issuing any movement commands, make sure there are no objects within reach of the arm. The robot is only aware of itself, the ground, and the camera so it will not know to avoid other objects.  When you are operating the robot, keep any siblings or pets away.
+- **Kill Switch**.  You should be aware that the robot's motion can be stopped at any moment by either unplugging the power cable, or flipping the switch on the control board. 
+- **Caring for the robot**. To preserve the lifetime of the robot, unplug it when not in use.  Do not try to force the robot joints to move as this can ruin the gears in the motors.
 
 
 ## Cubes
