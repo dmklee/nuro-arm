@@ -75,7 +75,11 @@ In order to calibrate the robot, you must first complete the [software installat
 	```
 
 #### General Guidelines
-When not using the camera, use the lens cover to keep it safe.  Ensure that the robot is made aware of the camera in the software for collision detection purposes (we will walk you through this). The camera circuit board may get hot if used for extended periods of time. 
+Safety is a priority when working with robots.  While the software is built to prevent collisions or unsafe velocities, you should still be careful to ensure you and the robot are safe.  
+- **Safe Workspace**. Before issuing any movement commands, make sure there are no objects within reach of the arm. The robot is only aware of itself, the ground, and the camera so it will not know to avoid other objects.  When you are operating the robot, keep any siblings or pets away.
+- **Kill Switch**.  You should be aware that the robot's motion can be stopped at any moment by either unplugging the power cable, or flipping the switch on the control board. 
+- **Caring for the robot**. To preserve the lifetime of the robot, unplug it when not in use.  Do not try to force the robot joints to move as this can ruin the gears in the motors.
+
 
 ### Camera
 #### Assembly Instructions
@@ -139,11 +143,7 @@ The setup camera script will first perform a scan over available cameras, prompt
 </p>
 
 #### General Guidelines
-Safety is a priority when working with robots.  While the software is built to prevent collisions or unsafe velocities, you should still be careful to ensure you and the robot are safe.  
-- **Safe Workspace**. Before issuing any movement commands, make sure there are no objects within reach of the arm. The robot is only aware of itself, the ground, and the camera so it will not know to avoid other objects.  When you are operating the robot, keep any siblings or pets away.
-- **Kill Switch**.  You should be aware that the robot's motion can be stopped at any moment by either unplugging the power cable, or flipping the switch on the control board. 
-- **Caring for the robot**. To preserve the lifetime of the robot, unplug it when not in use.  Do not try to force the robot joints to move as this can ruin the gears in the motors.
-
+When not using the camera, use the lens cover to keep it safe.  Ensure that the robot is made aware of the camera in the software for collision detection purposes (we will walk you through this). The camera circuit board may get hot if used for extended periods of time. 
 
 ## Cubes
 We provide you with some multi-colored cubes.  In order for the camera to identify these cubes, we need to attach Aruco tags. We give you two sheets of Aruco tags (they should look like simple QR codes).  The patterns are designed to be easily identified in the image. 
