@@ -1,6 +1,9 @@
 from neu_ro_arm.camera.camera import Camera, Capturer, GUI
 
 def determine_camera_id():
+    '''Scans over available cameras, prompting user to select which camera is
+    to be used with the robot
+    '''
     print('Performing scan over available cameras...')
     cap = Capturer()
     gui = GUI(cap)
@@ -24,6 +27,15 @@ def determine_camera_id():
     return None
 
 def calc_camera_location(camera_id=None):
+    '''Calculates camera position in world coordinate frame using checkerboard
+    pattern
+
+    Parameters
+    ----------
+    camera_id : int, optional
+        identifier of camera to open; if not provided then the camera opened
+        will be the one saved in the camera config file
+    '''
     camera = Camera(camera_id)
 
     print()

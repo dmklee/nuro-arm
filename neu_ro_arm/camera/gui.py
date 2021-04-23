@@ -4,11 +4,45 @@ from abc import abstractmethod
 
 class GUI:
     def __init__(self, capturer):
+        '''Class that displays images or camera feed using cv2 gui
+
+        Parameters
+        ----------
+        capturer : obj
+            instance of Capturer class
+        '''
         self._cap = capturer
 
-    def show(self, img=None, window_name='',
+    def show(self,
+             img=None,
+             window_name='',
              exit_keys=[],
-             modifier_fns=[]):
+             modifier_fns=[]
+            ):
+        '''Show an image or feed until exit keys are pressed
+
+        Parameters
+        ----------
+        img : array_like, optional
+            single image to be displayed; if not provided, the feed from the
+            capturer will be used
+        window_name : str
+            title for the window that displays image
+        exit_keys : list of int
+            list of keys that will close window when pressed; keys are represented
+            as the integer corresponding to the unicode character; for instance,
+            if we want to close on 'y' and 'n', then we would use
+            exit_keys=[ord('y'),ord('n')]
+        modifier_fns : list of obj
+            list of GUIModifierFunction instances that will be called in order
+            to modify the image being displayed
+
+        Returns
+        -------
+        int
+            integer representing last unicode character detected, a value of -1
+            means no key press was detected
+        '''
         use_live = img is None
 
         k = -1
@@ -37,15 +71,44 @@ class GUI:
         return k
 
 class GUIModifierFunction:
-    def __init__(self, **kwargs):
-        self.cam_configs = kwargs
+    def __init__(self, cam_configs):
+        '''Function that performs some image operations and adds modifications
+        for debugging/visualization purposed
+
+        Must implement __call__ method which will be used by GUI for plotting
+
+        Parameters
+        ----------
+        cam_configs : dict
+            all configs used by camera, these are needed for some image processing
+            especially coordinate transforms
+        '''
+        self.cam_configs = cam_configs
 
     @abstractmethod
     def __call__(self, canvas, original):
+        '''Modifies canvas image
+
+        Parameters
+        ----------
+        canvas : ndarray
+            image to be modified; it may already have some modifications to it
+        original : ndarray
+            image that has not been modified; any processing should be done on
+            this image so the results are not messed up by previous modifications
+
+        Returns
+        -------
+        ndarray
+            canvas image plus some additional modifications
+        '''
         return canvas
 
 class ShowCubes(GUIModifierFunction):
     def __call__(self, canvas, original):
+        '''Draws wireframe models for all cubes detected in the image via
+        aruco tag detection
+        '''
         cubes = find_cubes(original,
                            self.cam_configs['cam_mtx'],
                            self.cam_configs['dist_coeffs'],
@@ -66,6 +129,8 @@ class ShowCubes(GUIModifierFunction):
 
 class ShowArucoTags(GUIModifierFunction):
     def __call__(original, canvas):
+        '''Draws tag outlines and ids for all aruco tags detected in the image
+        '''
         tags = find_arucotags(original,
                               self.cam_configs['cam_mtx']
                               self.cam_configs['dist_coeffs']
