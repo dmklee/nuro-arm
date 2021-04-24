@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 
-import theeading
+import threading
 from neu_ro_arm.robot.base_controller import BaseController
 
 #TODO:
@@ -128,11 +128,6 @@ class XArmController(BaseController):
         device = Device()
         print('Connected to xArm')
         return device
-
-    def power_on(self):
-        '''Turns on servos. sets position command to current position'''
-        jpos = self.read_command(self.servos)
-        self.move_command(self.servos, jpos)
 
     def power_off(self):
         '''Powers off servos, used to enable passive mode or before disconnecting
