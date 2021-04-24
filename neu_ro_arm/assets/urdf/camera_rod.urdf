@@ -7,7 +7,7 @@
         <visual>
               <origin rpy="0 0 0" xyz="0.0 0.0 .15"/>
               <geometry>
-                  <cylinder radius="0.005" length="0.3"/>
+                  <cylinder radius="0.005" length="0.25"/>
               </geometry>
         </visual>
           <material name="gray">
@@ -16,7 +16,7 @@
         <collision>
               <origin rpy="0 0 0" xyz="0.0 0.0 0.15"/>
               <geometry>
-                  <cylinder radius="0.01" length="0.3"/>
+                  <cylinder radius="0.01" length="0.25"/>
               </geometry>
         </collision>
         <inertial>
