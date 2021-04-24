@@ -58,8 +58,8 @@ class PybulletBase:
         self.arm_joint_idxs = [1,2,3,4,5]
         self.gripper_joint_idxs = [6,7]
 
-        self.gripper_closed = np.array([-0.3, -0.3])
-        self.gripper_opened = np.array([0.3, 0.3])
+        self.gripper_closed = np.array([0., 0.])
+        self.gripper_opened = np.array([0.042, 0.042])
         self.camera_exists = False
 
     def _init_pybullet(self, connection_mode):

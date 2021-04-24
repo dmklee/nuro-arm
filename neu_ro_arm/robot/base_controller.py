@@ -13,7 +13,6 @@ class BaseController:
         self.arm_jpos_home = None
         self.gripper_joint_idxs = None
         self.joint_limits = None
-        self.arm_motor_directions = None
         self.joint_precision = 1e-4
 
     @abstractmethod
