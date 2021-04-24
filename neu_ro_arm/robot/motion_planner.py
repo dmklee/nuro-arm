@@ -3,21 +3,27 @@ import pybullet as pb
 import numpy as np
 
 from neu_ro_arm.camera.camera_utils import rotmat2euler
+from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
 
 class UnsafeTrajectoryError(Exception):
     '''A collision was detected at some intermediate joint position in trajectory
     '''
-    pass
+    def __init__(self, robot_link, other_body, **kwargs):
+        msg = f"Collision detected between robot:{robot_link}_link and {other_body}"
+        super().__init__(msg)
 
 class UnsafeJointPosition(Exception):
     '''A collision was detected at specified joint position
     '''
-    pass
+    def __init__(self, robot_link, other_body, **kwargs):
+        msg = f"Collision detected between robot:{robot_link}_link and {other_body}"
+        super().__init__(msg)
 
 class PybulletBase:
     ROBOT_URDF_PATH = "neu_ro_arm/assets/urdf/xarm.urdf"
     CAMERA_URDF_PATH = "neu_ro_arm/assets/urdf/camera.urdf"
     ROD_URDF_PATH = "neu_ro_arm/assets/urdf/camera_rod.urdf"
+    CUBE_URDF_PATH = "neu_ro_arm/assets/urdf/cube.urdf"
     def __init__(self, connection_mode):
         '''Base class for pybullet simulator to handle initialization and attributes
         about robot joints
@@ -54,11 +60,12 @@ class PybulletBase:
         self._client = self._init_pybullet(connection_mode)
         self.link_names = self._get_link_names()
         self.joint_names = self._get_joint_names()
-        self.end_effector_link_index = self.link_names.index('hand')
-        self.arm_joint_idxs = [1,2,3,4,5]
-        self.gripper_joint_idxs = [6,7]
 
-        self.gripper_closed = np.array([0., 0.])
+        self.arm_joint_idxs = [1,2,3,4,5]
+        self.end_effector_link_index = 6
+        self.gripper_joint_idxs = [7,8]
+
+        self.gripper_closed = np.array([0.0, 0.0])
         self.gripper_opened = np.array([0.042, 0.042])
         self.camera_exists = False
 
@@ -90,7 +97,7 @@ class PybulletBase:
 
         return client
 
-    def add_camera(self, cam_pose_mtx):
+    def add_camera(self, pose_mtx):
         '''Adds or moves collision object to simulator where camera is located.
 
         Currently, this assumes the camera is located to the left of the robot
@@ -99,19 +106,23 @@ class PybulletBase:
 
         Parameters
         ----------
-        cam_pose_mtx: ndarray
+        pose_mtx: ndarray
             Transformation matrix from world frame to camera frame; shape=(4,4);
             dtype=float
         '''
+        cam_pos, cam_quat, rod_pos, rod_quat = self._unpack_camera_pose(pose_mtx)
         if self.camera_exists:
             print('Camera already detected. Existing camera will be re-positioned.')
+            pb.resetBasePositionAndOrientation(self.camera_id, cam_pos, cam_quat,
+                                              physicsClientId=self._client)
+            pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, rod_quat,
+                                              physicsClientId=self._client)
         else:
-            self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, [0,0,0],[0,0,0,1],
+            self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, cam_pos, cam_quat,
                                         physicsClientId=self._client)
-            self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, [0,0,0],[0,0,0,1],
+            self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, rod_pos, rod_quat,
                                      physicsClientId=self._client)
 
-        self._set_camera_pose(cam_pose_mtx)
 
     def _get_joint_names(self):
         '''Returns list of joints for robot urdf
@@ -138,26 +149,59 @@ class PybulletBase:
 
         return link_names
 
-    def _set_camera_pose(self, cam_pose_mtx):
-        '''Changes location of camera-related collision object
+    def _unpack_camera_pose(self, cam_pose_mtx):
+        '''Get params for positioning camera and rod based on pose of camera
 
         Parameters
         ----------
         cam_pose_mtx: ndarray
             Transformation matrix from world frame to camera frame; shape=(4,4);
             dtype=float
+
+        Returns
+        -------
+        cam_pos : array_like
+            3d postion vector of camera body
+        cam_quat : array_like
+            quaternion of camera body
+        rod_pos : array_like
+            3d postion vector of rod body
+        rod_quat : array_like
+            quaternion of rod body
         '''
-        pos = cam_pose_mtx[:3,3]/1000.
-        rotmat = cam_pose_mtx[:3,:3]
-        quat = pb.getQuaternionFromEuler(rotmat2euler(rotmat))
-        pb.resetBasePositionAndOrientation(self.camera_id, pos, quat,
-                                          physicsClientId=self._client)
+        cam_pos = cam_pose_mtx[:3,3]
+        cam_rotmat = cam_pose_mtx[:3,:3]
+        cam_quat = pb.getQuaternionFromEuler(rotmat2euler(cam_rotmat))
 
         rod_offset_vec = np.array((0.026, -0.012, -0.013))
-        rod_pos = pos + np.dot(rotmat, rod_offset_vec)
+        rod_pos = cam_pos + np.dot(cam_rotmat, rod_offset_vec)
         rod_pos[2] = 0
-        pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, (0,0,0,1),
-                                          physicsClientId=self._client)
+        rod_quat = (0,0,0,1)
+
+        return cam_pos, cam_quat, rod_pos, rod_quat
+
+    def add_cube(self, pos, euler):
+        '''Add 1" cube to simulator
+
+        Parameters
+        ----------
+        pos : array_like
+            3d position of center of cube
+        euler: array_like
+            euler angles of cube; shape=(3,)
+
+        Returns
+        -------
+        int
+            body id of cube in simulator
+        '''
+        quat = pb.getQuaternionFromEuler(euler)
+        cube_id = pb.loadURDF(self.CUBE_URDF_PATH,
+                              pos,
+                              quat,
+                              physicsClientId=self._client,
+                             )
+        return cube_id
 
     def _get_link_pose(self, link_name):
         '''Returns position and orientation of robot's link
@@ -178,6 +222,26 @@ class PybulletBase:
         link_index = self.link_names.index(link_name)
         link_state = pb.getLinkState(self.robot_id, link_index,
                                     physicsClientId=self._client)
+        pos = link_state[4]
+        rot = pb.getEulerFromQuaternion(link_state[5])
+        return pos, rot
+
+    def get_hand_pose(self):
+        '''Get position and orientation of hand (i.e. where grippers would close)
+
+        This is not the same as the hand link, instead we are interested in the
+        space where the grippers would engage with an object
+
+        Returns
+        -------
+        ndarray
+            position vector; shape=(3,); dtype=float
+        ndarray
+            euler angle; shape=(3,); dtype=float
+        '''
+        link_state = pb.getLinkState(self.robot_id,
+                                     self.end_effector_link_index,
+                                     physicsClientId=self._client)
         pos = link_state[4]
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot
@@ -205,30 +269,36 @@ class MotionPlanner(PybulletBase):
         Returns
         -------
         bool
-            True if returned joint positions will result in collision
+            True if returned joint positions are safe (e.g. do not result in collision)
         ndarray
             joint position of arm joints; shape=(5,); dtype=float
         dict
-            additional information about positional and rotational error of
-            IK solution
+            collision data, may also include data on accuracy of ik solution
         '''
-        #TODO: return data on achieved pos, rot, and error
-        #       set max error thresholds maybe?
         if rot is not None:
             rot = pb.getQuaternionFromEuler(rot)
+
         jpos = pb.calculateInverseKinematics(self.robot_id,
                                              self.end_effector_link_index,
                                              pos,
                                              rot,
+                                             maxNumIterations=500,
                                              physicsClientId=self._client,
                                             )
 
-        arm_jpos = jpos[:self.end_effector_link_index]
+        num_arm_joints = len(self.arm_joint_idxs)
+        arm_jpos = jpos[:num_arm_joints]
 
-        data = {}
+        is_collision, data = self._check_collisions(arm_jpos)
 
-        is_collision = self._check_collisions(arm_jpos)
-        return is_collision, arm_jpos, data
+        # check collision teleports arm so we can check IK solution error here
+        achieved_pos, achieved_rot = self.get_hand_pose()
+        data['achieved_pos'] = achieved_pos
+        data['achieved_rot'] = achieved_rot
+        data['pos_error'] = np.linalg.norm(np.subtract(pos, achieved_pos))Difference
+
+        is_safe = not is_collision
+        return is_safe, arm_jpos, data
 
     def mirror(self, arm_jpos=None, gripper_state=None, gripper_jpos=None):
         '''Set simulators joint state to some desired joint state
@@ -258,8 +328,8 @@ class MotionPlanner(PybulletBase):
         '''Resets joint states of gripper joints
         '''
         if state is not None:
-            jpos = gripper_state*self.gripper_opened \
-                    + (1-gripper_state)*self.gripper_closed
+            jpos = state*self.gripper_opened \
+                    + (1 - state)*self.gripper_closed
 
         if jpos is not None:
             [pb.resetJointState(self.robot_id, i, jp, physicsClientId=self._client)
@@ -279,6 +349,8 @@ class MotionPlanner(PybulletBase):
         -------
         bool
             True if trajectory is safe (e.g. no collisions were detected)
+        dict
+            info on collision if collision occurred
         '''
         assert len(target_jpos) == len(self.arm_joint_idxs)
         current_jpos = [pb.getJointState(self.robot_id, j_idx, physicsClientId=self._client)[0]
@@ -287,27 +359,63 @@ class MotionPlanner(PybulletBase):
         inter_jpos = np.linspace(current_jpos, target_jpos,
                                  num=num_steps, endpoint=True)
 
-        safe = True
+        is_safe = True
         for jpos in inter_jpos[1:]:
-            if self._check_collisions(jpos):
-                safe = False
+            collision, data = self._check_collisions(jpos)
+            if collision:
+                is_safe = False
                 break
 
         self._teleport_arm(current_jpos)
-        return True
+        return is_safe, data
 
-    def _check_collisions(self, jpos):
+    def _check_collisions(self, jpos, gripper_mode='current'):
         '''Returns True if collisions present as arm joint position
+
+        Parameters
+        ----------
+        jpos : array_like
+            positions of arm joints in radians
+        gripper_mode : {'closed', 'open', 'ignore', 'current'}
+            how to treat gripper during collision check. if 'current' then the
+            gripper position will not be changed
+
+        Returns
+        -------
+        bool
+            True if collision was detected
+        dict
+            data about collision
         '''
         self._teleport_arm(jpos)
-        pb.performCollisionDetection(self._client)
-        for cont_pt in pb.getContactPoints(physicsClientId=self._client):
-            bodies = (cont_pt[1], cont_pt[2])
-            links = (cont_pt[3], cont_pt[4])
-            if self.robot_id in bodies:
-                body_idx = bodies.index(self.robot_id)
-                robot_link = links[body_idx]
-                if self.link_names[robot_link] != 'base':
-                    return True
 
-        return False
+        if gripper_mode == 'open':
+            self._teleport_gripper(state=GRIPPER_OPENED)
+        elif gripper_mode == 'closed':
+            self._teleport_gripper(state=GRIPPER_CLOSED)
+
+        # ignore base because it doesnt move and will likely be in collision
+        # with camera at all times
+        ignored_links = ['base']
+        if gripper_mode == 'ignore':
+            ignored_links.extend(['gripper_left', 'gripper_right'])
+
+        pb.performCollisionDetection(self._client)
+        contact_points = pb.getContactPoints(bodyA=self.robot_id,
+                                             physicsClientId=self._client)
+        for cont_pt in contact_points:
+            assert cont_pt[1] == self.robot_id
+            robot_link = cont_pt[3]
+            robot_link_name = self.link_names[robot_link]
+            if robot_link_name not in ignored_links:
+                other_body_id = cont_pt[2]
+                other_body_link = cont_pt[4]
+                other_body_name = pb.getBodyInfo(other_body_id,
+                                                 physicsClientId=self._client
+                                                )[1].decode('ascii')
+
+                return True, {'robot_link' : robot_link_name,
+                              'other_body' : other_body_name,
+                             }
+
+        return False, {}
