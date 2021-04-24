@@ -203,7 +203,7 @@ class SimCapturer(Capturer):
         self.view_mtx
         self.projection_mtx
 
-    def _snapshot(self):
+    def read(self):
         return getCameraImage(width=img_width,
                               height=img_height,
                               viewMatrix = self.view_mtx,
@@ -461,21 +461,3 @@ class Camera:
 
     def __call__(self):
         return self.get_image()
-
-    def get_world_pose(self):
-        '''Get translation vector and euler angles that describe position of
-        camera in world coordinate frame.
-
-        Used by pybullet to position camera object in simulator
-
-        Returns
-        -------
-        pos : ndarray
-            array of shape (3,). dtype=float
-        euler : ndarray
-            array of shape (3,). dtype=float
-        '''
-        pos = self._configs['world2cam'][3,:3]
-        rot_mat = self._configs['world2cam'][:3,:3]
-        euler = rotmat2euler(rot_mat)
-        return pos, euler

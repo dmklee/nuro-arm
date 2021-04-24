@@ -132,8 +132,8 @@ class ShowArucoTags(GUIModifierFunction):
         '''Draws tag outlines and ids for all aruco tags detected in the image
         '''
         tags = find_arucotags(original,
-                              self.cam_configs['cam_mtx']
-                              self.cam_configs['dist_coeffs']
+                              self.cam_configs['cam_mtx'],
+                              self.cam_configs['dist_coeffs'],
                              )
         for tag in tags:
             corners = tag['corners']
@@ -152,4 +152,4 @@ class ShowArucoTags(GUIModifierFunction):
                                 thickness=1,
                                 color=(0, 0, 255)
                                 )
-    return canvas
+        return canvas
