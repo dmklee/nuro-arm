@@ -48,6 +48,10 @@
     ```
     sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
     ```
+	2. You may need to run the following command so that the robot can be connected
+	```
+	sudo service fwupd stop
+	```
 
 ### [Recommended] Install Visual Studio Code
 1. Download VS Code for your device by clicking this [link](https://code.visualstudio.com/download)
