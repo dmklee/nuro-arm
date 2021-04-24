@@ -7,8 +7,8 @@ matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import tkinter as tk
 
-import neu_ro_arm.constants as constants
-from neu_ro_arm.robot.motion_planner import MotionPlanner, UnsafeTrajectoryError
+from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
+from neu_ro_arm.robot.motion_planner import MotionPlanner, UnsafeTrajectoryError, UnsafeJointPosition
 from neu_ro_arm.robot.simulator_controller import SimulatorController
 from neu_ro_arm.robot.xarm_controller import XArmController
 
@@ -33,27 +33,30 @@ class RobotArm:
         '''
         self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation')
 
-        #TODO: init controllers
         if controller_type == 'real':
             self.controller = XArmController()
         elif controller_type == 'sim':
             self.controller = SimulatorController()
         else:
             raise TypeError('invalid controller type')
+        self.controller_type = controller_type
 
         self.mp = MotionPlanner()
 
-    def add_camera(self, world2cam):
+    def add_camera(self, pose_mtx):
         '''Add camera object to motion planner's internal simulator so that it is
         included in collision checking
 
         Parameters
         ----------
-        world2cam : ndarray
-            transformation matrix from world reference frame to camera
-            reference frame; shape=(4,4); dtype=float
+        pose_mtx : ndarray
+            pose matrix of camera in world coordinate frame; shape=(4,4);
+            dtype=float
         '''
-        self.mp.add_camera(world2cam)
+        self.mp.add_camera(pose_mtx)
+
+        if self.controller_type == 'sim':
+            self.controller.add_camera(pose_mtx)
 
     def get_arm_jpos(self):
         '''Get positions of the arm joints
@@ -85,9 +88,9 @@ class RobotArm:
         bool
             True if joint angles returned from IK were achieved
         '''
-        is_collision = self.mp.check_arm_trajectory(jpos)
-        if is_collision:
-            raise UnsafeTrajectoryError
+        safe, collision_data = self.mp.check_arm_trajectory(jpos)
+        if not safe:
+            raise UnsafeTrajectoryError(**collision_data)
 
         self.controller.move_command(self.controller.arm_joint_idxs, jpos)
         success, achieved_jpos = self.controller.monitor(self.controller.arm_joint_idxs,
@@ -96,7 +99,7 @@ class RobotArm:
         self.mp.mirror(arm_jpos=achieved_jpos)
         return success
 
-    def move_hand_to(self, pos, rot):
+    def move_hand_to(self, pos, rot=None):
         '''Moves end effector to desired pose in world
 
         Parameters
@@ -120,9 +123,9 @@ class RobotArm:
         bool
             True if joint angles returned from IK were achieved
         '''
-        is_collision, jpos, data = self.mp._calculate_ik(pos, rot)
-        if is_collision:
-            raise UnsafeJointPosition
+        is_safe, jpos, data = self.mp._calculate_ik(pos, rot)
+        if not is_safe:
+            raise UnsafeJointPosition(**data)
 
         return self.move_arm_jpos(jpos)
 
@@ -134,7 +137,7 @@ class RobotArm:
         bool
             True if desired gripper state was achieved
         '''
-        return self.set_gripper_state(self.gripper_opened)
+        return self.set_gripper_state(GRIPPER_OPENED)
 
     def close_gripper(self):
         '''Closes gripper completely
@@ -144,7 +147,7 @@ class RobotArm:
         bool
             True if desired gripper state was achieved
         '''
-        return self.set_gripper_state(self.gripper_closed)
+        return self.set_gripper_state(GRIPPER_CLOSED)
 
     def set_gripper_state(self, state):
         '''Get state of gripper
@@ -279,7 +282,7 @@ class RobotArm:
 
 if __name__ == "__main__":
     import time
-    robot = RobotArm('real')
+    robot = RobotArm('sim')
     robot.controller.gripper_closed = np.array([0.5])
     robot.controller.gripper_opened = np.array([-0.5])
     robot.controller.home()

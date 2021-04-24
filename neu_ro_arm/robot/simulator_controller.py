@@ -8,15 +8,17 @@ class SimulatorController(BaseController, PybulletBase):
     def __init__(self):
         PybulletBase.__init__(self, pb.GUI)
         pb.setRealTimeSimulation(1, self._client)
+        # pb.setGravity(0,0,-10,self._client)
         self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
         self.joint_limits =  { 1 : (-3, 3),
                                2 : (-np.pi, np.pi),
                                3 : (-np.pi, np.pi),
                                4 : (-np.pi, np.pi),
                                5 : (-np.pi, np.pi),
-                               6 : (-0.3, 0.3),
-                               7 : (-0.3, 0.3),
+                               6 : (0, 0.042),
+                               7 : (0, 0.042),
                              }
+        self.joint_precision = 1e-4
 
     def move_command(self, j_idxs, jpos):
         '''Issue move command to specified joint indices
