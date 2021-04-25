@@ -29,6 +29,8 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
             transformation matrix that converts from coordinate frame of the tag
             to the coordinate frame of the camera; shape=(4,2); dtype=float
     '''
+    #TODO: alert if multiple of the same tag ids are detected as this may mess
+    # up further processing
     gray = convert_gray(img)
     corners, ids, rejected = cv2.aruco.detectMarkers(
                                 gray,
@@ -55,6 +57,16 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
 
 def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
     '''Locates cubes in image by detecting aruco tags
+
+    Because the tag consists of 4 coplanar points, the P2P calculation to determine
+    the pose is subject to error.  This manifests in an odd "flipping" behavior
+    as documented (here)[https://github.com/opencv/opencv/issues/8813]. Further
+    processing should be used to filter out the anamolies or use some bias
+    based on the fact that the cube will be lying flat.
+
+    Given one of the poses, you can calculate the other possible P2P solution
+    by mirroring the tag2cam rotation matrix in the z-direction (i.e. last row
+    of the rotation matrix is negated)
 
     Parameters
     ----------
@@ -86,13 +98,18 @@ def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
 
     cubes = []
     vertices = constants.cube_vertices.copy()
-    vertices[:,2] -= 0.5*constants.cube_size
+    shift_center_mat = np.array(((1,0,0,0),
+                                 (0,1,0,0),
+                                 (0,0,1,-0.5*constants.cube_size),
+                                 (0,0,0,1)))
 
     for tag in tags:
-        cube2world = np.dot(cam2world, tag['tag2cam'])
+        cube2cam = tag['tag2cam'].dot(shift_center_mat)
+        cube2world = np.dot(cam2world, cube2cam)
         tmp_vertices = coord_transform(cube2world, vertices)
         cube = {'pos' : cube2world[:3,3],
-                'rot' : rotmat2euler(cube2world[:3,:3]),
+                'euler' : rotmat2euler(cube2world[:3,:3]),
+                'rotmat' : cube2world[:3,:3],
                 'tag_id' : tag['tag_id'],
                 'vertices' : tmp_vertices,
                 'center' : tmp_vertices.mean(axis=0),
@@ -100,6 +117,42 @@ def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
         cubes.append(cube)
 
     return cubes
+
+def rotmat_median(rotmats):
+    '''Return approximate geometric median of rotation matrices in O(N^2)
+
+    This does not return the true geometric median, it returns the matrix
+    that has the lowest sum of distances to other matrices
+
+    Parameters
+    ----------
+    rotmats : ndarray
+        array of rotation matrices; shape=(*,3,3); dtype=float
+
+    Returns
+    -------
+    int :
+        index of the median
+    ndarray :
+        median rotation matrix; shape=(3,3); dtype=float
+    '''
+    def dist_metric(R1, R2):
+        '''Distance between rotation matrices as suggested
+        (here)[https://github.com/opencv/opencv/issues/8813#issuecomment-583379900]
+        '''
+        R2_transpose = np.swapaxes(R2, 1, 2)
+        return np.linalg.norm(np.log(R1 * R2_transpose), axis=(1,2))
+
+    n_pts = len(rotmats)
+    i,j = np.mgrid[:n_pts,:n_pts]
+    R1 = rotmats[i.flatten()]
+    R2 = rotmats[j.flatten()]
+
+    distances = dist_metric(R1, R2).reshape(n_pts, n_pts)
+
+    median_id = np.argmin(np.sum(distances, axis=0))
+
+    return median_id, rotmats[median_id]
 
 def project_world2pixel(pts_wframe, world2cam,
                        rvec, tvec, mtx, dist_coeffs):

@@ -4,8 +4,8 @@ import threading
 import time
 
 from neu_ro_arm.camera.camera_utils import *
-import neu_ro_arm.constants as constants
 from neu_ro_arm.camera.gui import GUI
+import neu_ro_arm.constants as constants
 
 class Capturer:
     def __init__(self):
@@ -434,7 +434,7 @@ class Camera:
 
         if write:
             try:
-                self._camera_id = configs['camera_id']
+                self._camera_id = int(configs['camera_id'])
                 self._rvec = configs['rvec']
                 self._tvec = configs['tvec']
                 self._mtx = configs['mtx']
@@ -459,5 +459,40 @@ class Camera:
         img = self.cap.read()
         return img
 
+    def get_cubes(self, n_frames=10, min_frames=5):
+        '''Calculate position of cubes using aruco tags, position is refined
+        over multiple frames to improve accuracy
+        '''
+        positions = dict()
+        rotmats = dict()
+        for i in range(n_frames):
+            img = self.cap.read()
+            cubes = find_cubes(img)
+            for cube in cubes:
+                existing_positions = positions.get(cube.tag_id, [])
+                existing_rotmats = rotmats.get(cube.tag_id, [])
+                positions[cube.tag_id] = existing_positions + [cubes.pos]
+                rotmats[cube.tag_id] = existing_rotmats + [cubes.rotmat]
+
+        # process images
+        refined_cubes = {}
+        for tag_id in positions.keys():
+            these_rotmats = rotmats[tag_id]
+            if len(these_rotmats) < min_frames:
+                continue
+            median_id, _ = rotmat_median(these_rotmats)
+            refined_cubes[tag_id] = {'pos' : positions[tag_id][median_id],
+                                     'rotmat' : rotmats[tag_id][median_id]
+                                    }
+        return refined_cubes
+            
+
+
+
     def __call__(self):
         return self.get_image()
+
+if __name__ == "__main__":
+    from neu_ro_arm.camera.gui import ShowCubes
+    cam = Camera()
+    cam.gui.show(modifier_fns=[ShowCubes(cam.unpack_configs(False))])
