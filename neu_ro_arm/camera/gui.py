@@ -2,6 +2,9 @@ import numpy as np
 import cv2
 from abc import abstractmethod
 
+from neu_ro_arm.camera.camera_utils import find_cubes, find_arucotags, project_world2pixel
+import neu_ro_arm.constants as constants
+
 class GUI:
     def __init__(self, capturer):
         '''Class that displays images or camera feed using cv2 gui
@@ -58,7 +61,7 @@ class GUI:
             for mod_fn in modifier_fns:
                 canvas = mod_fn(canvas, img)
 
-            cv2.imshow(window_name, img)
+            cv2.imshow(window_name, canvas)
             k = cv2.waitKey(int(1000/self._cap._frame_rate))
             if k == 27 or k in exit_keys:
                 break
@@ -110,15 +113,16 @@ class ShowCubes(GUIModifierFunction):
         aruco tag detection
         '''
         cubes = find_cubes(original,
-                           self.cam_configs['cam_mtx'],
+                           self.cam_configs['mtx'],
                            self.cam_configs['dist_coeffs'],
-                           self.cam_configs['cam2world'])
+                           self.cam_configs['cam2world']
+                          )
         for cube in cubes:
             vert_px = project_world2pixel(cube['vertices'],
                                           self.cam_configs['world2cam'],
                                           self.cam_configs['rvec'],
                                           self.cam_configs['tvec'],
-                                          self.cam_configs['undistort_mtx'],
+                                          self.cam_configs['mtx'],
                                           self.cam_configs['dist_coeffs'],
                                          ).astype(int)
             for a, b in constants.cube_edges:
@@ -132,7 +136,7 @@ class ShowArucoTags(GUIModifierFunction):
         '''Draws tag outlines and ids for all aruco tags detected in the image
         '''
         tags = find_arucotags(original,
-                              self.cam_configs['cam_mtx'],
+                              self.cam_configs['mtx'],
                               self.cam_configs['dist_coeffs'],
                              )
         for tag in tags:

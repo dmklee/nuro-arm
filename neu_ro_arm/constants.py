@@ -10,6 +10,7 @@ calibration_gridshape = (7,9)
 
 aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
 aruco_params = cv2.aruco.DetectorParameters_create()
+
 tag_size = 0.020
 
 cube_size = 0.0254

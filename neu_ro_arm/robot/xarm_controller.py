@@ -12,11 +12,6 @@ from matplotlib import pyplot as plt
 import threading
 from neu_ro_arm.robot.base_controller import BaseController
 
-#TODO:
-    # error handling on receiving/sending
-    # allow for calibration of joints using smart movements
-    # create and write config file for storing offsets + servo directions
-
 class InvalidServoOffset(Exception):
     def __init__(self, j_idx):
         message = f"Servo offset is too large for motor id={j_idx}. Servo must be re-installed."
@@ -122,7 +117,7 @@ class XArmController(BaseController):
         self.n_servos = len(self.servos)
         self._lock = threading.Lock()
         self.device = self.connect()
-        self.power_on()
+        # self.power_on()
 
     def connect(self):
         device = Device()
@@ -191,7 +186,7 @@ class XArmController(BaseController):
         duration = int(max(duration, delta / self._max_speed))
 
         # convert to positional units
-        pos = self._to_pos_units(jpos)
+        pos = self._to_pos_units(j_idx, jpos)
         data = [1, *itos(duration), j_idx, *itos(pos)]
         self._send(self.cmd_lib.MOVE, data)
 
@@ -249,10 +244,17 @@ class XArmController(BaseController):
             recv_data.append(data)
         return recv_data
 
-    def _to_radians(self, pos):
-        return (pos - self.SERVO_HOME) * self.POS2RADIANS
+    def _to_radians(self, idx, pos):
+        jpos = (pos - self.SERVO_HOME) * self.POS2RADIANS
+        if idx in self.arm_joint_idxs:
+            jpos *= self.arm_motor_directions[idx]
 
-    def _to_pos_units(self, jpos):
+        return jpos
+
+    def _to_pos_units(self, idx, jpos):
+        if idx in self.arm_joint_idxs:
+            jpos *= self.arm_motor_directions[idx]
+
         return int( jpos / self.POS2RADIANS + self.SERVO_HOME )
 
     def __del__(self):
@@ -328,7 +330,6 @@ class XArmController(BaseController):
             return False, data
         arm_jpos = self.read_command(self.arm_joint_idxs)
         data['arm_motor_directions'] = np.sign(arm_jpos)
-        print(np.sign(arm_jpos))
 
         self.power_on()
         return True, data
@@ -377,12 +378,13 @@ class XArmController(BaseController):
 
 if __name__ == "__main__":
     arm = XArmController()
-    arm.power_off()
+    # arm.power_off()
     names = ['base', 'shoulder', 'elbow', 'wrist', 'wristRotation']
     while True:
         jpos = arm.read_command(arm.arm_joint_idxs)
+        print([f"{n}:{jp:.2f}" for jp,n in zip(jpos, names)])
         # pos = [arm._to_pos_units(jp) for jp in jpos]
         # print([f"{n}:{p}" for p,n in zip(pos, names)])
-        print([f"{n}:{p}" for p,n in zip(pos, names)])
+
         # print([f"{a:0.2f}" for a in arm._read_all_servos_pos_angle()])
-        # time.sleep(0.1)
+        time.sleep(0.1)
