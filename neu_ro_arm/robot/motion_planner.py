@@ -295,7 +295,7 @@ class MotionPlanner(PybulletBase):
         achieved_pos, achieved_rot = self.get_hand_pose()
         data['achieved_pos'] = achieved_pos
         data['achieved_rot'] = achieved_rot
-        data['pos_error'] = np.linalg.norm(np.subtract(pos, achieved_pos))Difference
+        data['pos_error'] = np.linalg.norm(np.subtract(pos, achieved_pos))
 
         is_safe = not is_collision
         return is_safe, arm_jpos, data

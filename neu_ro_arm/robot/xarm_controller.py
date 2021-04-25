@@ -30,6 +30,7 @@ class Device:
             devices = en.find(vid=1155, pid=22352)
             assert len(devices) == 1
             self.device = devices[0]
+            print(self.device)
             self.device.open()
             self.type = 0
         elif platform.system() == 'Windows':
@@ -101,10 +102,12 @@ class XArmController(BaseController):
         configs = np.load(self.CONFIG_FILE)
         self.gripper_closed = configs.get('gripper_closed', None)
         self.gripper_opened = configs.get('gripper_opened', None)
-        self.arm_motor_directions = configs.get('arm_motor_directions', None)
-        self.arm_jpos_home = np.full(len(self.arm_joint_idxs),
-                                     self._to_radians(self.SERVO_HOME)
-                                    )
+        self.arm_motor_directions = {k:v for k,v in zip(self.arm_joint_idxs,
+                                                        configs['arm_motor_directions'])}
+
+        self.arm_jpos_home = np.array([self._to_radians(idx, self.SERVO_HOME)
+                                       for idx in self.arm_joint_idxs])
+
         self.joint_limits = { 1 : (-np.pi/2, np.pi/2),
                               2 : (-np.pi/2, np.pi/2),
                               3 : (-np.pi/2, np.pi/2),
@@ -169,7 +172,7 @@ class XArmController(BaseController):
         pos = self._recv(self.cmd_lib.POSITION_READ)
 
         # convert to radians
-        j_pos = [self._to_radians(p) for p in pos]
+        j_pos = [self._to_radians(i, p) for i,p in zip(j_idxs, pos)]
         return j_pos
 
     def _move_servo(self, jpos, j_idx, duration=1000):
@@ -272,7 +275,7 @@ class XArmController(BaseController):
         for j_idx in self.arm_joint_idxs:
             old_offset = self._read_servo_offset(j_idx)
             true_home = self.SERVO_HOME - old_offset
-            pos = self._to_pos_units(self.read_command([j_idx])[0])
+            pos = self._to_pos_units(j_idx, self.read_command([j_idx])[0])
             new_offset = pos - true_home
             if abs(new_offset) > 127:
                 raise InvalidServoOffset(j_idx)
