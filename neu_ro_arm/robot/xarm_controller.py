@@ -24,13 +24,29 @@ def itos(v):
 
 class Device:
     def __init__(self):
+        '''Abstraction of HID device so that the interface is the same across
+        platforms
+
+        Raises
+        ------
+        TypeError
+            If operating system is not Darwin, Linux or Windows
+
+        Attributes
+        ----------
+            device : obj
+                hid device
+            type : int
+                indicates how to interact with hid device. if 1, send message as
+                bytes and provide size argument to read; if 0, send message as
+                bytearray without leading 0
+        '''
         if platform.system() == 'Linux':
             import easyhid
             en = easyhid.Enumeration()
             devices = en.find(vid=1155, pid=22352)
             assert len(devices) == 1
             self.device = devices[0]
-            print(self.device)
             self.device.open()
             self.type = 0
         elif platform.system() == 'Windows':
@@ -46,12 +62,31 @@ class Device:
             raise TypeError('unsupported operating system')
 
     def write(self, msg):
+        '''Write message to device
+
+        Parameters
+        ----------
+        msg : list
+            list of data to be written
+        '''
         if self.type == 0:
             self.device.write(bytearray(msg[1:]))
         elif self.type == 1:
             self.device.write(bytes(msg))
 
     def read(self, timeout):
+        '''Read message from device
+
+        Parameters
+        ----------
+        timeout : int
+            timeout period in milliseconds
+
+        Returns
+        -------
+        array_like
+            message received from device
+        '''
         if self.type == 0:
             return self.device.read(timeout)
         elif self.type == 1:
@@ -59,6 +94,8 @@ class Device:
             return self.device.read(size, timeout)
 
     def close(self):
+        '''Close hid device if possible
+        '''
         if self.type == 0:
             self.device.close()
 
@@ -120,17 +157,27 @@ class XArmController(BaseController):
         self.n_servos = len(self.servos)
         self._lock = threading.Lock()
         self.device = self.connect()
-        # self.power_on()
+        self.power_on()
 
     def connect(self):
         device = Device()
         print('Connected to xArm')
         return device
 
-    def power_off(self):
+    def power_on(self):
         '''Powers off servos, used to enable passive mode or before disconnecting
         '''
-        self._send(self.cmd_lib.POWER_OFF, [6, 1,2,3,4,5,6])
+        jpos = self.read_command(self.servos)
+        self.move_command(self.servos, jpos)
+
+    def power_off(self):
+        '''Powers off servos, used to enable passive mode or before disconnecting
+
+        This can be done in a single command but sometimes the shoulder and elbow
+        do not power off when you do them all in one command
+        '''
+        for servo in self.servos:
+            self._send(self.cmd_lib.POWER_OFF, [1, servo.value])
 
     def disconnect(self):
         '''Closes HID connection to xArm
@@ -199,7 +246,6 @@ class XArmController(BaseController):
         # returns in positional units
         self._send(self.cmd_lib.OFFSET_READ, [1, servo_id])
         pos = self._recv(self.cmd_lib.OFFSET_READ, ret_type='sbyte')[0]
-        # print('warning: _read_servo_offset returns servo units not radians')
         return pos
 
     def _write_servo_offset(self, servo_id, offset):
@@ -262,9 +308,6 @@ class XArmController(BaseController):
 
     def __del__(self):
         '''Makes sure servos are off before disconnecting'''
-        # print('xArm shutting down, returning to home position momentarily...')
-        # time.sleep(3)
-        # self.home()
         self.power_off()
         self.disconnect()
 
@@ -280,35 +323,39 @@ class XArmController(BaseController):
             if abs(new_offset) > 127:
                 raise InvalidServoOffset(j_idx)
 
-            self._move_servo(self._to_radians(pos-new_offset+old_offset),
+            self._move_servo(self._to_radians(j_idx, pos-new_offset+old_offset),
                              j_idx)
             self._write_servo_offset(j_idx, new_offset)
             offsets[f"offset_j{j_idx}"] = new_offset
         return offsets
 
     def calibrate_arm(self):
+        print('Moving to HOME position...')
+        time.sleep(0.5)
+        self.home()
+        time.sleep(3)
+
+        #enter passive mode
         self.power_off()
         data = {}
         print('  =====================  ')
         print('  == Calibrating arm ==  ')
         print('  =====================  ')
         print('Please move arm into home position.')
-        inp = input('  ready? [y/n/picture]: ')
+        img = np.concatenate((cv2.imread('neu_ro_arm/data/arm_home_position_front.jpg'),
+                              cv2.imread('neu_ro_arm/data/arm_home_position_side.jpg')),
+                            axis=1
+                            )
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        plt.figure()
+        plt.imshow(img)
+        plt.axis('off')
+        plt.title('Move arm to this position (gripper can be ignored)'
+                  '\n Close window when ready')
+        plt.show()
+        inp = input('  ready? [y/n]: ')
         if inp == 'y':
             pass
-        elif inp == 'picture':
-            img = np.concatenate((cv2.imread('data/arm_home_position_front.jpg'),
-                                  cv2.imread('data/arm_home_position_side.jpg')),
-                                axis=1
-                                )
-            plt.figure()
-            plt.imshow(img)
-            plt.axis('off')
-            plt.title('Move arm into this position (gripper position can be ignored)')
-            plt.show()
-            if input('  ready? [y/n]: ') != 'y':
-                print('Calibration terminated')
-                return False, data
         else:
             print('Calibration terminated.')
             return False, data
@@ -322,7 +369,8 @@ class XArmController(BaseController):
         print('Checking motor directions...')
         print('Please move robot into the configuration shown in the picture.')
         self.power_off()
-        img = cv2.imread('data/arm_motor_calibration.jpg')
+        img = cv2.imread('neu_ro_arm/data/arm_motor_calibration.jpg')
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         plt.figure()
         plt.imshow(img)
         plt.axis('off')
@@ -343,22 +391,22 @@ class XArmController(BaseController):
         print('  =========================  ')
         print('  == Calibrating gripper ==  ')
         print('  =========================  ')
-        print('Move gripper to fully closed position.')
+        print('Move gripper to fully closed position.'
+              ' Use two hands and move gently.')
         if input('   ready? [y/n]: ') != 'y':
             print('Calibration terminated.')
             return False, data
         gripper_closed = self.read_command(self.gripper_joint_idxs)
         data.update({'gripper_closed' : np.array(gripper_closed)})
-        # print(f"  gripper closed position is {gripper_closed[0]:.2f} radians.")
         print()
 
-        print('Move gripper to fully opened position.')
+        print('Move gripper to fully opened position.'
+              ' Use two hands and move gently.')
         if input('   ready? [y/n]: ') != 'y':
             print('Calibration terminated.')
             return False, data
         gripper_opened = self.read_command(self.gripper_joint_idxs)
         data.update({'gripper_opened' : np.array(gripper_opened)})
-        # print(f"  gripper opened position is {gripper_opened[0]:.2f} radians.")
         self.power_on()
         return True, data
 
@@ -378,16 +426,3 @@ class XArmController(BaseController):
 
 
         return True, data
-
-if __name__ == "__main__":
-    arm = XArmController()
-    # arm.power_off()
-    names = ['base', 'shoulder', 'elbow', 'wrist', 'wristRotation']
-    while True:
-        jpos = arm.read_command(arm.arm_joint_idxs)
-        print([f"{n}:{jp:.2f}" for jp,n in zip(jpos, names)])
-        # pos = [arm._to_pos_units(jp) for jp in jpos]
-        # print([f"{n}:{p}" for p,n in zip(pos, names)])
-
-        # print([f"{a:0.2f}" for a in arm._read_all_servos_pos_angle()])
-        time.sleep(0.1)
