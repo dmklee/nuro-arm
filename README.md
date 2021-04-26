@@ -3,7 +3,7 @@
 This repository is built to help students learn more about programming and robotics. It aims to provide a high-level interface for performing basic robotic manipulation tasks.  The repo is meant to be accessible: the hardware is low cost; a simulator is provided for those who do not purchase the robot; the api is built to work on Windows, MacOS & Linux.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/xarm.png" height="400"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/xarm.png" height="400"/>
 </p>
 
 ## Table of Contents
@@ -43,8 +43,8 @@ Description  | Price
 [ELP Megapixel 720p USB Camera 100 deg lens](https://www.amazon.com/ELP-megapixel-Camera-Module-120degree/dp/B01DRJXDEA/ref=sr_1_1?crid=12SN0I987B5WH&dchild=1&keywords=elp+megapixel+super+mini+720p+usb+camera+module+with+120degree+lens&qid=1618417242&sprefix=elp+camera+megapix%2Caps%2C157&sr=8-1) | $30
 [Small (~1") toy cubes](https://www.amazon.com/ETA-hand2mind-1-inch-Color-Cubes/dp/B01J6GC83U/ref=sr_1_13?dchild=1&keywords=wooden+cubes+color&qid=1619112911&sr=8-13) or find similar items around the house | $19 (or free)
 3D Printed parts ([stl files](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/assets/meshes/)) | ~$10
-Calibration sheet ([printable pdf](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/checkerboard.pdf)) | $0
-Aruco Tags ([printable pdf](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/aruco_tags.pdf)) | $0
+Calibration sheet ([printable pdf](https://github.com/dmklee/neu-ro-arm/blob/main/images/checkerboard.pdf)) | $0
+Aruco Tags ([printable pdf](https://github.com/dmklee/neu-ro-arm/blob/main/images/aruco_tags.pdf)) | $0
 
 <a name="projects"></a>
 ## Tutorials and Projects

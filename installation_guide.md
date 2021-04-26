@@ -90,38 +90,38 @@ Safety is a priority when working with robots.  While the software is built to p
 1. Collect the parts shown in the photo below, the 3D printed parts and camera will be in camera box; the rod and screws will be in Hiwonder box.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_parts.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_parts.jpg"/>
 </p>
 
 2. Attach the base part to the base plate of the robot. The part should be installed as shown in the picture below.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_base.jpg"/>
 </p>
 
 3. Install the aluminum rod by sliding it into the base part and then tightening the collar until the rod does not easily move around.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_base_rod.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_base_rod.jpg"/>
 </p>
 
 4. Attach the camera to the camera holder part using the small nuts+bolts.  It is safe to touch the back panel of the camera, but you should avoid scratching it accidentally with your screwdriver.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_front.jpg" width="190"/>
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_holder_back.jpg" width="200"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_holder_front.jpg" width="190"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_holder_back.jpg" width="200"/>
 </p>
 
 5. Attach the camera holder to the last 3D printed part by tightening the collar around it. Only tighten until snug, as you will adjust the configuration later during calibration.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_top.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_top.jpg"/>
 </p>
 
 6. Place the parts from step 5 onto the aluminum rod, and tighten the collar such that the full assembly is snug in place.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_full.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_full.jpg"/>
 </p>
 
 7.  All done! You are now ready to calibrate the camera.
@@ -142,8 +142,8 @@ To perform the calibration, follow the following steps.
 
 The setup camera script will first perform a scan over available cameras, prompting you to select the one used by the robot.  Next, you will be asked to place the checkerboard pattern in front of the robot and position the camera to view it.  Pictures illustrating the calibration and the proper camera view are shown below.
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_calibration_setup.jpg" width="250"/>
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/camera_calibration_view.png" width="250"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_calibration_setup.jpg" width="250"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_calibration_view.png" width="250"/>
 </p>
 
 #### General Guidelines
@@ -156,6 +156,6 @@ We provide you with some multi-colored cubes.  In order for the camera to identi
 3. Repeat for as many cubes as you want to use. **Each cube should use a different tag number** (this way the camera can differentiate between them).  We provide four copies of 12 different numbered tags so there will be plenty of leftovers.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/data/installation_guide/cubes.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/cubes.jpg"/>
 </p>
 

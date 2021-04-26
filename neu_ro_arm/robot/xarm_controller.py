@@ -185,7 +185,7 @@ class XArmController(BaseController):
         self.device.close()
         print('Disconnected xArm')
 
-    def move_command(self, j_idxs, jpos):
+    def move_command(self, j_idxs, jpos, speed='normal'):
         '''Issue move command to specified joint indices
 
         This simulator runs realtime and I have not tried to mimic the movement
@@ -198,8 +198,20 @@ class XArmController(BaseController):
             joint indices to be moved
         jpos : array_like of float
             target joint positions corresponding to the joint indices
+        speed : {'normal', 'max', 'slow'}
         '''
-        [self._move_servo(j_p, j_id) for j_p, j_id in zip(jpos, j_idxs)]
+        # we need to ensure linear motion without violating max speed
+        current_jpos = self.read_command(j_idxs)
+        delta_jpos = np.abs(np.subtract(jpos, current_jpos))
+
+        speed = {'max' : self._max_speed,
+                 'normal' : self._normal_speed,
+                 'slow' : self._slow_speed,
+                }[speed]
+        duration = int(np.max(delta_jpos) / speed)
+
+        [self._move_servo(j_p, j_id, duration)
+             for j_p, j_id in zip(jpos, j_idxs)]
 
     def read_command(self, j_idxs):
         '''Read some joint positions
@@ -229,18 +241,10 @@ class XArmController(BaseController):
         # prevent motion outside of servo limits
         jpos = np.clip(jpos, *self.joint_limits[j_idx])
 
-        current_jpos = self.read_command([j_idx])[0]
-        delta = abs(jpos - current_jpos)
-
-        # ensure movement does not go above max speed
-        duration = int(max(duration, delta / self._max_speed))
-
         # convert to positional units
         pos = self._to_pos_units(j_idx, jpos)
         data = [1, *itos(duration), j_idx, *itos(pos)]
         self._send(self.cmd_lib.MOVE, data)
-
-        return duration
 
     def _read_servo_offset(self, servo_id):
         # returns in positional units
@@ -330,6 +334,9 @@ class XArmController(BaseController):
         return offsets
 
     def calibrate_arm(self):
+        #TODO: this form of absolute joint space calibration is not very accurate.
+        # future version should either use the camera for calibration or
+        # incorporate more positions in a passive method
         print('Moving to HOME position...')
         time.sleep(0.5)
         self.home()
@@ -366,6 +373,11 @@ class XArmController(BaseController):
         print('finished servo offset correction.')
 
         print()
+
+        # motor direction correction is important because some of the servos
+        # (ids 3,4&5) can be installed in two possible configurations. We need to
+        # ensure that the motion planner's joint motors are set up in the same 
+        # manner, else the forward kinematics will be wrong
         print('Checking motor directions...')
         print('Please move robot into the configuration shown in the picture.')
         self.power_off()
@@ -423,6 +435,5 @@ class XArmController(BaseController):
             data.update(new_data)
         else:
             return False, None
-
 
         return True, data
