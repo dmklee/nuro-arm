@@ -8,7 +8,8 @@ from matplotlib import pyplot as plt
 import tkinter as tk
 
 from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
-from neu_ro_arm.robot.motion_planner import MotionPlanner, UnsafeTrajectoryError, UnsafeJointPosition
+from neu_ro_arm.robot.motion_planner import (MotionPlanner, UnsafeTrajectoryError,
+                                             UnsafeJointPosition, ProbitedHandPosition)
 from neu_ro_arm.robot.simulator_controller import SimulatorController
 from neu_ro_arm.robot.xarm_controller import XArmController
 
@@ -42,6 +43,28 @@ class RobotArm:
         self.controller_type = controller_type
 
         self.mp = MotionPlanner()
+        self._mirror_planner()
+
+    def home(self):
+        '''Moves to home arm positions
+        '''
+        self.move_arm_jpos(self.controller.arm_jpos_home)
+        self._mirror_planner()
+
+    def passive_mode(self):
+        if self.controller_type == 'real':
+            self.controller.power_off()
+        else:
+            print('WARNING: passive mode does not exist for simulated robot')
+
+    def active_mode(self):
+        if self.controller_type == 'real':
+            self.controller.power_on()
+            self.mp.mirror(arm_jpos=self.get_arm_jpos(),
+                           gripper_state=self.get_gripper_state())
+        else:
+            print('WARNING: active mode does not exist for simulated robot')
+
 
     def add_camera(self, pose_mtx):
         '''Add camera object to motion planner's internal simulator so that it is
@@ -69,7 +92,7 @@ class RobotArm:
         arm_jpos = self.controller.read_command(self.controller.arm_joint_idxs)
         return arm_jpos
 
-    def move_arm_jpos(self, jpos):
+    def move_arm_jpos(self, jpos, verbose=True):
         '''Moves arm joints to specific positions
 
         Parameters
@@ -78,28 +101,29 @@ class RobotArm:
             Desired joint angles in radians for each joint in the arm;
             shape=(5,); dtype=float
 
-        Raises
-        ------
-        UnsafeTrajectoryError
-            If trajectory to reach desired pose will cause a collision.
-
         Returns
         -------
         bool
             True if joint angles returned from IK were achieved
         '''
-        safe, collision_data = self.mp.check_arm_trajectory(jpos)
-        if not safe:
-            raise UnsafeTrajectoryError(**collision_data)
+        try:
+            self.mp.check_arm_trajectory(jpos)
+        except UnsafeTrajectoryError as e:
+            if verbose:
+                print(f"[MOVE FAILED] Trajectory would result in collision"
+                      " of robot:{e.robot_link} and {e.other_body}.")
+            return False
 
         self.controller.move_command(self.controller.arm_joint_idxs, jpos)
         success, achieved_jpos = self.controller.monitor(self.controller.arm_joint_idxs,
-                                                         jpos,
-                                                        )
+                                                         jpos)
         self.mp.mirror(arm_jpos=achieved_jpos)
         return success
 
-    def move_hand_to(self, pos, rot=None):
+    def get_hand_pose(self):
+        return self.mp.get_hand_pose()
+
+    def move_hand_to(self, pos, rot=None, verbose=True):
         '''Moves end effector to desired pose in world
 
         Parameters
@@ -123,9 +147,17 @@ class RobotArm:
         bool
             True if joint angles returned from IK were achieved
         '''
-        is_safe, jpos, data = self.mp._calculate_ik(pos, rot)
-        if not is_safe:
-            raise UnsafeJointPosition(**data)
+        try:
+            self.mp.calculate_ik(pos, rot)
+        except ProbitedHandPosition as e:
+            if verbose:
+                print(f"[MOVE FAILED] {e}")
+            return False
+        except UnsafeJointPosition as e:
+            if verbose:
+                print(f"[MOVE FAILED] Target configuration would result in collision"
+                      " of robot:{e.robot_link} and {e.other_body}.")
+            return False
 
         return self.move_arm_jpos(jpos)
 
@@ -167,9 +199,10 @@ class RobotArm:
 
         self.controller.move_command(self.controller.gripper_joint_idxs, jpos)
         success, achieved_jpos = self.controller.monitor(self.controller.gripper_joint_idxs,
-                                                         jpos,
-                                                        )
-        self.mp.mirror(gripper_jpos=achieved_jpos)
+                                                         jpos)
+
+        achieved_gripper_state = self.controller.gripper_jpos_to_state(achieved_jpos)
+        self.mp.mirror(gripper_state=achieved_gripper_state)
         return success
 
     def get_gripper_state(self):
@@ -280,29 +313,41 @@ class RobotArm:
 
         window.mainloop()
 
+    def _mirror_planner(self):
+        self.mp.mirror(arm_jpos=self.get_arm_jpos(),
+                       gripper_state=self.get_gripper_state())
+
+
 if __name__ == "__main__":
     import time
-    robot = RobotArm('sim')
+    mode='real'
+    # mode = 'sim'
+    robot = RobotArm(mode)
+    # robot.passive_mode()
+    # exit()
+    # robot.home()
+    # robot.open_gripper()
+    # robot.move_hand_to(np.array((-0.06,0.16,0.03)))
+    # exit()
+    # robot.close_gripper()
+    # robot.close_gripper()
+    robot.passive_mode()
+    while True:
+        arm_jpos = robot.get_arm_jpos()
+        gripper_state = robot.get_gripper_state()
+        robot.mp.mirror(arm_jpos=arm_jpos, gripper_state=gripper_state)
+        print([f"{a:.2f}" for a in robot.get_hand_pose()[1]])
+        # print(robot.mp._check_collisions(arm_jpos)[0])
+        time.sleep(0.2)
+    robot.close_gripper()
+    exit()
+    # robot.home()
+    # robot.close_gripper()
+    # robot.open_gripper()
+    robot.move_hand_to([-0.0382, 0.220, 0.043])
+    time.sleep(10)
+    exit()
     robot.controller.gripper_closed = np.array([0.5])
     robot.controller.gripper_opened = np.array([-0.5])
     robot.controller.home()
     robot.move_with_gui()
-    # robot.controller.move_command([1],[0.2])
-    # robot.controller.move_command([1],[0.24])
-    # robot.controller.move_command([1],[0.28])
-    # robot.controller.move_command([1],[0.29])
-    # robot.controller.move_command([1],[0.27])
-    # while True:
-        # time.sleep(0.1)
-    # robot.move_with_gui()
-    # while True:
-        # time.sleep(0.1)
-        # robot.open_gripper()
-        # time.sleep(0.1)
-        # robot.close_gripper()
-        # time.sleep(0.1)
-        # pos = np.random.uniform(-1,1,size=3)
-        # pos[2] = np.clip(pos[2], 0.1, 0.4)
-        # rot = np.random.uniform(0, np.pi, size=3)
-        # robot.move_hand_to(pos, rot)
-        # time.sleep(1)
