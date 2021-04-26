@@ -26,6 +26,8 @@ cube_vertices = 0.5 * cube_size * np.array((( 1, 1, 1),
 cube_edges = ((0,1),(0,2),(0,4),(1,3),(1,5),(2,3),
               (2,6),(3,7),(4,5),(4,6),(5,7),(6,7))
 
+
+# used to place camera in simulator if not using real camera
 default_cam_pose_mtx = np.array([
     [ 8.71709181e-01, -3.97821192e-01,  2.86114320e-01, -9.75743393e-02],
     [-4.90013665e-01, -7.03961344e-01,  5.14125504e-01, -3.05716144e-02],
@@ -35,5 +37,14 @@ default_cam_pose_mtx = np.array([
 
 frame_rate = 20
 
+##############################################
+# common gripper states
+##############################################
 GRIPPER_CLOSED = 0
 GRIPPER_OPENED = 1
+
+##############################################
+# useful euler angles for hand during grasping
+##############################################
+TOP_DOWN_GRASP = np.array((-np.pi, 0., 0.))
+STANDARD_GRASP = np.array((-3*np.pi/4, 0., 0.))
