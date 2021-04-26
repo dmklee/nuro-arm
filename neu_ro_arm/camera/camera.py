@@ -2,11 +2,11 @@ import numpy as np
 import cv2
 import time
 
-from neu_ro_arm.camera.camera_utils import *
+import neu_ro_arm.camera.camera_utils as camera_utils
+import neu_ro_arm.transformation_utils as tfm
 from neu_ro_arm.camera.gui import GUI
 from neu_ro_arm.capturer import Capturer
 import neu_ro_arm.constants as constants
-
 
 class Camera:
     CONFIG_FILE = "neu_ro_arm/camera/configs.npz"
@@ -64,7 +64,7 @@ class Camera:
         return self.cap._frame_rate
 
     def _calc_distortion_matrix(self):
-        mtx, newcameramtx, roi, dist = calc_distortion_matrix()
+        mtx, newcameramtx, roi, dist = camera_utils.calc_distortion_matrix()
         self._update_config_file({
             'mtx' : mtx.tolist(),
             'undistort_mtx' : newcameramtx,
@@ -97,7 +97,7 @@ class Camera:
         gsize = constants.calibration_gridsize
 
         img = self.get_image()
-        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        gray = camera_utils.convert_gray(img)
 
         ret, corners = cv2.findChessboardCorners(gray,
                                                 (gh,gw),
@@ -114,8 +114,8 @@ class Camera:
 
             ret, rvec, tvec = cv2.solvePnP(objp, corners2, self._mtx, self._dist_coeffs)
 
-            world2cam = transformation_matrix(rvec, tvec)
-            cam2world = inverse_transformation_matrix(rvec, tvec)
+            world2cam = tfm.transformation_matrix(rvec, tvec)
+            cam2world = tfm.inverse_transformation_matrix(rvec, tvec)
 
             return True, (rvec, tvec, world2cam, cam2world)
 
@@ -184,15 +184,15 @@ class Camera:
         Returns
         -------
         ndarray
-            sequence of 2D pixel indices
+            sequence of 2D pixel indices; shape=(*,2); dtype=float
         '''
-        # transform world to camera frame
-        return project_world2pixel(pts_wframe,
-                                   self._world2cam,
-                                   self._rvec,
-                                   self._tvec,
-                                   self._mtx,
-                                   self._dist_coeffs)
+        return cam_utils.project_to_pixels(pts_wframe,
+                                           self._world2cam,
+                                           self._rvec,
+                                           self._tvec,
+                                           self._mtx,
+                                           self._dist_coeffs
+                                          )
 
     def _update_config_file(self, new_configs):
         '''Adds new configs to config file, or updates those that already exist.
@@ -256,32 +256,32 @@ class Camera:
         img = self.cap.read()
         return img
 
-    def get_cubes(self, n_frames=10, min_frames=5):
-        '''Calculate position of cubes using aruco tags, position is refined
-        over multiple frames to improve accuracy
-        '''
-        positions = dict()
-        rotmats = dict()
-        for i in range(n_frames):
-            img = self.cap.read()
-            cubes = find_cubes(img)
-            for cube in cubes:
-                existing_positions = positions.get(cube.tag_id, [])
-                existing_rotmats = rotmats.get(cube.tag_id, [])
-                positions[cube.tag_id] = existing_positions + [cubes.pos]
-                rotmats[cube.tag_id] = existing_rotmats + [cubes.rotmat]
+    # def get_cubes(self, n_frames=10, min_frames=5):
+        # '''Calculate position of cubes using aruco tags, position is refined
+        # over multiple frames to improve accuracy
+        # '''
+        # positions = dict()
+        # rotmats = dict()
+        # for i in range(n_frames):
+            # img = self.cap.read()
+            # cubes = camera_utils.find_cubes(img)
+            # for cube in cubes:
+                # existing_positions = positions.get(cube.tag_id, [])
+                # existing_rotmats = rotmats.get(cube.tag_id, [])
+                # positions[cube.tag_id] = existing_positions + [cubes.pos]
+                # rotmats[cube.tag_id] = existing_rotmats + [cubes.rotmat]
 
-        # process images
-        refined_cubes = {}
-        for tag_id in positions.keys():
-            these_rotmats = rotmats[tag_id]
-            if len(these_rotmats) < min_frames:
-                continue
-            median_id, _ = rotmat_median(these_rotmats)
-            refined_cubes[tag_id] = {'pos' : positions[tag_id][median_id],
-                                     'rotmat' : rotmats[tag_id][median_id]
-                                    }
-        return refined_cubes
+        # # process images
+        # refined_cubes = {}
+        # for tag_id in positions.keys():
+            # these_rotmats = rotmats[tag_id]
+            # if len(these_rotmats) < min_frames:
+                # continue
+            # median_id, _ = camera_utils.rotmat_median(these_rotmats)
+            # refined_cubes[tag_id] = {'pos' : positions[tag_id][median_id],
+                                     # 'rotmat' : rotmats[tag_id][median_id]
+                                    # }
+        # return refined_cubes
 
     def __call__(self):
         return self.get_image()

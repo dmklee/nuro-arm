@@ -1,8 +1,12 @@
 import numpy as np
 import cv2
-import os
+from collections import namedtuple
 
 import neu_ro_arm.constants as constants
+import neu_ro_arm.transformation_utils as tfm
+
+ArucoTag = namedtuple('ArucoTag', ['id_', 'corners', 'tag2cam'])
+Cube = namedtuple('Cube', ['id_', 'pos', 'euler', 'vertices'])
 
 def find_arucotags(img, cam_mtx, dist_coeffs):
     '''Locates aruco tags in image, recording info on ID, corner pixels, and tag pose
@@ -18,16 +22,9 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
 
     Returns
     -------
-    dict
-        tag_id : int
-            Unique identifier for a tag, based on the pattern.  Multiple tags of
-            the same id can be detected at the same time.
-        corners: ndarray
-            four pixel locations where corners of tag are located in image;
-            shape=(4,2); dtype=float
-        tag2cam: ndarray
-            transformation matrix that converts from coordinate frame of the tag
-            to the coordinate frame of the camera; shape=(4,2); dtype=float
+    list of namedtuple
+        ArucoTags with fields: id_ (int), corners (ndarray; shape=(4,2);
+        dtype=float), tag2cam (ndarray; shape=(4,4); dtype=float
     '''
     #TODO: alert if multiple of the same tag ids are detected as this may mess
     # up further processing
@@ -45,13 +42,11 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
                                                           cam_mtx, dist_coeffs)
     tags = []
     for i in range(len(corners)):
-        tag2cam = transformation_matrix(rvecs[i], tvecs[i])
-        tags.append({'tag_id' : ids[i][0],
-                     'corners' : corners[i].reshape((4,2)),
-                     'tag2cam' : tag2cam,
-                     # 'rvec' : rvecs[i],
-                     # 'tvec' : tvecs[i],
-                    })
+        new_tag = ArucoTag(id_=ids[i][0],
+                           corners=corners[i].reshape(4,2),
+                           tag2cam=tfm.transformation_matrix(rvecs[i], tvecs[i])
+                          )
+        tags.append(new_tag)
 
     return tags
 
@@ -82,41 +77,54 @@ def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
 
     Returns
     -------
-    dict
-        pos: ndarray
-            xyz position of cube; shape (3,); dtype=float
-        rot: ndarray
-            euler angles of cube; shape (3,); dtype=float
-        tag_id : int
-            Unique identifier for a tag, based on the pattern.  Multiple tags of
-            the same id can be detected at the same time.
-        vertices: ndarray
-            eight 3D positions in world frame where vertices of cube are located
-            in image; shape=(8,3); dtype=float
+    namedtuple
+        Cubes with fields: id_ (int), pos (ndarray;shape=(3,);dtype=float),
+        euler (ndarray; shape=(3,);dtype=float), vertices (ndarray; shape=(8,3);
+        dtype=float.
     '''
     tags = find_arucotags(img, cam_mtx, dist_coeffs)
 
     cubes = []
-    vertices = constants.cube_vertices.copy()
+
+    for tag in tags:
+        cubes.append(convert_tag_to_cube(tag, cam_mtx, dist_coeffs, cam2world))
+
+    return cubes
+
+def convert_tag_to_cube(tag, cam_mtx, dist_coeffs, cam2world):
+    '''Uses coordinate transform to calculate cube properties from detected tag
+
+    Parameters
+    ----------
+    tag : namedtuple
+        ArucoTag
+    cam_mtx : ndarray
+        camera matrix; shape=(3,3); dtype=float
+    dist_coeffs : ndarray
+        distortion coefficients; shape=(5,);dtype=float
+    cam2world : ndarray
+        transformation matrix to convert from camera frame to world frame;
+        shape=(4,4); dtype=float
+
+    Returns
+    -------
+    namedtuple
+        Cube
+    '''
     shift_center_mat = np.array(((1,0,0,0),
                                  (0,1,0,0),
                                  (0,0,1,-0.5*constants.cube_size),
                                  (0,0,0,1)))
+    cube2cam = np.dot(tag.tag2cam, shift_center_mat)
+    cube2world = np.dot(cam2world, cube2cam)
 
-    for tag in tags:
-        cube2cam = tag['tag2cam'].dot(shift_center_mat)
-        cube2world = np.dot(cam2world, cube2cam)
-        tmp_vertices = coord_transform(cube2world, vertices)
-        cube = {'pos' : cube2world[:3,3],
-                'euler' : rotmat2euler(cube2world[:3,:3]),
-                'rotmat' : cube2world[:3,:3],
-                'tag_id' : tag['tag_id'],
-                'vertices' : tmp_vertices,
-                'center' : tmp_vertices.mean(axis=0),
-               }
-        cubes.append(cube)
+    cube = Cube(id_=tag.id_,
+                pos=cube2world[:3,3],
+                euler=tfm.rotmat2euler(cube2world[:3,:3]),
+                vertices=tfm.coord_transform(cube2world, constants.cube_vertices)
+               )
 
-    return cubes
+    return cube
 
 def rotmat_median(rotmats):
     '''Return approximate geometric median of rotation matrices in O(N^2)
@@ -140,8 +148,8 @@ def rotmat_median(rotmats):
         '''Distance between rotation matrices as suggested
         (here)[https://github.com/opencv/opencv/issues/8813#issuecomment-583379900]
         '''
-        R2_transpose = np.swapaxes(R2, 1, 2)
-        return np.linalg.norm(np.log(R1 * R2_transpose), axis=(1,2))
+        mult = np.einsum('lij,ljk->lik', R1, np.swapaxes(R2, 1, 2) )
+        return np.linalg.norm(np.log(mult), axis=(1,2))
 
     n_pts = len(rotmats)
     i,j = np.mgrid[:n_pts,:n_pts]
@@ -154,82 +162,41 @@ def rotmat_median(rotmats):
 
     return median_id, rotmats[median_id]
 
-def project_world2pixel(pts_wframe, world2cam,
-                       rvec, tvec, mtx, dist_coeffs):
-    # transform world to camera frame
-    pts_cframe = coord_transform(world2cam,
-                                 pts_wframe)
+def project_to_pixels(pts, world2cam, rvec, tvec, cam_mtx, dist_coeffs):
+    '''Projects 3D world points to pixel locations
+
+    Parameters
+    ----------
+    pts : ndarray
+        sequence of 3D arrays representing x,y,z location in world
+        coordinate frame
+    rvec : ndarray
+    tvec : ndarray
+    world2cam : ndarray
+        transformation matrix to convert from world frame to camera frame;
+        shape=(4,4); dtype=float
+    cam_mtx : ndarray
+        camera matrix; shape=(3,3); dtype=float
+    dist_coeffs : ndarray
+        distortion coefficients; shape=(5,);dtype=float
+
+    Returns
+    -------
+    ndarray
+        sequence of 2D pixel indices; shape=(*,2); dtype=float
+    '''
+    # convert to camera frame
+    pts_cframe = tfm.coord_transform(world2cam, pts)
+
     # project from camera frame to 2d pixel space
-    pixels, _ = cv2.projectPoints( pts_wframe,
-                                    rvec,
-                                    tvec,
-                                    mtx,
-                                    dist_coeffs
-                                   )
-    return pixels[:,0,:]
+    pixels, _ = cv2.projectPoints(pts_cframe,
+                                  rvec,
+                                  tvec,
+                                  cam_mtx,
+                                  dist_coeffs
+                                  )
 
-def rvec2euler(rvec):
-    '''Converts rotation vector (Rodrigues) to euler angles
-
-    Returns
-    -------
-    ndarray
-        euler angles; shape=(3,); dtype=float
-    '''
-    return rotmat2euler(cv2.Rodrigues(rvec)[0])
-
-def rvec2quat(rvec):
-    '''Converts rotation vector (Rodrigues) to quaternion
-
-    Returns
-    -------
-    ndarray
-        quaternion; shape=(4,); dtype=float
-    '''
-    euler = rvec2euler(rvec)
-    return euler2quat(euler)
-
-def euler2quat(euler):
-    '''Converts euler angles to quaternion
-
-    Returns
-    -------
-    ndarray
-        quaternion; shape=(4,); dtype=float
-    '''
-    cy = np.cos(0.5 * euler[0])
-    sy = np.sin(0.5 * euler[0])
-    cp = np.cos(0.5 * euler[1])
-    sp = np.sin(0.5 * euler[1])
-    cr = np.cos(0.5 * euler[2])
-    sr = np.sin(0.5 * euler[2])
-
-    return np.array((cr*cp*cy+sr*sp*sy,
-                     sr*cp*cy-cr*sp*sy,
-                     cr*sp*cy+sr*cp*sy,
-                     cr*cp*sy-sr*sp*cy))
-
-def rotmat2euler(R):
-    '''Converts rotation matrix to euler angles
-
-    Returns
-    -------
-    ndarray
-        euler angles; shape=(3,); dtype=float
-    '''
-    sy = np.sqrt(R[0,0]*R[0,0]+R[1,1]*R[1,1])
-
-    singular = sy < 1e-6
-
-    if not singular:
-        x = np.arctan2(R[2,1], R[2,2])
-        y = np.arctan2(-R[2,0], sy)
-        z = np.arctan2(R[1,0], R[0,0])
-    else:
-        x = np.arxtan2(-R[1,2],R[1,1])
-        y = np.arctan2(-R[2,0], sy)
-        z = 0
-    return np.array((x,y,z))
+    return pixels.reshape(-1,2)
 
 def reshape_image(img, height, width=None):
     if width is None:
@@ -244,31 +211,6 @@ def rescale_image(img, scale):
 
 def convert_gray(img):
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-def transformation_matrix(rvec, tvec):
-    mat = np.zeros((4,4))
-    mat[:3,3] = tvec.flatten()
-    mat[:3,:3] = cv2.Rodrigues(rvec)[0]
-    mat[3,3] = 1
-    return mat
-
-def inverse_transformation_matrix(rvec, tvec):
-    mat = np.zeros((4,4))
-    rot_mat = cv2.Rodrigues(rvec)[0]
-    # rotational matrices are orthogonal so inv <--> transpose
-    inv_rot_mat = rot_mat.T
-    mat[:3,3] = -np.dot(inv_rot_mat, tvec[:,0])
-    mat[:3,:3] = inv_rot_mat
-    mat[3,3] = 1
-    return mat
-
-def coord_transform(trans_mtx, pts):
-    if len(pts.shape) == 1:
-        pts = pts[None,:]
-    homog_pts = np.concatenate( (pts, np.ones((len(pts),1))), axis=1 )
-    new_homog_pts = np.dot(trans_mtx, homog_pts.T).T
-    new_pts = np.true_divide(new_homog_pts[:,:-1],  new_homog_pts[:,[-1]])
-    return new_pts
 
 def calc_distortion_matrix(imgs=None, verbose=True):
     GW, GH = constants.calibration_gridshape
