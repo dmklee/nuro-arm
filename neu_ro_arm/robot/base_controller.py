@@ -16,8 +16,10 @@ class BaseController:
         self.joint_precision = 1e-4
 
     @abstractmethod
-    def move_command(self, j_idxs, jpos):
+    def move_command(self, j_idxs, jpos, speed=None):
         '''Issue move command to specified joint indices
+
+        All movements are linear in joint space
 
         Parameters
         ----------
@@ -25,6 +27,8 @@ class BaseController:
             joint indices to be moved
         jpos : array_like of float
             target joint positions corresponding to the joint indices
+        speed : {'normal', 'max', 'slow'}, optional
+            designate movement speed. Not used by simulator controller
         '''
         return
 
@@ -35,7 +39,8 @@ class BaseController:
     def home(self):
         '''Move arm to home joint positions
         '''
-        self.move_command(self.arm_joint_idxs, self.arm_jpos_home)
+        self.move_command(self.arm_joint_idxs,
+                          self.arm_jpos_home)
 
     def gripper_jpos_to_state(self, jpos):
         '''Convert gripper joint position to state
@@ -50,6 +55,7 @@ class BaseController:
         float
             gripper state
         '''
+        jpos = np.mean(jpos)
         return (jpos - self.gripper_closed[0]) \
                 / (self.gripper_opened[0] - self.gripper_closed[0])
 

@@ -4,7 +4,7 @@ import pybullet as pb
 from neu_ro_arm.robot.base_controller import BaseController
 from neu_ro_arm.robot.motion_planner import PybulletBase
 
-class SimulatorController(BaseController, PybulletBase):
+class SimulatorController(BaseController, BasePybullet):
     def __init__(self):
         PybulletBase.__init__(self, pb.GUI)
         pb.setRealTimeSimulation(1, self._client)
@@ -20,7 +20,7 @@ class SimulatorController(BaseController, PybulletBase):
                              }
         self.joint_precision = 1e-4
 
-    def move_command(self, j_idxs, jpos):
+    def move_command(self, j_idxs, jpos, speed=None):
         '''Issue move command to specified joint indices
 
         This simulator runs realtime and I have not tried to mimic the movement
@@ -33,6 +33,8 @@ class SimulatorController(BaseController, PybulletBase):
             joint indices to be moved
         jpos : array_like of float
             target joint positions corresponding to the joint indices
+        speed
+            ignored
         '''
         num_joints = len(j_idxs)
         pb.setJointMotorControlArray(self.robot_id,
