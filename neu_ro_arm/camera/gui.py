@@ -1,8 +1,9 @@
 import numpy as np
 import cv2
 from abc import abstractmethod
+from collections import deque
 
-from neu_ro_arm.camera.camera_utils import find_cubes, find_arucotags, project_world2pixel
+import neu_ro_arm.camera.camera_utils as cam_utils
 import neu_ro_arm.constants as constants
 
 class GUI:
@@ -73,7 +74,7 @@ class GUI:
 
         return k
 
-class GUIModifierFunction:
+class ImageModifierFunction:
     def __init__(self, cam_configs):
         '''Function that performs some image operations and adds modifications
         for debugging/visualization purposed
@@ -107,49 +108,52 @@ class GUIModifierFunction:
         '''
         return canvas
 
-class ShowCubes(GUIModifierFunction):
+class ShowCubes(ImageModifierFunction):
+    def __init__(self, cam_configs):
+        super().__init__(cam_configs)
+
     def __call__(self, canvas, original):
         '''Draws wireframe models for all cubes detected in the image via
         aruco tag detection
         '''
-        cubes = find_cubes(original,
-                           self.cam_configs['mtx'],
-                           self.cam_configs['dist_coeffs'],
-                           self.cam_configs['cam2world']
-                          )
+        cubes = cam_utils.find_cubes(original,
+                                     self.cam_configs['mtx'],
+                                     self.cam_configs['dist_coeffs'],
+                                     self.cam_configs['cam2world'],
+                                     )
+
         for cube in cubes:
-            vert_px = project_world2pixel(cube['vertices'],
-                                          self.cam_configs['world2cam'],
-                                          self.cam_configs['rvec'],
-                                          self.cam_configs['tvec'],
-                                          self.cam_configs['mtx'],
-                                          self.cam_configs['dist_coeffs'],
-                                         ).astype(int)
+            vert_px = project_to_pixels(cube.vertices,
+                                        self.cam_configs['world2cam'],
+                                        self.cam_configs['rvec'],
+                                        self.cam_configs['tvec'],
+                                        self.cam_configs['mtx'],
+                                        self.cam_configs['dist_coeffs'],
+                                       ).astype(int)
             for a, b in constants.cube_edges:
                 canvas = cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]),
                                   (255, 0, 0), thickness=2)
 
         return canvas
 
-class ShowArucoTags(GUIModifierFunction):
-    def __call__(original, canvas):
+class ShowArucoTags(ImageModifierFunction):
+    def __call__(self, original, canvas):
         '''Draws tag outlines and ids for all aruco tags detected in the image
         '''
-        tags = find_arucotags(original,
-                              self.cam_configs['mtx'],
-                              self.cam_configs['dist_coeffs'],
-                             )
+        tags = cam_utils.find_arucotags(original,
+                                        self.cam_configs['mtx'],
+                                        self.cam_configs['dist_coeffs'],
+                                       )
         for tag in tags:
-            corners = tag['corners']
-            for c_id in range(len(corners)):
+            for c_id in range(4):
                 canvas = cv2.line(canvas,
-                                  tuple(corners[c_id-1, :].astype(int)),
-                                  tuple(corners[c_id, :].astype(int)),
+                                  tuple(tag.corners[c_id-1].astype(int)),
+                                  tuple(tag.corners[c_id].astype(int)),
                                   (0, 255, 0)
                                  )
 
-            text_org = tuple(np.mean(corners, axis=0).astype(int))
-            canvas = cv2.putText(canvas, str(tag['tag_id']),
+            text_org = tuple(np.mean(tag.corners, axis=0).astype(int))
+            canvas = cv2.putText(canvas, str(tag.id_),
                                 org=text_org,
                                 fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                                 fontScale=0.5,
