@@ -348,18 +348,7 @@ class XArmController(BaseController):
         print('  =====================  ')
         print('  == Calibrating arm ==  ')
         print('  =====================  ')
-        print('Please move arm into home position.')
-        img = np.concatenate((cv2.imread('neu_ro_arm/data/arm_home_position_front.jpg'),
-                              cv2.imread('neu_ro_arm/data/arm_home_position_side.jpg')),
-                            axis=1
-                            )
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        plt.figure()
-        plt.imshow(img)
-        plt.axis('off')
-        plt.title('Move arm to this position (gripper can be ignored)'
-                  '\n Close window when ready')
-        plt.show()
+        print('Please move arm into home position. Follow along in Installation Guide for picture.')
         inp = input('  ready? [y/n]: ')
         if inp == 'y':
             pass
@@ -379,15 +368,9 @@ class XArmController(BaseController):
         # ensure that the motion planner's joint motors are set up in the same 
         # manner, else the forward kinematics will be wrong
         print('Checking motor directions...')
-        print('Please move robot into the configuration shown in the picture.')
+        print('Please move robot into the bent-arm configuration.'
+              ' Refer to Installation Guide for picture.')
         self.power_off()
-        img = cv2.imread('neu_ro_arm/data/arm_motor_calibration.jpg')
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        plt.figure()
-        plt.imshow(img)
-        plt.axis('off')
-        plt.title('Move arm into this approximate position')
-        plt.show()
         if input('  ready? [y/n]: ') != 'y':
             print('Calibration terminated')
             return False, data
