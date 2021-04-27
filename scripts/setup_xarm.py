@@ -12,7 +12,7 @@ def calibrate():
     # this tests the connection
     xarm = XArmController()
 
-    #reset arm motor direction corrections
+    # reset arm motor direction corrections
     xarm.arm_motor_directions = {k:1 for k in xarm.arm_motor_directions.keys()}
 
     # this calibrates the arm + gripper

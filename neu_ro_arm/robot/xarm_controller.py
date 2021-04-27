@@ -1,13 +1,10 @@
 import time
-import ctypes
 from enum import IntEnum
 import platform
 import numpy as np
-import cv2
 
 import matplotlib
 matplotlib.use('TkAgg')
-from matplotlib import pyplot as plt
 
 import threading
 from neu_ro_arm.robot.base_controller import BaseController
@@ -128,6 +125,7 @@ class XArmController(BaseController):
         gripper = 1
 
     def __init__(self):
+        super().__init__()
         self.cmd_lib = XArmController.CommandLibrary()
         self._max_speed = self.SERVO_MAX_SPEED*self.POS2RADIANS
 
@@ -205,8 +203,8 @@ class XArmController(BaseController):
         delta_jpos = np.abs(np.subtract(jpos, current_jpos))
 
         speed = {'max' : self._max_speed,
-                 'normal' : self._normal_speed,
-                 'slow' : self._slow_speed,
+                 'normal' : self._normal_speed, #TODO: define normal speed
+                 'slow' : self._slow_speed, #TODO: define slow_speed
                 }[speed]
         duration = int(np.max(delta_jpos) / speed)
 
@@ -285,7 +283,6 @@ class XArmController(BaseController):
         recv_data = []
         packet_size = 3 if ret_type == 'ushort' else 2
         for i in range(count):
-            servo_id = ret[5 + packet_size*i]
             lsb = ret[5 + packet_size*i + 1]
             msb = ret[5 + packet_size*i + 2]
             if ret_type == 'ushort':

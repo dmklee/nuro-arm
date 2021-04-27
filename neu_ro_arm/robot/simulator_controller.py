@@ -2,11 +2,11 @@ import numpy as np
 import pybullet as pb
 
 from neu_ro_arm.robot.base_controller import BaseController
-from neu_ro_arm.robot.motion_planner import PybulletBase
+from neu_ro_arm.robot.motion_planner import BasePybullet
 
 class SimulatorController(BaseController, BasePybullet):
     def __init__(self):
-        PybulletBase.__init__(self, pb.GUI)
+        BasePybullet.__init__(self, pb.GUI)
         pb.setRealTimeSimulation(1, self._client)
         # pb.setGravity(0,0,-10,self._client)
         self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
@@ -36,7 +36,6 @@ class SimulatorController(BaseController, BasePybullet):
         speed
             ignored
         '''
-        num_joints = len(j_idxs)
         pb.setJointMotorControlArray(self.robot_id,
                                      j_idxs,
                                      pb.POSITION_CONTROL,

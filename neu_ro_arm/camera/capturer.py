@@ -104,7 +104,7 @@ class Capturer:
                                        dtype=np.uint8)
         self._record_id = 0
 
-        time.sleep(delay)
+        time.sleep(5)# time.sleep(delay) delay wasn't defined
         with self._lock:
             self._recording = True
 
@@ -195,14 +195,14 @@ class SimCapturer(Capturer):
     #TODO: find a good abstraction to unite the interface of simulated and real camera
     # i think we just need to create a simulator camera "cap" class that has method
     # "read"
-    img_width = 640
-    img_height = 480
-    def __init__(self, pb_client, camera_pose):
+    def __init__(self, pb_client):
         self._pb_client = pb_client
-        self.view_mtx
-        self.projection_mtx
+        self.view_mtx = None
+        self.projection_mtx = None
 
     def read(self):
+        img_width = 640
+        img_height = 480
         return pb.getCameraImage(width=img_width,
                                   height=img_height,
                                   viewMatrix = self.view_mtx,

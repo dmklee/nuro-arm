@@ -1,9 +1,8 @@
 import numpy as np
 import cv2
 from abc import abstractmethod
-from collections import deque
 
-import neu_ro_arm.camera.camera_utils as cam_utils
+from neu_ro_arm.camera import camera_utils
 import neu_ro_arm.constants as constants
 
 class GUI:
@@ -116,14 +115,14 @@ class ShowCubes(ImageModifierFunction):
         '''Draws wireframe models for all cubes detected in the image via
         aruco tag detection
         '''
-        cubes = cam_utils.find_cubes(original,
+        cubes = camera_utils.find_cubes(original,
                                      self.cam_configs['mtx'],
                                      self.cam_configs['dist_coeffs'],
                                      self.cam_configs['cam2world'],
                                      )
 
         for cube in cubes:
-            vert_px = project_to_pixels(cube.vertices,
+            vert_px = camera_utils.project_to_pixels(cube.vertices,
                                         self.cam_configs['world2cam'],
                                         self.cam_configs['rvec'],
                                         self.cam_configs['tvec'],
@@ -140,7 +139,7 @@ class ShowArucoTags(ImageModifierFunction):
     def __call__(self, original, canvas):
         '''Draws tag outlines and ids for all aruco tags detected in the image
         '''
-        tags = cam_utils.find_arucotags(original,
+        tags = camera_utils.find_arucotags(original,
                                         self.cam_configs['mtx'],
                                         self.cam_configs['dist_coeffs'],
                                        )

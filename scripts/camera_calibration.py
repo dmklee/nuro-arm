@@ -1,14 +1,13 @@
-import numpy as np
 import cv2
 import time
 
 from neu_ro_arm.camera.camera import Camera
 from neu_ro_arm.camera.camera_utils import calc_distortion_matrix, convert_gray
-from neu_ro_arm.camera.constants import calibration_gridshape, calibration_gridsize
+from neu_ro_arm.constants import calibration_gridshape
 
 def show_chessboard(original, canvas):
     gray = convert_gray(original)
-    ret, corners =cv2.findChessboardCorners(gray, calibration_gridshape, None)
+    ret, corners = cv2.findChessboardCorners(gray, calibration_gridshape, None)
     if ret:
         canvas = cv2.drawChessboardCorners(canvas, calibration_gridshape,
                                            corners, ret)
@@ -35,7 +34,6 @@ def take_pictures(camera):
 def reject_no_grid(images):
     '''Rejects any images where the grid cannot be identified'''
     gw, gh = calibration_gridshape
-    gsize = calibration_gridsize
 
     good_images = []
     for img in images:
