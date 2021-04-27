@@ -1,6 +1,5 @@
 import numpy as np
 from neu_ro_arm.robot.xarm_controller import XArmController
-from neu_ro_arm.robot.robot_arm import RobotArm
 
 def calibrate():
     '''Calibrates servos in xArm so that the internal motion planner is accurate
@@ -24,18 +23,9 @@ def calibrate():
         np.savez(xarm.CONFIG_FILE, **data)
     else:
         print('Calibration failed. Please try again.')
+
     return success
 
-def move_with_gui():
-    '''Allows user to move joints of the robot with sliders
-
-    Currently, there is no collision detection during gui motions so the user
-    should be careful and ensure no objects are within the reach of the arm
-    '''
-    robot = RobotArm('real')
-    robot.move_with_gui()
-
 if __name__ == "__main__":
-    if calibrate():
-        move_with_gui()
+    calibrate()
 
