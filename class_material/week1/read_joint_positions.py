@@ -38,7 +38,7 @@ while True:
         break
 
     # add some delay so the while loop doesnt run too fast
-    delay = 0.1 # seconds
+    delay = 1 # seconds
     time.sleep(delay)
 
 print('Program is ending')
