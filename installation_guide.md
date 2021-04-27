@@ -86,8 +86,8 @@ The setup xarm script will calibrate the robot.  Make sure that no objects are n
 1. The first step of calibration is to move the robot to its "HOME" state, which is pictured below.  The robot should be in passive mode and you want to make any modifications such that it is pointing straight up and the base is aligned.  You can ignore the gripper position.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_home_position_front.jpg"/>
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_home_position_side.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_home_position_front.jpg" width="250"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_home_position_side.jpg" width="250"/>
 </p>
 
 2. The next step is to move the arm into a bent position as shown below. The robot will be in passive mode so there should be no resistance.  The gripper position can be ignored.  This step allows us to determine which way the servos were installed.
