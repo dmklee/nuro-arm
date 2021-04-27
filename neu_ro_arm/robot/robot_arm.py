@@ -244,7 +244,7 @@ class RobotArm:
 
         H,W = 500, 300
         window = tk.Tk()
-        heading = tk.Label(text="CAUTION!\nCollision detection is not running.",
+        heading = tk.Label(text="CAUTION!\nCollision detection is not running.\nMotors are active so do not move by hand.",
                           fg="#FF0000")
         heading.pack()
 
