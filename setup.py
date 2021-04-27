@@ -17,7 +17,6 @@ setup(
         "matplotlib",
         "easyhid;platform_system=='Linux'",
         "hid;platform_system=='Windows'",
-        "tk",
         "sklearn",
         # "pywin32 >= 1.0;platform_system=='Darwin'"
     ],
