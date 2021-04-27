@@ -108,8 +108,9 @@ class ImageModifierFunction:
         return canvas
 
 class ShowCubes(ImageModifierFunction):
-    def __init__(self, cam_configs):
+    def __init__(self, cam_configs, include_id=False):
         super().__init__(cam_configs)
+        self.include_id = include_id
 
     def __call__(self, canvas, original):
         '''Draws wireframe models for all cubes detected in the image via
@@ -132,6 +133,16 @@ class ShowCubes(ImageModifierFunction):
             for a, b in constants.cube_edges:
                 canvas = cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]),
                                   (255, 0, 0), thickness=2)
+
+            if self.include_id:
+                text_org = tuple(np.mean(vert_px, axis=0).astype(int))
+                canvas = cv2.putText(canvas, str(cube.id_),
+                                    org=text_org,
+                                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                                    fontScale=0.5,
+                                    thickness=1,
+                                    color=(0, 0, 255)
+                                    )
 
         return canvas
 
