@@ -139,7 +139,7 @@ class ShowCubes(ImageModifierFunction):
                 canvas = cv2.putText(canvas, str(cube.id_),
                                     org=text_org,
                                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                                    fontScale=0.5,
+                                    fontScale=0.8,
                                     thickness=3,
                                     color=(0, 0, 255)
                                     )
