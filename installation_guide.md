@@ -26,11 +26,11 @@
 	cd neu-ro-arm/
 	```
 3. Create the virtual environment:
-    1. [Windows Only]
+    1. [**Windows Only**]
         ```
         conda env create -f environment_win.yml
         ```
-    2. [Mac Only]
+    2. [**Mac Only**]
         ```
         conda env create -f environment_mac.yml
         ```
