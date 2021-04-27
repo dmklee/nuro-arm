@@ -86,18 +86,21 @@ The setup xarm script will calibrate the robot.  Make sure that no objects are n
 1. The first step of calibration is to move the robot to its "HOME" state, which is pictured below.  The robot should be in passive mode and you want to make any modifications such that it is pointing straight up and the base is aligned.  You can ignore the gripper position.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/arm_home_position_front.jpg"/>
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/arm_home_position_side.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_home_position_front.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_home_position_side.jpg"/>
 </p>
 
 2. The next step is to move the arm into a bent position as shown below. The robot will be in passive mode so there should be no resistance.  The gripper position can be ignored.  This step allows us to determine which way the servos were installed.
 
 <p align="center">
-  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/arm_motor_calibration.jpg"/>
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_motor_calibration.jpg"/>
 </p>
 
-3. Now we will calibrate the grippers.  You will be asked to move the gripper fingers to the closed then open positio,f
+3. Now we will calibrate the grippers.  You will be asked to move the gripper fingers to the closed then open position. The grippers should be easy to move: use two hands and do not try to squeeze them together. For the open position aim for a configuration as shown below. 
 
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/gripper_closed.jpg"/>
+</p>
 
 #### General Guidelines
 Safety is a priority when working with robots.  While the software is built to prevent collisions or unsafe velocities, you should still be careful to ensure you and the robot are safe.  
