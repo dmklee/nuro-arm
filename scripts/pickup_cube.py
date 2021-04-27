@@ -1,8 +1,6 @@
 import numpy as np
 import pybullet as pb
 
-#TODO: unused import from neu_ro_arm.camera.camera import Camera
-#TODO: unused import from neu_ro_arm.camera.camera_utils import find_cubes
 
 from neu_ro_arm.robot.robot_arm import RobotArm
 from neu_ro_arm.constants import default_cam_pose_mtx
