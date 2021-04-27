@@ -256,7 +256,7 @@
         <child link="base_swivel_link"/>
         <origin rpy="0.0 0.0 -1.5708" xyz="0.0 0.0 0.034"/>
         <limit lower="-3" upper="3" velocity="2.09"/>
-		<dynamics damping="0.5" friction="0.0"/>
+		<dynamics damping="10" friction="0.0"/>
         <axis xyz="0 0 1"/>
       </joint>
 
@@ -265,7 +265,7 @@
         <child link="upperarm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.031"/>
         <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
-		<dynamics damping="0.5" friction="0.0"/>
+		<dynamics damping="10" friction="0.0"/>
         <axis xyz="-1 0 0"/>
       </joint>
 
@@ -274,7 +274,7 @@
         <child link="forearm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.101"/>
         <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
-		<dynamics damping="0.5" friction="0.0"/>
+		<dynamics damping="10" friction="0.0"/>
         <axis xyz="-1 0 0"/>
       </joint>
 
@@ -283,7 +283,7 @@
         <child link="wrist_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0965"/>
         <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
-		<dynamics damping="0.5" friction="0.0"/>
+		<dynamics damping="10" friction="0.0"/>
         <axis xyz="-1 0 0"/>
       </joint>
 
@@ -292,7 +292,7 @@
         <child link="hand_link"/>
         <origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.052"/>
         <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
-		<dynamics damping="0.5" friction="0.0"/>
+		<dynamics damping="10" friction="0.0"/>
         <axis xyz="0 0 1"/>
       </joint>
 
