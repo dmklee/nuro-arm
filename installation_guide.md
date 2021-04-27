@@ -10,7 +10,7 @@
 2. Open downloaded file and click thru the Installer, selecting the default options.
 
 ### Install Git
-1. Open a terminal application (for Mac it is called Terminal, for Windows it is Anaconda Prompt)
+1. Open a terminal application (for Mac it is called **Terminal**, for Windows it is **Anaconda Prompt**)
 2. Enter the following command and hit enter:
 	```
 	conda install -c anaconda git
