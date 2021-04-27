@@ -87,21 +87,17 @@ def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
     cubes = []
 
     for tag in tags:
-        cubes.append(convert_tag_to_cube(tag, cam_mtx, dist_coeffs, cam2world))
+        cubes.append(convert_tag_to_cube(tag, cam2world))
 
     return cubes
 
-def convert_tag_to_cube(tag, cam_mtx, dist_coeffs, cam2world):
+def convert_tag_to_cube(tag, cam2world):
     '''Uses coordinate transform to calculate cube properties from detected tag
 
     Parameters
     ----------
     tag : namedtuple
         ArucoTag
-    cam_mtx : ndarray
-        camera matrix; shape=(3,3); dtype=float
-    dist_coeffs : ndarray
-        distortion coefficients; shape=(5,);dtype=float
     cam2world : ndarray
         transformation matrix to convert from camera frame to world frame;
         shape=(4,4); dtype=float

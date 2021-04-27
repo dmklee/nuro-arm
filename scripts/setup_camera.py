@@ -1,4 +1,6 @@
-from neu_ro_arm.camera.camera import Camera, Capturer, GUI
+from neu_ro_arm.camera.camera import Camera
+from neu_ro_arm.camera.capturer import Capturer
+from neu_ro_arm.camera.gui import GUI
 
 def determine_camera_id():
     '''Scans over available cameras, prompting user to select which camera is

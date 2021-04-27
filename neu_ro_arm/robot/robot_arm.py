@@ -1,10 +1,7 @@
 import numpy as np
-import pybullet as pb
-import pybullet_data
 
 import matplotlib
 matplotlib.use('TkAgg')
-from matplotlib import pyplot as plt
 import tkinter as tk
 
 from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
@@ -100,6 +97,8 @@ class RobotArm:
         jpos : ndarray
             Desired joint angles in radians for each joint in the arm;
             shape=(5,); dtype=float
+        verbose : bool
+            Whether to print error messages in case of an issue
 
         Returns
         -------
@@ -132,6 +131,8 @@ class RobotArm:
             desired 3d position of end effector; shape=(3,); dtype=float
         rot : ndarray
             desired euler angles of end effector; shape=(3,); dtype=float
+        verbose : bool
+            Whether to print error messages in case of an issue
 
         Raises
         ------
@@ -148,7 +149,7 @@ class RobotArm:
             True if joint angles returned from IK were achieved
         '''
         try:
-            self.mp.calculate_ik(pos, rot)
+            jpos, data = self.mp.calculate_ik(pos, rot)
         except ProbitedHandPosition as e:
             if verbose:
                 print(f"[MOVE FAILED] {e}")

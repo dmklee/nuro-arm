@@ -2,10 +2,11 @@ import numpy as np
 import cv2
 import time
 
-import neu_ro_arm.camera.camera_utils as camera_utils
+
 import neu_ro_arm.transformation_utils as tfm
+from neu_ro_arm.camera import camera_utils
 from neu_ro_arm.camera.gui import GUI
-from neu_ro_arm.capturer import Capturer
+from neu_ro_arm.camera.capturer import Capturer
 import neu_ro_arm.constants as constants
 
 class Camera:
@@ -186,7 +187,7 @@ class Camera:
         ndarray
             sequence of 2D pixel indices; shape=(*,2); dtype=float
         '''
-        return cam_utils.project_to_pixels(pts_wframe,
+        return camera_utils.project_to_pixels(pts_wframe,
                                            self._world2cam,
                                            self._rvec,
                                            self._tvec,

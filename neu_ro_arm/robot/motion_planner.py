@@ -91,6 +91,7 @@ class MotionPlanner(BasePybullet):
 
         # check collision teleports arm so we can check IK solution error here
         achieved_pos, achieved_rot = self.get_hand_pose()
+        data = dict()
         data['achieved_pos'] = achieved_pos
         data['achieved_rot'] = achieved_rot
         data['pos_error'] = np.linalg.norm(np.subtract(pos, achieved_pos))
@@ -198,7 +199,6 @@ class MotionPlanner(BasePybullet):
             robot_link_name = self.link_names[robot_link]
             if robot_link_name not in ignored_links:
                 other_body_id = cont_pt[2]
-                other_body_link = cont_pt[4]
                 other_body_name = pb.getBodyInfo(other_body_id,
                                                  physicsClientId=self._client
                                                 )[1].decode('ascii')

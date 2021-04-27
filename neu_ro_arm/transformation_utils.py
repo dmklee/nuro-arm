@@ -59,7 +59,7 @@ def rotmat2euler(R):
         y = np.arctan2(-R[2,0], sy)
         z = np.arctan2(R[1,0], R[0,0])
     else:
-        x = np.arxtan2(-R[1,2],R[1,1])
+        x = np.arctan2(-R[1,2],R[1,1])
         y = np.arctan2(-R[2,0], sy)
         z = 0
     return np.array((x,y,z))

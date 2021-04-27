@@ -1,6 +1,7 @@
 import pybullet_data
 import pybullet as pb
 import numpy as np
+from neu_ro_arm import transformation_utils
 
 class BasePybullet:
     ROBOT_URDF_PATH = "neu_ro_arm/assets/urdf/xarm.urdf"
@@ -97,14 +98,14 @@ class BasePybullet:
         if self.camera_exists:
             print('Camera already detected. Existing camera will be re-positioned.')
             pb.resetBasePositionAndOrientation(self.camera_id, cam_pos, cam_quat,
-                                              physicsClientId=self._client)
+                                               physicsClientId=self._client)
             pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, rod_quat,
-                                              physicsClientId=self._client)
+                                               physicsClientId=self._client)
         else:
             self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, cam_pos, cam_quat,
-                                        physicsClientId=self._client)
+                                         physicsClientId=self._client)
             self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, rod_pos, rod_quat,
-                                     physicsClientId=self._client)
+                                      physicsClientId=self._client)
 
 
     def _get_joint_names(self):
@@ -113,7 +114,7 @@ class BasePybullet:
         num_joints = pb.getNumJoints(self.robot_id)
 
         joint_names = [pb.getJointInfo(self.robot_id, j_idx, physicsClientId=self._client)[1]
-                        for j_idx in range(num_joints)]
+                       for j_idx in range(num_joints)]
 
         # remove "_joint" from name
         joint_names = [name.decode("utf-8").replace('_joint','') for name in joint_names]
@@ -154,7 +155,7 @@ class BasePybullet:
         '''
         cam_pos = cam_pose_mtx[:3,3]
         cam_rotmat = cam_pose_mtx[:3,:3]
-        cam_quat = pb.getQuaternionFromEuler(rotmat2euler(cam_rotmat))
+        cam_quat = pb.getQuaternionFromEuler(transformation_utils.rotmat2euler(cam_rotmat))
 
         rod_offset_vec = np.array((0.026, -0.012, -0.013))
         rod_pos = cam_pos + np.dot(cam_rotmat, rod_offset_vec)
@@ -204,7 +205,7 @@ class BasePybullet:
         assert link_name in self.link_names
         link_index = self.link_names.index(link_name)
         link_state = pb.getLinkState(self.robot_id, link_index,
-                                    physicsClientId=self._client)
+                                     physicsClientId=self._client)
         pos = link_state[4]
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot

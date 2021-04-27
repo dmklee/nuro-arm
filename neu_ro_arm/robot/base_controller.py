@@ -34,7 +34,7 @@ class BaseController:
 
     @abstractmethod
     def read_command(self, j_idxs):
-        return jpos
+        return
 
     def home(self):
         '''Move arm to home joint positions
