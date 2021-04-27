@@ -293,7 +293,7 @@ class RobotArm:
         col_frame_right = tk.Frame(master=row_frame, width=2*W//3)
         col_frame_right.pack(side=tk.RIGHT)
 
-        tk.Label(master=col_frame_left, text="gripper").pack()
+        tk.Label(master=col_frame_left, text="gripper state").pack()
 
         scl_gripper = tk.Scale(master=col_frame_right,
                              from_=0,
