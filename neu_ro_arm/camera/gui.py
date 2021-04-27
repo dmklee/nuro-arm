@@ -140,7 +140,7 @@ class ShowCubes(ImageModifierFunction):
                                     org=text_org,
                                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                                     fontScale=0.8,
-                                    thickness=3,
+                                    thickness=2,
                                     color=(0, 0, 255)
                                     )
 
