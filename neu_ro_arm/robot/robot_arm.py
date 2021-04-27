@@ -240,10 +240,11 @@ class RobotArm:
 
         def go_home_fn():
             self.controller.home()
+            [scl.set(jp) for scl, jp in zip(scales, self.controller.arm_jpos_home)]
 
         H,W = 500, 300
         window = tk.Tk()
-        heading = tk.Label(text="BE CAREFUL!\nCollision detection is not running.",
+        heading = tk.Label(text="CAUTION!\nCollision detection is not running.",
                           fg="#FF0000")
         heading.pack()
 
@@ -318,38 +319,3 @@ class RobotArm:
     def _mirror_planner(self):
         self.mp.mirror(arm_jpos=self.get_arm_jpos(),
                        gripper_state=self.get_gripper_state())
-
-
-if __name__ == "__main__":
-    import time
-    mode='real'
-    # mode = 'sim'
-    robot = RobotArm(mode)
-    # robot.passive_mode()
-    # exit()
-    # robot.home()
-    # robot.open_gripper()
-    # robot.move_hand_to(np.array((-0.06,0.16,0.03)))
-    # exit()
-    # robot.close_gripper()
-    # robot.close_gripper()
-    robot.passive_mode()
-    while True:
-        arm_jpos = robot.get_arm_jpos()
-        gripper_state = robot.get_gripper_state()
-        robot.mp.mirror(arm_jpos=arm_jpos, gripper_state=gripper_state)
-        print([f"{a:.2f}" for a in robot.get_hand_pose()[1]])
-        # print(robot.mp._check_collisions(arm_jpos)[0])
-        time.sleep(0.2)
-    robot.close_gripper()
-    exit()
-    # robot.home()
-    # robot.close_gripper()
-    # robot.open_gripper()
-    robot.move_hand_to([-0.0382, 0.220, 0.043])
-    time.sleep(10)
-    exit()
-    robot.controller.gripper_closed = np.array([0.5])
-    robot.controller.gripper_opened = np.array([-0.5])
-    robot.controller.home()
-    robot.move_with_gui()
