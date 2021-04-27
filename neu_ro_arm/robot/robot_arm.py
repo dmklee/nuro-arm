@@ -228,14 +228,15 @@ class RobotArm:
         def move_joint_fn_generator(j_idx):
             def move_joint_fn(jpos):
                 jpos = float(jpos)
-                self.controller.move_command([j_idx], [jpos])
+                self.controller.move_command([j_idx], [jpos], speed='normal')
             return move_joint_fn
 
         def move_gripper_fn(state):
             state = float(state)
             gripper_jpos = self.controller.gripper_state_to_jpos(state)
             self.controller.move_command(self.controller.gripper_joint_idxs,
-                                         gripper_jpos)
+                                         gripper_jpos,
+                                        speed='normal')
 
         def go_home_fn():
             self.controller.home()
