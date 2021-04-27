@@ -31,7 +31,7 @@ class MotionPlanner(BasePybullet):
         '''Pybullet simulator of robot used to perform inverse kinematics
         and collision detection quickly in background
         '''
-        super(MotionPlanner, self).__init__(pb.GUI)
+        super(MotionPlanner, self).__init__(pb.DIRECT)
         self._hand_position_limits = np.array(((-0.18,0.18),
                                                (0.08,0.30),
                                                (0.0, 0.30)))
