@@ -187,8 +187,7 @@ class Camera:
         ndarray
             sequence of 2D pixel indices; shape=(*,2); dtype=float
         '''
-        return camera_utils.project_to_pixels(pts_wframe,
-                                           self._world2cam,
+        return cam_utils.project_to_pixels(pts_wframe,
                                            self._rvec,
                                            self._tvec,
                                            self._mtx,

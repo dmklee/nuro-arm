@@ -123,12 +123,12 @@ class ShowCubes(ImageModifierFunction):
 
         for cube in cubes:
             vert_px = camera_utils.project_to_pixels(cube.vertices,
-                                        self.cam_configs['world2cam'],
                                         self.cam_configs['rvec'],
                                         self.cam_configs['tvec'],
                                         self.cam_configs['mtx'],
                                         self.cam_configs['dist_coeffs'],
                                        ).astype(int)
+
             for a, b in constants.cube_edges:
                 canvas = cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]),
                                   (255, 0, 0), thickness=2)

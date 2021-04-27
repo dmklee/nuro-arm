@@ -158,7 +158,7 @@ def rotmat_median(rotmats):
 
     return median_id, rotmats[median_id]
 
-def project_to_pixels(pts, world2cam, rvec, tvec, cam_mtx, dist_coeffs):
+def project_to_pixels(pts, rvec, tvec, cam_mtx, dist_coeffs):
     '''Projects 3D world points to pixel locations
 
     Parameters
@@ -168,9 +168,6 @@ def project_to_pixels(pts, world2cam, rvec, tvec, cam_mtx, dist_coeffs):
         coordinate frame
     rvec : ndarray
     tvec : ndarray
-    world2cam : ndarray
-        transformation matrix to convert from world frame to camera frame;
-        shape=(4,4); dtype=float
     cam_mtx : ndarray
         camera matrix; shape=(3,3); dtype=float
     dist_coeffs : ndarray
@@ -181,11 +178,8 @@ def project_to_pixels(pts, world2cam, rvec, tvec, cam_mtx, dist_coeffs):
     ndarray
         sequence of 2D pixel indices; shape=(*,2); dtype=float
     '''
-    # convert to camera frame
-    pts_cframe = tfm.coord_transform(world2cam, pts)
-
     # project from camera frame to 2d pixel space
-    pixels, _ = cv2.projectPoints(pts_cframe,
+    pixels, _ = cv2.projectPoints(pts,
                                   rvec,
                                   tvec,
                                   cam_mtx,
@@ -246,7 +240,7 @@ def calc_distortion_matrix(imgs=None, verbose=True):
     if verbose:
         total_error = 0
         for i in range(len(obj_pts)):
-            img_pts2, _ = cv2.projectPoints(obj_pts[i], rvecs[1], tvecs[i], mtx, dist)
+            img_pts2, _ = cv2.projectPoints(obj_pts[i], rvecs[i], tvecs[i], mtx, dist)
             error = cv2.norm(img_pts[i], img_pts2, cv2.NORM_L2)/len(img_pts2)
             total_error += error
         print("===============")

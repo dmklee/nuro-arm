@@ -81,6 +81,12 @@ def inverse_transformation_matrix(rvec, tvec):
     mat[3,3] = 1
     return mat
 
+def invert_transformation(mtx):
+    inverted = np.copy(mtx)
+    inverted[:3,:3] = mtx[:3,:3].T
+    inverted[:3,3] = -np.dot(inverted[:3,:3], mtx[:3,3])
+    return inverted
+
 def coord_transform(transform_mtx, pts):
     if len(pts.shape) == 1:
         pts = pts[None,:]
