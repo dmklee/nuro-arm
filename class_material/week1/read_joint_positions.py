@@ -15,11 +15,13 @@ from neu_ro_arm.constants import GRIPPER_CLOSED
 robot_mode = 'real'
 robot = RobotArm(robot_mode)
 
+# ensure gripper is open to start
+robot.open_gripper()
+
 # enter passive mode so motors move freely
 robot.passive_mode()
 
 # loop will run until gripper is closed manually
-robot.open_gripper()
 while True:
     # get arm joint positions in radians
     arm_jpos = robot.get_arm_jpos()
