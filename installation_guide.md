@@ -90,7 +90,7 @@ In order to calibrate the robot, you must first complete the [software installat
 	```
 3. Run setup xarm script:
 	```
-	python neu_ro_arm/scripts/setup_xarm.py
+	python scripts/setup_xarm.py
 	```
 The setup xarm script will calibrate the robot.  Make sure that no objects are nearby when calibrating, so if you have already installed the camera, remove the rod temporarily.
 1. The first step of calibration is to move the robot to its "HOME" state, which is pictured below.  The robot should be in passive mode and you want to make any modifications such that it is pointing straight up and the base is aligned.  You can ignore the gripper position.
@@ -170,7 +170,7 @@ To perform the calibration, follow the following steps.
 	```
 3. Run setup camera script:
 	```
-	python neu_ro_arm/scripts/setup_camera.py
+	python scripts/setup_camera.py
 	```
 
 The setup camera script will first perform a scan over available cameras, prompting you to select the one used by the robot.  Next, you will be asked to place the checkerboard pattern in front of the robot and position the camera to view it.  Pictures illustrating the calibration and the proper camera view are shown below.

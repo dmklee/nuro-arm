@@ -145,7 +145,7 @@ class XArmController(BaseController):
         self.arm_jpos_home = np.array([self._to_radians(idx, self.SERVO_HOME)
                                        for idx in self.arm_joint_idxs])
 
-        self.joint_limits = { 1 : (-np.pi/2, np.pi/2),
+        self.joint_limits = { 1 : (-np.pi, np.pi),
                               2 : (-np.pi/2, np.pi/2),
                               3 : (-np.pi/2, np.pi/2),
                               4 : (-np.pi/2, np.pi/2),
