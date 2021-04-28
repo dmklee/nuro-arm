@@ -71,6 +71,16 @@ The parts needed to assemble the robot will all be located in the Hiwonder box. 
 2. [Assembly 02](https://www.youtube.com/watch?v=BhTdgkRTBoE): self-tapping means the screws will have a pointy end.
 3. [Assembly 03](https://www.youtube.com/watch?v=ij0365iMALk): it may take some force to fit the blue parts over the servo horns;  the portion after 3:25 is about cable management and is optional. If any wires are sticking out too much, you might want to fasten them down to avoid them getting caught during motion.
 
+The final step that is not shown in the video is to plug in the robot.  We must plug two things into the controller board on the robot: the power supply and the usb cable.  See the pictures below to understand how to plug things in.  If everything is correct, then when you flip the power switch to ON, lights on the motors should come on.  If you here a beeping noise, this means the power supply is not plugged in.  Do not leave the robot on for extended periods of time, so make sure to flip the power switch when done.
+
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_plugin_parts.png" width="400"/>
+</p>
+
+<p align="center">
+  <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_plugin_with_text.png" width="400"/>
+</p>
+
 #### Calibration
 In order to calibrate the robot, you must first complete the [software installation](#software) section.  For safety reasons, you should remove all obstacles from around the robot (including the camera stand if you already set that up) since the obstacle avoidance abilities do not work until it is calibrated.
 1. In terminal, navigate to the neu-ro-arm directory
@@ -107,7 +117,6 @@ Safety is a priority when working with robots.  While the software is built to p
 - **Safe Workspace**. Before issuing any movement commands, make sure there are no objects within reach of the arm. The robot is only aware of itself, the ground, and the camera so it will not know to avoid other objects.  When you are operating the robot, keep any siblings or pets away.
 - **Kill Switch**.  You should be aware that the robot's motion can be stopped at any moment by either unplugging the power cable, or flipping the switch on the control board. 
 - **Caring for the robot**. To preserve the lifetime of the robot, unplug it when not in use.  Do not force the robot joints to move as this can ruin the gears in the motors; when the robot is in passive mode, there should not be any resistance to motion.
-
 
 ### Camera
 #### Assembly Instructions
@@ -148,7 +157,7 @@ Safety is a priority when working with robots.  While the software is built to p
   <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/camera_full.jpg"/>
 </p>
 
-7.  All done! You are now ready to calibrate the camera.
+7.  All done! Plug in the camera's USB cable into your computer when you are ready to use.
 
 #### Calibration
 In order to calibrate the camera, you must first complete the [software installation](#software) section. 
