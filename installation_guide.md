@@ -71,7 +71,7 @@ The parts needed to assemble the robot will all be located in the Hiwonder box. 
 2. [Assembly 02](https://www.youtube.com/watch?v=BhTdgkRTBoE): self-tapping means the screws will have a pointy end.
 3. [Assembly 03](https://www.youtube.com/watch?v=ij0365iMALk): it may take some force to fit the blue parts over the servo horns;  the portion after 3:25 is about cable management and is optional. If any wires are sticking out too much, you might want to fasten them down to avoid them getting caught during motion.
 
-The final step is to plug in the robot.  We must plug two things into the controller board on the robot: the power supply and the usb cable.  See the pictures below to understand how to plug things in.  If everything is correct, then when you flip the power switch to ON, lights on the motors should come on.  If you here a beeping noise, this means the power supply is not plugged in.  Do not leave the robot on for extended periods of time, so make sure to flip the power switch when done.
+The final step is to plug in the robot.  We must plug two things into the controller board on the robot: the power supply and the usb cable.  See the pictures below to understand how to plug things in.  If everything is correct, when you flip the power switch to ON, lights on the motors will turn on.  If you hear a beeping noise, this means the power supply is not plugged in.  Do not leave the robot on for extended periods of time, so make sure to flip the power switch when done.
 
 <p align="center">
   <img src="https://github.com/dmklee/neu-ro-arm/blob/main/images/installation_guide/arm_plugin_parts.png" width="350"/>
