@@ -48,7 +48,7 @@
 	3. Copy the three files ("hidapi.dll","hidapi.lib","hidapi.pdb")
 	4. Paste them in "C:\Users\[username]\Anaconda3\envs\robot\"
 
-5. [**Linux only**] Install libraries for usb-hid:
+5. [Linux only (**not for Mac or Windows**)] Install libraries for usb-hid:
 	1. In terminal, enter following command:
     ```
     sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
