@@ -376,6 +376,10 @@ class XArmController(BaseController):
         arm_jpos = self.read_command(self.arm_joint_idxs)
         data['arm_motor_directions'] = np.sign(arm_jpos)
 
+        # we must leave a positve direction for wristRotation
+        # it is a one-sided servo so it will always be correctly installed
+        data['arm_motor_directions'][4] = 1
+
         self.power_on()
         return True, data
 
