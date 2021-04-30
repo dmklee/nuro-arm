@@ -21,11 +21,11 @@ def calibrate():
 
     if success:
         np.savez(xarm.CONFIG_FILE, **data)
+        print('[SUCCESS] Arm has been calibrated! ')
+        print('It is now safe to send commands to the arm.')
     else:
         print('Calibration failed. Please try again.')
 
-    print('[SUCCESS] Arm has been calibrated! ')
-    print('It is now safe to send commands to the arm.')
     return success
 
 if __name__ == "__main__":
