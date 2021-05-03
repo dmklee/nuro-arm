@@ -2,7 +2,7 @@ import numpy as np
 import pybullet as pb
 
 from neu_ro_arm.robot.base_controller import BaseController
-from neu_ro_arm.robot.motion_planner import BasePybullet
+from neu_ro_arm.robot.base_pybullet import BasePybullet
 
 class SimulatorController(BaseController, BasePybullet):
     def __init__(self):
