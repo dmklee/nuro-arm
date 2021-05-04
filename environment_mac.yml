@@ -52,7 +52,7 @@ dependencies:
   - pcre=8.44
   - pip=21.0.1
   - pthread-stubs=0.3
-  - pybullet=3.09
+  - pybullet=3.12
   - pyparsing=2.4.7
   - pyqt=5.12.3
   - pyqt-impl=5.12.3
