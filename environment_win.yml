@@ -28,7 +28,7 @@ dependencies:
   - openssl=1.1.1k
   - pillow=8.2.0
   - pip=21.0.1
-  - pybullet=3.09
+  - pybullet=3.12
   - pyparsing=2.4.7
   - pyqt=5.9.2
   - python=3.8.5
