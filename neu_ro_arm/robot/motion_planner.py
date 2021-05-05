@@ -190,9 +190,12 @@ class MotionPlanner(BasePybullet):
         if gripper_mode == 'ignore':
             ignored_links.extend(['gripper_left', 'gripper_right'])
 
-        pb.performCollisionDetection(self._client)
+        #TODO: with pb>=3.1.2, we can use performCollisionDetection without
+        # calling stepSimulation to avoid constraint solving and integration
+        pb.stepSimulation(self._client)
         contact_points = pb.getContactPoints(bodyA=self.robot_id,
                                              physicsClientId=self._client)
+
         for cont_pt in contact_points:
             assert cont_pt[1] == self.robot_id
             robot_link = cont_pt[3]
