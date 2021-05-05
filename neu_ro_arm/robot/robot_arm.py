@@ -110,7 +110,7 @@ class RobotArm:
         except UnsafeTrajectoryError as e:
             if verbose:
                 print(f"[MOVE FAILED] Trajectory would result in collision"
-                      " of robot:{e.robot_link} and {e.other_body}.")
+                      f" of robot:{e.robot_link} and {e.other_body}.")
             return False
 
         self.controller.move_command(self.controller.arm_joint_idxs, jpos)
@@ -157,7 +157,7 @@ class RobotArm:
         except UnsafeJointPosition as e:
             if verbose:
                 print(f"[MOVE FAILED] Target configuration would result in collision"
-                      " of robot:{e.robot_link} and {e.other_body}.")
+                      f" of robot:{e.robot_link} and {e.other_body}.")
             return False
 
         return self.move_arm_jpos(jpos)
