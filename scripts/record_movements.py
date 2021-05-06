@@ -14,9 +14,12 @@ class MovementDispatcher(Thread):
         self.running=True
 
     def run(self):
-        for i, arm_jpos in enumerate(self.data):
+        for i, full_arm_state in enumerate(self.data):
+            arm_jpos = full_arm_state[:-1]
+            gripper_state = full_arm_state[-1]
             self.wp_frame.highlight_row(i)
             robot.move_arm_jpos(arm_jpos)
+            robot.set_gripper_state(gripper_state)
             self.wp_frame.unhighlight_row(i)
             if not self.running:
                 break
@@ -31,7 +34,7 @@ class WaypointsFrame(tk.Frame):
         self.rows = []
 
         #TODO: get the canvas to expand as necessary without specifying width
-        canvas_width = 430
+        canvas_width = 510
         self.canvas = tk.Canvas(self, width=canvas_width,
                                 borderwidth=0, background="#ffffff")
         self.frame = tk.Frame(self.canvas, background="#ffffff")
@@ -113,7 +116,8 @@ class GUI(tk.Frame):
         self.body = tk.Frame(self)
         self.footer = tk.Frame(self)
 
-        self.waypoints_frame = WaypointsFrame(self.body, robot.joint_names)
+        field_names = list(robot.joint_names) + ['gripper']
+        self.waypoints_frame = WaypointsFrame(self.body, field_names)
 
         self.play_button = tk.Button(self.header, bg="#ffffff", fg="#069621",
                                      text="Play", font=('bold'),
@@ -140,6 +144,7 @@ class GUI(tk.Frame):
             print('Cannot add while arm is in motion')
         else:
             new = self.robot.get_arm_jpos()
+            new.append(self.robot.get_gripper_state())
             self.data.append(new)
             self.waypoints_frame.add(new)
 
