@@ -188,14 +188,14 @@ class RobotArm:
         Parameters
         ----------
         state : float
-            gripper state to move to; must be in range [0,1]
+            gripper state to move to; will be clipped to range [0,1]
 
         Returns
         -------
         bool
             True if desired gripper state was achieved
         '''
-        assert 0 <= state <= 1
+        state = np.clip(state, 0, 1)
         jpos = self.controller.gripper_state_to_jpos(state)
 
         self.controller.move_command(self.controller.gripper_joint_idxs, jpos)
