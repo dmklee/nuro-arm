@@ -142,6 +142,7 @@ class XArmController(BaseController):
         self.arm_motor_directions = {k:v for k,v in zip(self.arm_joint_idxs,
                                                         configs['arm_motor_directions'])}
 
+
         self.arm_jpos_home = np.array([self._to_radians(idx, self.SERVO_HOME)
                                        for idx in self.arm_joint_idxs])
 
@@ -158,6 +159,17 @@ class XArmController(BaseController):
         self._lock = threading.Lock()
         self.device = self.connect()
         self.power_on()
+
+        # write servo offsets from config file,
+        # set movement command first to prevent jerky movement
+        for j_idx in self.arm_joint_idxs:
+            new_offset = configs.get(f'offset_j{j_idx}', 0)
+            old_offset = self._read_servo_offset(j_idx)
+            pos = self._to_pos_units(j_idx, self.read_command([j_idx])[0])
+            self._move_servo(self._to_radians(j_idx, pos-new_offset+old_offset),
+                             j_idx)
+            self._write_servo_offset(j_idx, new_offset)
+
 
     def connect(self):
         device = Device()
