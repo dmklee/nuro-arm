@@ -142,6 +142,7 @@ class XArmController(BaseController):
         self.arm_motor_directions = {k:v for k,v in zip(self.arm_joint_idxs,
                                                         configs['arm_motor_directions'])}
 
+
         self.arm_jpos_home = np.array([self._to_radians(idx, self.SERVO_HOME)
                                        for idx in self.arm_joint_idxs])
 
@@ -158,6 +159,17 @@ class XArmController(BaseController):
         self._lock = threading.Lock()
         self.device = self.connect()
         self.power_on()
+
+        # write servo offsets from config file,
+        # set movement command first to prevent jerky movement
+        for j_idx in self.arm_joint_idxs:
+            new_offset = configs.get(f'offset_j{j_idx}', 0)
+            old_offset = self._read_servo_offset(j_idx)
+            pos = self._to_pos_units(j_idx, self.read_command([j_idx])[0])
+            self._move_servo(self._to_radians(j_idx, pos-new_offset+old_offset),
+                             j_idx)
+            self._write_servo_offset(j_idx, new_offset)
+
 
     def connect(self):
         device = Device()
@@ -228,28 +240,35 @@ class XArmController(BaseController):
         '''
         self._send(self.cmd_lib.POSITION_READ,
                    [len(j_idxs), *j_idxs])
-        pos = self._recv(self.cmd_lib.POSITION_READ)
+        pos = self._recv(self.cmd_lib.POSITION_READ, ret_type='short')
+
+        # ensure no readings are outside range
+        pos = np.clip(pos, self.SERVO_LOWER_LIMIT, self.SERVO_UPPER_LIMIT)
 
         # convert to radians
-        j_pos = [self._to_radians(i, p) for i,p in zip(j_idxs, pos)]
-        return j_pos
+        jpos = [self._to_radians(i, p) for i,p in zip(j_idxs, pos)]
+        return jpos
 
     def _move_servo(self, jpos, j_idx, duration=1000):
         '''I have been unable to get multi-servo move command to work,
         so each servo must be commanded separately
         '''
-        # prevent motion outside of servo limits
+        # prevent motion outside of joint limits
         jpos = np.clip(jpos, *self.joint_limits[j_idx])
 
         # convert to positional units
         pos = self._to_pos_units(j_idx, jpos)
+
+        # ensure pos is within servo limits to prevent servo damage
+        pos = np.clip(pos, self.SERVO_LOWER_LIMIT, self.SERVO_UPPER_LIMIT)
+
         data = [1, *itos(duration), j_idx, *itos(pos)]
         self._send(self.cmd_lib.MOVE, data)
 
     def _read_servo_offset(self, servo_id):
         # returns in positional units
         self._send(self.cmd_lib.OFFSET_READ, [1, servo_id])
-        pos = self._recv(self.cmd_lib.OFFSET_READ, ret_type='sbyte')[0]
+        pos = self._recv(self.cmd_lib.OFFSET_READ, ret_type='char')[0]
         return pos
 
     def _write_servo_offset(self, servo_id, offset):
@@ -271,8 +290,11 @@ class XArmController(BaseController):
         with self._lock:
             self.device.write(msg)
 
-    def _recv(self, cmd, ret_type='ushort', timeout=1000):
-        assert ret_type in ('ushort', 'byte', 'sbyte')
+    def _recv(self, cmd, ret_type, timeout=1000):
+        '''
+        short : -32,768 to 32,767 for positional readings
+        char : -128 to 127 for servo offsets
+        '''
         with self._lock:
             ret = self.device.read(timeout)
         if ret is None:
@@ -283,16 +305,18 @@ class XArmController(BaseController):
         assert ret[3] == cmd
 
         recv_data = []
-        packet_size = 3 if ret_type == 'ushort' else 2
+        packet_size = 3 if ret_type == 'short' else 2
         for i in range(count):
             lsb = ret[5 + packet_size*i + 1]
             msb = ret[5 + packet_size*i + 2]
-            if ret_type == 'ushort':
+            if ret_type == 'short':
                 data = (msb << 8) + lsb
-            elif ret_type == 'byte':
-                data = lsb
-            else: # 'sbyte'
+                if data > 32767:
+                    data = data - 65_535
+            elif ret_type == 'char':
                 data = lsb if lsb < 128 else lsb-255
+            else:
+                raise TypeError
             recv_data.append(data)
         return recv_data
 
