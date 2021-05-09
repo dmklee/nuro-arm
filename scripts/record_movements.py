@@ -9,6 +9,8 @@ from neu_ro_arm.robot.robot_arm import RobotArm
 
 class MovementDispatcher(Thread):
     def __init__(self, robot, table, idxs):
+        '''Async thread to handle issuing commands to robot without hanging gui
+        '''
         super().__init__()
         self.robot = robot
         self.table = table
@@ -16,6 +18,9 @@ class MovementDispatcher(Thread):
         self.running=True
 
     def run(self):
+        '''Issue all commands sequentially.  Currently, the arm movement is
+        performed first, followed by gripper movement
+        '''
         children = self.table.get_children()
         for i in self.idxs:
             self.table.selection_set(children[i])
@@ -40,15 +45,15 @@ class GUI(tk.Frame):
         self.initialize()
 
     def initialize(self):
-        self.grid_columnconfigure(0,weight=1)
         self.header = tk.Frame(self)
+        self.header.grid_columnconfigure(0, weight=1)
         self.footer = tk.Frame(self)
 
         field_names = list(robot.joint_names) + ['gripper']
         self.table = ttk.Treeview(self,
                              show='headings',
                              columns=list(range(len(field_names))),
-                             height=8,
+                             height=12,
                              selectmode="browse")
 
         for i, name in enumerate(field_names):
@@ -63,18 +68,18 @@ class GUI(tk.Frame):
         self.table.configure(yscrollcommand=vscrollbar.set)
 
         self.btn_play = tk.Button(self.header, bg="#ffffff", fg="#069621",
-                                  text="Play All", font=('bold'),
+                                  text="Play All", font=('Helvetica','12','bold'),
                                   command=lambda: self.toggle_move('all')
                                  )
         self.btn_go = tk.Button(self.header, bg="#ffffff", fg="#069621",
-                                text="Move", font=('bold'),
+                                text="Move to", font=('Helvetica','12','bold'),
                                 command=lambda: self.toggle_move('single')
                                )
-        self.btn_save = tk.Button(self.header, bg="#ffffff", fg="#d61111",
-                                  text="Save", font=('bold'),
+        self.btn_save = tk.Button(self.header, bg="#ffffff", fg="#bd5e00",
+                                  text="Save", font=('Helvetica','12','bold'),
                                   command=self.save)
-        self.btn_load = tk.Button(self.header, bg="#ffffff", fg="#d61111",
-                                  text="Load", font=('bold'),
+        self.btn_load = tk.Button(self.header, bg="#ffffff", fg="#bd5e00",
+                                  text="Load", font=('Helvetica','12','bold'),
                                   command=self.load)
         self.btn_append = tk.Button(self.footer, bg="#ffffff", fg="#0740c9",
                                  text="Append", font=('Helvetica','12','bold'),
@@ -93,19 +98,20 @@ class GUI(tk.Frame):
                                     command=self.delete,)
 
         # pack 
-        self.header.grid(row=0, sticky="we")
-        self.table.grid(row=1, sticky="we")
-        self.footer.grid(row=2, sticky="e")
-        self.btn_play.grid(row=0, column=0, padx=20)
-        self.btn_go.grid(row=0, column=1, padx=20)
-        self.btn_save.grid(row=0, column=2, padx=10)
-        self.btn_load.grid(row=0, column=3, padx=10)
+        self.header.grid(row=0, pady=4, sticky='we')
+        self.table.grid(row=1, sticky='we')
+        self.footer.grid(row=2, sticky='e', pady=4)
 
-        self.btn_move_up.grid(row=0, column=0)
-        self.btn_move_down.grid(row=0, column=1)
-        self.btn_append.grid(row=0, column=2)
-        self.btn_insert.grid(row=0, column=3)
-        self.btn_delete.grid(row=0, column=4)
+        self.btn_play.grid(row=0, column=0, padx=10, sticky='w')
+        self.btn_go.grid(row=0, column=0, padx=10)
+        self.btn_save.grid(row=0, column=1, padx=10, sticky='e')
+        self.btn_load.grid(row=0, column=2, padx=10, sticky='e')
+
+        self.btn_move_up.grid(row=0, column=0,padx=4)
+        self.btn_move_down.grid(row=0, column=1,padx=4)
+        self.btn_append.grid(row=0, column=2,padx=4)
+        self.btn_insert.grid(row=0, column=3,padx=4)
+        self.btn_delete.grid(row=0, column=4,padx=4)
 
     def append(self):
         if not self.moving:
@@ -200,7 +206,7 @@ class GUI(tk.Frame):
             self.after(100, lambda : self.monitor(thread))
         else:
             self.change_buttons_state('normal')
-            self.btn_play.config(text="Play", fg="#069621")
+            self.btn_play.config(text="Play All", fg="#069621")
             thread.running = False
             self.moving = False
             self.robot.passive_mode()
@@ -209,6 +215,7 @@ class GUI(tk.Frame):
         assert state in ('normal', 'disabled')
         self.btn_go['state'] = state
         self.btn_save['state'] = state
+        self.btn_load['state'] = state
         self.btn_move_up['state'] = state
         self.btn_move_down['state'] = state
         self.btn_append['state'] = state
