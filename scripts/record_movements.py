@@ -1,108 +1,33 @@
 import tkinter as tk
+from tkinter import ttk
 import numpy as np
 import time
 from threading import Thread
+import os
 
 from neu_ro_arm.robot.robot_arm import RobotArm
 
 class MovementDispatcher(Thread):
-    def __init__(self, robot, data, wp_frame):
+    def __init__(self, robot, table, idxs):
         super().__init__()
         self.robot = robot
-        self.data = data
-        self.wp_frame = wp_frame
+        self.table = table
+        self.idxs = idxs
         self.running=True
 
     def run(self):
-        for i, full_arm_state in enumerate(self.data):
+        children = self.table.get_children()
+        for i in self.idxs:
+            self.table.selection_set(children[i])
+            values = self.table.item(children[i])['values']
+            full_arm_state = [float(a) for a in values]
             arm_jpos = full_arm_state[:-1]
             gripper_state = full_arm_state[-1]
-            self.wp_frame.highlight_row(i)
+
             robot.move_arm_jpos(arm_jpos)
             robot.set_gripper_state(gripper_state)
-            self.wp_frame.unhighlight_row(i)
             if not self.running:
                 break
-
-class WaypointsFrame(tk.Frame):
-    def __init__(self, parent, field_names):
-        tk.Frame.__init__(self, parent)
-
-        self.field_names = field_names
-        self.colors = {'highlight' : "#56a95b",
-                       'normal' : "#ffffff"}
-        self.rows = []
-
-        #TODO: get the canvas to expand as necessary without specifying width
-        canvas_width = 510
-        self.canvas = tk.Canvas(self, width=canvas_width,
-                                borderwidth=0, background="#ffffff")
-        self.frame = tk.Frame(self.canvas, background="#ffffff")
-        self.frame.grid_columnconfigure(0,weight=1)
-
-        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=self.vsb.set)
-
-        self.vsb.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.canvas_frame = self.canvas.create_window((0,0),
-                                                      window=self.frame,
-                                                      anchor="nw",
-                                                      tags="self.frame")
-
-        self.frame.bind("<Configure>", self.onFrameConfigure)
-
-        self.initialize()
-
-    def add(self, values):
-        row_id = len(self.rows) + 1
-        new_row = []
-
-        lbl = tk.Label(self.frame, width=3, borderwidth=1,
-                       fg="#494949", relief="solid", text=str(row_id))
-        lbl.grid(row=row_id, column=0, sticky='nswe')
-        new_row.append(lbl)
-
-        for i,v in enumerate(values):
-            text = v if isinstance(v, str) else f"{v:0.2f}"
-            lbl = tk.Label(self.frame, borderwidth=1,
-                           text=text, relief="solid", bg=self.colors['normal'])
-            lbl.grid(row=row_id, column=i+1, sticky='nswe')
-            new_row.append(lbl)
-
-        self.rows.append(new_row)
-
-    def clear(self):
-        for row in self.rows:
-            for lbl in row:
-                lbl.destroy()
-        self.rows = []
-
-    def initialize(self):
-        tk.Label(self.frame,
-                 borderwidth=1,
-                 text="  ",
-                 relief="solid",
-                 font=('bold'),
-                ).grid(row=0, column=0, ipadx=8, sticky='nwse')
-
-        for i,v in enumerate(self.field_names):
-            tk.Label(self.frame,
-                     borderwidth=1,
-                     text=v,
-                     relief="solid",
-                     font=('bold'),
-                    ).grid(row=0, column=i+1, ipadx=8)
-
-    def highlight_row(self, row_id):
-        [lbl.config(bg=self.colors['highlight']) for lbl in self.rows[row_id][1:]]
-
-    def unhighlight_row(self, row_id):
-        [lbl.config(bg=self.colors['normal']) for lbl in self.rows[row_id][1:]]
-
-    def onFrameConfigure(self, event):
-        '''Reset the scroll region to encompass the inner frame'''
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
 class GUI(tk.Frame):
     def __init__(self, parent, robot):
@@ -112,56 +37,160 @@ class GUI(tk.Frame):
         self.moving = False
         self.robot.passive_mode()
 
+        self.initialize()
+
+    def initialize(self):
+        self.grid_columnconfigure(0,weight=1)
         self.header = tk.Frame(self)
-        self.body = tk.Frame(self)
         self.footer = tk.Frame(self)
 
         field_names = list(robot.joint_names) + ['gripper']
-        self.waypoints_frame = WaypointsFrame(self.body, field_names)
+        self.table = ttk.Treeview(self,
+                             show='headings',
+                             columns=list(range(len(field_names))),
+                             height=8,
+                             selectmode="browse")
 
-        self.play_button = tk.Button(self.header, bg="#ffffff", fg="#069621",
-                                     text="Play", font=('bold'),
-                                     command=self.toggle_arm_motion)
-        self.clear_button = tk.Button(self.header, bg="#ffffff", fg="#d61111",
-                                      text="Clear", font=('bold'),
-                                      command=self.clear)
-        self.add_button = tk.Button(self.footer, bg="#ffffff", fg="#0740c9",
-                                    text="Add", font=('bold'),
-                                    command=self.add)
+        for i, name in enumerate(field_names):
+            self.table.column(i, width=10*(len(name)+2),
+                              anchor='center', stretch='no')
+            self.table.heading(i, text=name)
+
+        vscrollbar = ttk.Scrollbar(self,
+                                   orient='vertical',
+                                   command=self.table.yview)
+        vscrollbar.grid(row=1,column=1, sticky="ns")
+        self.table.configure(yscrollcommand=vscrollbar.set)
+
+        self.btn_play = tk.Button(self.header, bg="#ffffff", fg="#069621",
+                                  text="Play All", font=('bold'),
+                                  command=lambda: self.toggle_move('all')
+                                 )
+        self.btn_go = tk.Button(self.header, bg="#ffffff", fg="#069621",
+                                text="Move", font=('bold'),
+                                command=lambda: self.toggle_move('single')
+                               )
+        self.btn_save = tk.Button(self.header, bg="#ffffff", fg="#d61111",
+                                  text="Save", font=('bold'),
+                                  command=self.save)
+        self.btn_load = tk.Button(self.header, bg="#ffffff", fg="#d61111",
+                                  text="Load", font=('bold'),
+                                  command=self.load)
+        self.btn_append = tk.Button(self.footer, bg="#ffffff", fg="#0740c9",
+                                 text="Append", font=('Helvetica','12','bold'),
+                                 command=self.append,)
+        self.btn_insert = tk.Button(self.footer, bg="#ffffff", fg="#0740c9",
+                                 text="Insert", font=('Helvetica','12','bold'),
+                                 command=self.insert,)
+        self.btn_move_up = tk.Button(self.footer, bg="#ffffff", fg="#000000",
+                                     text="Shift Up", font=('Helvetica','12','bold'),
+                                     command=self.move_up,)
+        self.btn_move_down = tk.Button(self.footer, bg="#ffffff", fg="#000000",
+                                       text="Shift Down", font=('Helvetica','12','bold'),
+                                       command=self.move_down,)
+        self.btn_delete = tk.Button(self.footer, bg="#ffffff", fg="#ff0000",
+                                    text="Delete", font=('Helvetica','12','bold'),
+                                    command=self.delete,)
 
         # pack 
-        self.header.pack(side="top")
-        self.body.pack(side="top")
-        self.footer.pack(side="top")
-        self.waypoints_frame.pack(side="top", fill="both")
-        self.clear_button.pack(side="right", fill="x", padx=20)
-        self.play_button.pack(side="right", fill="x", padx=20)
-        self.add_button.pack(side="right", fill="x")
+        self.header.grid(row=0, sticky="we")
+        self.table.grid(row=1, sticky="we")
+        self.footer.grid(row=2, sticky="e")
+        self.btn_play.grid(row=0, column=0, padx=20)
+        self.btn_go.grid(row=0, column=1, padx=20)
+        self.btn_save.grid(row=0, column=2, padx=10)
+        self.btn_load.grid(row=0, column=3, padx=10)
 
-    def add(self):
-        # get data 
-        if self.moving:
-            print('Cannot add while arm is in motion')
-        else:
+        self.btn_move_up.grid(row=0, column=0)
+        self.btn_move_down.grid(row=0, column=1)
+        self.btn_append.grid(row=0, column=2)
+        self.btn_insert.grid(row=0, column=3)
+        self.btn_delete.grid(row=0, column=4)
+
+    def append(self):
+        if not self.moving:
             new = self.robot.get_arm_jpos()
             new.append(self.robot.get_gripper_state())
             self.data.append(new)
-            self.waypoints_frame.add(new)
+            id_ = self.table.insert('','end', values=[f'{a:.2f}' for a in new])
 
-    def clear(self):
-        if self.moving:
-            print('Cannot clear while arm is in motion')
-        else:
-            self.data = []
-            self.waypoints_frame.clear()
+            # select newest by default
+            self.table.selection_set(id_)
 
-    def toggle_arm_motion(self):
+    def insert(self):
+        if not self.moving:
+            selected = self.table.selection()
+            if len(selected) == 0:
+                return self.append()
+            selected = selected[0]
+            selected_id = self.table.index(selected)
+
+            new = self.robot.get_arm_jpos()
+            new.append(self.robot.get_gripper_state())
+            self.data.append(new)
+
+            id_ = self.table.insert('',selected_id, values=[f'{a:.2f}' for a in new])
+
+            # select newest by default
+            self.table.selection_set(id_)
+
+    def move_up(self):
+        if not self.moving:
+            selected = self.table.selection()
+            if len(selected) == 0:
+                return
+            selected = selected[0]
+            selected_id = self.table.index(selected)
+            if selected_id > 0:
+                self.table.move(selected, '', selected_id-1)
+
+    def move_down(self):
+        if not self.moving:
+            selected = self.table.selection()
+            if len(selected) == 0:
+                return
+            selected = selected[0]
+
+            selected_id = self.table.index(selected)
+            self.table.move(selected, '', selected_id+1)
+
+    def delete(self):
+        if not self.moving:
+            selected = self.table.selection()
+            if len(selected) == 0:
+                return
+            selected = selected[0]
+
+            to_select = self.table.prev(selected)
+            if to_select == '':
+                # we need to find something to select if there are still rows
+                to_select = self.table.next(selected)
+
+            self.table.delete(selected)
+            self.table.selection_set(to_select)
+
+    def toggle_move(self, mode):
+        assert mode in ('single', 'all')
         if self.moving:
             self.moving = False
+            self.change_buttons_state('normal')
         else:
-            self.play_button.config(text="STOP", fg="#ff0000")
-            dispatcher = MovementDispatcher(self.robot, self.data.copy(),
-                                            self.waypoints_frame)
+            if mode == 'single':
+                try:
+                    idxs = [self.table.index(self.table.selection()[0])]
+                except IndexError:
+                    idxs = []
+            else:
+                idxs = range(len(self.table.get_children()))
+
+            if len(idxs) == 0:
+                return
+
+            self.change_buttons_state('disabled')
+            self.btn_play.config(text="STOP", fg="#ff0000")
+            dispatcher = MovementDispatcher(self.robot,
+                                            self.table,
+                                            idxs)
             self.moving = True
             dispatcher.start()
             self.monitor(dispatcher)
@@ -170,10 +199,102 @@ class GUI(tk.Frame):
         if thread.is_alive() and self.moving:
             self.after(100, lambda : self.monitor(thread))
         else:
-            self.play_button.config(text="Play", fg="#069621")
+            self.change_buttons_state('normal')
+            self.btn_play.config(text="Play", fg="#069621")
             thread.running = False
             self.moving = False
             self.robot.passive_mode()
+
+    def change_buttons_state(self, state):
+        assert state in ('normal', 'disabled')
+        self.btn_go['state'] = state
+        self.btn_save['state'] = state
+        self.btn_move_up['state'] = state
+        self.btn_move_down['state'] = state
+        self.btn_append['state'] = state
+        self.btn_insert['state'] = state
+        self.btn_delete['state'] = state
+
+    def save(self):
+        if len(self.table.get_children()) == 0:
+            print('You must add joint positions before saving.')
+            return
+
+        def check_file():
+            filename = entry.get()
+            if filename == '':
+                print('Filename cannot be empty')
+            else:
+                filepath = os.path.dirname(os.path.abspath(__file__))
+                filename = filename + '.npy'
+                data = []
+                for child in self.table.get_children():
+                    data.append(self.table.item(child)['values'])
+                data = np.array(data).astype(float)
+                np.save(os.path.join(filepath, filename), data)
+                popup.destroy()
+
+        popup = tk.Toplevel()
+        popup.winfo_toplevel().title('')
+        popup.grid_columnconfigure(0, weight=1)
+        popup.grid_rowconfigure(0, weight=1)
+
+        label = tk.Label(popup, text="File name: ")
+        entry = tk.Entry(popup)
+        button = tk.Button(popup, text='save', command=check_file)
+        label.grid(row=0, column=0, padx=3, pady=3)
+        entry.grid(row=0, column=1)
+        button.grid(row=0, column=2)
+
+    def load(self):
+        def load_file():
+            selected = table.selection()
+            if len(selected) == 0:
+                return
+            filename = table.item(selected[0])['values'][0]
+            self.table.delete(*self.table.get_children())
+            for data in np.load(os.path.join(filepath,filename)):
+                item = self.table.insert('','end', values=[f'{d:.2f}' for d in data])
+            self.table.selection_set(item)
+            popup.destroy()
+
+        popup = tk.Toplevel()
+        popup.winfo_toplevel().title('')
+        popup.grid_columnconfigure(0, weight=1)
+        popup.grid_rowconfigure(0, weight=1)
+
+        # check if files exist
+        filepath = os.path.dirname(os.path.abspath(__file__))
+        files = [f for f in next(os.walk(filepath))[2] if f.endswith('.npy')]
+        if len(files) == 0:
+            tk.Label(popup,
+                     text="No files were found.",
+                     fg='#990000',
+                     font=('Helvetica','12','bold'),
+                    ).grid(padx=10, pady=10)
+            self.after(800, popup.destroy)
+            return
+
+        table = ttk.Treeview(popup,
+                             show='headings',
+                             columns=(0,),
+                             height=8,
+                             selectmode="browse")
+        table.column(0, anchor='center')
+        table.heading(0, text='Select a File')
+        for f in files:
+            table.insert('','end', values=[f,])
+        table.selection_set(table.get_children()[0])
+
+        vscrollbar = ttk.Scrollbar(popup,
+                                   orient='vertical',
+                                   command=table.yview)
+        button = tk.Button(popup, text='load', font=('bold'),
+                           command=load_file)
+
+        table.grid(row=1,column=0, sticky="ns", pady=5, padx=(3,0))
+        vscrollbar.grid(row=1,column=1, sticky="ns", pady=5)
+        button.grid(row=1, column=2, sticky='n',padx=10, pady=5)
 
 if __name__ == "__main__":
     robot = RobotArm()
