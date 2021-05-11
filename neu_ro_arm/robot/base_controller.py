@@ -118,19 +118,20 @@ class BaseController:
         # otherwise, it may terminate prematurely because it detects no motion
         # this is mainly an issue for the gripper only
         time.sleep(4./self.measurement_frequency)
-        while not np.allclose(jpos, target_jpos, atol=self.movement_precision):
+        while True:
             time.sleep(1./self.measurement_frequency)
 
             new_jpos = self.read_command(j_idxs)
+            if np.allclose(new_jpos, target_jpos, atol=self.movement_precision):
+                # success
+                return True, new_jpos
 
             if time.time()-start_time > t_factor * duration:
                 # movement has taken too much time
-                return False, jpos
+                return False, new_jpos
 
             if (np.abs(np.subtract(new_jpos, jpos)) < self.measurement_precision).all():
-                # all motion has stopped
-                return False, jpos
+                # all movements are within measurement precision so motion has stopped
+                return False, new_jpos
 
             jpos = new_jpos
-
-        return True, jpos
