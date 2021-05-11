@@ -31,6 +31,11 @@ class BaseController:
             target joint positions corresponding to the joint indices
         speed : {'normal', 'max', 'slow'}, optional
             designate movement speed. Not used by simulator controller
+
+        Returns
+        -------
+        float
+            expected time (s) to complete movement, used for monitoring
         '''
         return
 
@@ -77,7 +82,7 @@ class BaseController:
         return state*self.gripper_opened + (1-state)*self.gripper_closed
 
 
-    def monitor(self, j_idxs, target_jpos, max_iter=100):
+    def monitor(self, j_idxs, target_jpos, duration=2):
         '''Monitor controller motion to detect failure or collision
 
         With simulated controller, failure indicates collision.  With xArm, it
@@ -92,8 +97,9 @@ class BaseController:
             target_jpos
         target_jpos : array_like of float
             target joint positions in radians, length should match j_idxs
-        max_iter : int, default 100
-            maximum iterations to watch the movement
+        duration : float, default 2
+            number of seconds that the movement is expected to take. a movement
+            will be labeled a failure if it takes longer than 1.1x duration
 
         Returns
         -------
@@ -103,16 +109,20 @@ class BaseController:
             achieved joint position at the end of the motion, may be different
             from target even if successful due to joint precision margin
         '''
-        it = 0
+        t_factor = 1.1
+        start_time = time.time()
 
         jpos = self.read_command(j_idxs)
         while not np.allclose(jpos, target_jpos, atol=self.movement_precision):
-            it += 1
             time.sleep(1./self.measurement_frequency)
 
             new_jpos = self.read_command(j_idxs)
-            if it > max_iter or np.allclose(new_jpos, jpos):
-                # motion has stopped, so failure
+            if time.time()-start_time > t_factor * duration:
+                # movement has taken too much time
+                return False, jpos
+
+            if (np.abs(np.subtract(new_jpos, jpos)) < self.measurement_precision).all():
+                # all motion has stopped
                 return False, jpos
 
             jpos = new_jpos
