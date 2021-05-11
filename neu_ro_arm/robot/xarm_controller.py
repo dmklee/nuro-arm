@@ -132,7 +132,7 @@ class XArmController(BaseController):
 
         self.arm_joint_idxs = [6,5,4,3,2]
         self.gripper_joint_idxs = [1]
-        self.movement_precision = 0.035
+        self.movement_precision = 0.04
         self.measurement_precision = 0.01
         self.measurement_frequency = 20
 
@@ -147,12 +147,13 @@ class XArmController(BaseController):
         self.arm_jpos_home = np.array([self._to_radians(idx, self.SERVO_HOME)
                                        for idx in self.arm_joint_idxs])
 
-        self.joint_limits = { 1 : (-np.pi, np.pi),
-                              2 : (-np.pi/2, np.pi/2),
-                              3 : (-np.pi/2, np.pi/2),
-                              4 : (-np.pi/2, np.pi/2),
-                              5 : (-np.pi/2, np.pi/2),
-                              6 : (-np.pi/2, np.pi/2)
+        # servo limits end at -2.09, +2.09, so add a bit of a cushion
+        self.joint_limits = { 1 : (-2.0, 2.0),
+                              2 : (-2.0, 2.0),
+                              3 : (-2.0, 2.0),
+                              4 : (-2.0, 2.0),
+                              5 : (-2.0, 2.0),
+                              6 : (-2.0, 2.0)
                             }
 
         self.servos = XArmController.Servos
