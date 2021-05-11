@@ -132,7 +132,7 @@ class XArmController(BaseController):
 
         self.arm_joint_idxs = [6,5,4,3,2]
         self.gripper_joint_idxs = [1]
-        self.joint_precision = 0.035
+        self.movement_precision = 0.035
         self.measurement_precision = 0.01
         self.measurement_frequency = 20
 
