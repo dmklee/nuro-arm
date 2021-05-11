@@ -18,7 +18,6 @@ class SimulatorController(BaseController, BasePybullet):
                                6 : (0, 0.042),
                                7 : (0, 0.042),
                              }
-        self.joint_precision = 1e-4
 
     def move_command(self, j_idxs, jpos, speed=None):
         '''Issue move command to specified joint indices
@@ -35,6 +34,11 @@ class SimulatorController(BaseController, BasePybullet):
             target joint positions corresponding to the joint indices
         speed
             ignored
+
+        Returns
+        -------
+        float
+            expected time (s) to complete movement
         '''
         pb.setJointMotorControlArray(self.robot_id,
                                      j_idxs,
@@ -42,6 +46,8 @@ class SimulatorController(BaseController, BasePybullet):
                                      jpos,
                                      physicsClientId=self._client
                                     )
+        # TODO: calculate expected time
+        return 0.5
 
     def read_command(self, j_idxs):
         '''Read some joint positions

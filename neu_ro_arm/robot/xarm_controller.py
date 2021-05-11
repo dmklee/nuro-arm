@@ -101,7 +101,6 @@ class XArmController(BaseController):
     SERVO_LOWER_LIMIT = 0
     SERVO_UPPER_LIMIT = 1000
     SERVO_HOME = 500
-    SERVO_PRECISION = 10 # how accurate can we expect it to be
     SERVO_MAX_SPEED = 0.5 # positional units per millisecond
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
@@ -133,7 +132,9 @@ class XArmController(BaseController):
 
         self.arm_joint_idxs = [6,5,4,3,2]
         self.gripper_joint_idxs = [1]
-        self.joint_precision = self.SERVO_PRECISION * self.POS2RADIANS
+        self.movement_precision = 0.035
+        self.measurement_precision = 0.01
+        self.measurement_frequency = 20
 
         # load params from config file
         configs = np.load(self.CONFIG_FILE)
@@ -211,6 +212,11 @@ class XArmController(BaseController):
         jpos : array_like of float
             target joint positions corresponding to the joint indices
         speed : {'normal', 'max', 'slow'}
+
+        Returns
+        -------
+        float
+            expected time (s) to complete movement
         '''
         # we need to ensure linear motion without violating max speed
         current_jpos = self.read_command(j_idxs)
@@ -224,6 +230,8 @@ class XArmController(BaseController):
 
         [self._move_servo(j_p, j_id, duration)
              for j_p, j_id in zip(jpos, j_idxs)]
+
+        return duration/1000
 
     def read_command(self, j_idxs):
         '''Read some joint positions
