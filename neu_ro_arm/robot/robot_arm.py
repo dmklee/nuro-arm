@@ -113,9 +113,13 @@ class RobotArm:
                       f" of robot:{e.robot_link} and {e.other_body}.")
             return False
 
-        self.controller.move_command(self.controller.arm_joint_idxs, jpos)
+        duration = self.controller.move_command(self.controller.arm_joint_idxs, jpos)
         success, achieved_jpos = self.controller.monitor(self.controller.arm_joint_idxs,
-                                                         jpos)
+                                                         jpos, duration)
+        if not success:
+            # to avoid leaving motors under load, move to achieved jpos
+            self.controller.move_command(self.controller.arm_joint_idxs, achieved_jpos)
+
         self.mp.mirror(arm_jpos=achieved_jpos)
         return success
 
@@ -198,9 +202,12 @@ class RobotArm:
         state = np.clip(state, 0, 1)
         jpos = self.controller.gripper_state_to_jpos(state)
 
-        self.controller.move_command(self.controller.gripper_joint_idxs, jpos)
+        duration = self.controller.move_command(self.controller.gripper_joint_idxs, jpos)
         success, achieved_jpos = self.controller.monitor(self.controller.gripper_joint_idxs,
-                                                         jpos)
+                                                         jpos, duration)
+        if not success:
+            # to avoid leaving motors under load, move to achieved jpos
+            self.controller.move_command(self.controller.gripper_joint_idxs, achieved_jpos)
 
         achieved_gripper_state = self.controller.gripper_jpos_to_state(achieved_jpos)
         self.mp.mirror(gripper_state=achieved_gripper_state)
