@@ -13,7 +13,9 @@ class BaseController:
         self.arm_jpos_home = None
         self.gripper_joint_idxs = None
         self.joint_limits = None
-        self.joint_precision = 1e-4
+        self.movement_precision = 1e-4
+        self.measurement_precision = 1e-4
+        self.measurement_frequency = 20
 
     @abstractmethod
     def move_command(self, j_idxs, jpos, speed=None):
@@ -75,7 +77,7 @@ class BaseController:
         return state*self.gripper_opened + (1-state)*self.gripper_closed
 
 
-    def monitor(self, j_idxs, target_jpos, max_iter=100, monitor_freq=10):
+    def monitor(self, j_idxs, target_jpos, max_iter=100):
         '''Monitor controller motion to detect failure or collision
 
         With simulated controller, failure indicates collision.  With xArm, it
@@ -92,8 +94,6 @@ class BaseController:
             target joint positions in radians, length should match j_idxs
         max_iter : int, default 100
             maximum iterations to watch the movement
-        monitor_freq : int, default 10
-            number of position checks made per second
 
         Returns
         -------
@@ -106,9 +106,9 @@ class BaseController:
         it = 0
 
         jpos = self.read_command(j_idxs)
-        while not np.allclose(jpos, target_jpos, atol=self.joint_precision):
+        while not np.allclose(jpos, target_jpos, atol=self.movement_precision):
             it += 1
-            time.sleep(1./monitor_freq)
+            time.sleep(1./self.measurement_frequency)
 
             new_jpos = self.read_command(j_idxs)
             if it > max_iter or np.allclose(new_jpos, jpos):

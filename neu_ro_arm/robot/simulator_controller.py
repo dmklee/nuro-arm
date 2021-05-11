@@ -18,7 +18,6 @@ class SimulatorController(BaseController, BasePybullet):
                                6 : (0, 0.042),
                                7 : (0, 0.042),
                              }
-        self.joint_precision = 1e-4
 
     def move_command(self, j_idxs, jpos, speed=None):
         '''Issue move command to specified joint indices
