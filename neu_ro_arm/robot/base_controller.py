@@ -86,9 +86,9 @@ class BaseController:
         '''Monitor controller motion to detect failure or collision
 
         With simulated controller, failure indicates collision.  With xArm, it
-        is possible that the joint precision is too small (the arm is quite
-        inconsistent with hitting the target position especially for short
-        movements).
+        is also possible that the joint precision is too small (I have tried to
+        tune the precision values, however the gripper is especially inaccurate
+        for some reason).
 
         Parameters
         ----------
@@ -99,7 +99,7 @@ class BaseController:
             target joint positions in radians, length should match j_idxs
         duration : float, default 2
             number of seconds that the movement is expected to take. a movement
-            will be labeled a failure if it takes longer than 1.1x duration
+            will be labeled a failure if it takes longer than 1.5x duration
 
         Returns
         -------
@@ -109,14 +109,20 @@ class BaseController:
             achieved joint position at the end of the motion, may be different
             from target even if successful due to joint precision margin
         '''
-        t_factor = 1.1
+        t_factor = 1.5
         start_time = time.time()
 
         jpos = self.read_command(j_idxs)
+
+        # give some initial time for motion to start
+        # otherwise, it may terminate prematurely because it detects no motion
+        # this is mainly an issue for the gripper only
+        time.sleep(4./self.measurement_frequency)
         while not np.allclose(jpos, target_jpos, atol=self.movement_precision):
             time.sleep(1./self.measurement_frequency)
 
             new_jpos = self.read_command(j_idxs)
+
             if time.time()-start_time > t_factor * duration:
                 # movement has taken too much time
                 return False, jpos
@@ -128,4 +134,3 @@ class BaseController:
             jpos = new_jpos
 
         return True, jpos
-
