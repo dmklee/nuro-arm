@@ -9,7 +9,8 @@ import cv2
 
 from neu_ro_arm.camera.camera import Camera
 from neu_ro_arm.robot.robot_arm import RobotArm
-from ..utils import ShowFace, get_face
+from neu_ro_arm.camera.camera_utils import find_face
+from neu_ro_arm.camera.gui import ShowFace
 
 camera = Camera()
 
@@ -47,7 +48,7 @@ while True:
     image = camera.get_image()
 
     # detect face
-    face = get_face(image)
+    face = find_face(image)
     if face is None:
         # no face found so go to next iteration
         continue
