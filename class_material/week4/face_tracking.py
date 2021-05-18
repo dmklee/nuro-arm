@@ -74,8 +74,8 @@ if __name__ == "__main__":
         #####################################
         # your code goes here
         #####################################
-        cx, cy = image.shape/2
-        move_base_relative(robot, -(x-cx)/600)
+        cx, cy = np.array(image.shape)/2
+        move_base_relative(robot, -(x-cx)/300)
 
         #####################################
         #####################################
