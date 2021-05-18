@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 
 from neu_ro_arm.camera.camera import Camera
-from neu_ro_arm.robot.robot import RobotArm
+from neu_ro_arm.robot.robot_arm import RobotArm
 from class_material.week4.utils import ShowFace, get_face
 
 camera = Camera()
