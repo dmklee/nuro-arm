@@ -39,7 +39,7 @@ for arm_jpos in go_to_block:
 # Feedback code starts here
 ################################
 
-delay = 1 # second
+delay = 2 # second
 almost_closed = 0.15
 while True:
     # attempt to grasp
@@ -51,8 +51,8 @@ while True:
 
     if gripper_state < almost_closed:
         # nothing in gripper
-        time.sleep(delay)
         robot.open_gripper()
+        time.sleep(delay)
     else:
         # gripper must have something in it
         print('Cube detected in gripper.')
