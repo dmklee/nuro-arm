@@ -41,9 +41,8 @@ if __name__ == "__main__":
 
     # if you want to visualize the face detection, uncomment this section
     # script will hand on this function until you close window
-    draw_face = ShowFace(camera.unpack_configs(False))
-    # camera.gui.show(window_name='Detecting Faces (press ESC to exit)',
-                   # modifier_fns=[draw_face])
+    camera.gui.show(window_name='Detecting Faces (press ESC to exit)',
+                   modifier_fns=[ShowFace(camera.unpack_configs(False))])
 
 
     # initialize the robot
