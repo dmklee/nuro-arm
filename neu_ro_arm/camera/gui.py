@@ -171,3 +171,12 @@ class ShowArucoTags(ImageModifierFunction):
                                 color=(0, 0, 255)
                                 )
         return canvas
+
+class ShowFace(ImageModifierFunction):
+    def __call__(self, original, canvas):
+        face_data = camera_utils.find_face(original)
+        if face_data is not None:
+            x,y,w,h = face_data
+            canvas = cv2.ellipse(canvas, (x, y), (int(w/2), int(h/2)),
+                                 0, 0, 360, color=(0,0,255), thickness=4)
+        return canvas
