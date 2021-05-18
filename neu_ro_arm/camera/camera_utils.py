@@ -29,7 +29,7 @@ def find_face(img):
     h : int
         vertical size of face in pixel space
     '''
-    gray = camera_utils.convert_gray(img)
+    gray = convert_gray(img)
     faces, _, confidences = face_detector.detectMultiScale3(gray,
                                            scaleFactor=1.1,
                                            minNeighbors=7,
