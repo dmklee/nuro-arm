@@ -174,9 +174,18 @@ class ShowArucoTags(ImageModifierFunction):
 
 class ShowFace(ImageModifierFunction):
     def __call__(self, original, canvas):
+        # highlight center of image
+        cx = int(original.shape[1]/2)
+        cy = int(original.shape[0]/2)
+        canvas = cv2.drawMarker(canvas, (cx,cy), markerType=cv2.MARKER_CROSS,
+                                color=(255,0,0), markerSize=14, thickness=2)
+
         face_data = camera_utils.find_face(original)
         if face_data is not None:
             x,y,w,h = face_data
             canvas = cv2.ellipse(canvas, (x, y), (int(w/2), int(h/2)),
                                  0, 0, 360, color=(0,0,255), thickness=4)
+            canvas = cv2.drawMarker(canvas, (x,y), markerType=cv2.MARKER_CROSS,
+                                    color=(0,0,255), markerSize=10, thickness=2)
+
         return canvas
