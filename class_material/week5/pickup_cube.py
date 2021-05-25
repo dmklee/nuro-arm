@@ -12,10 +12,9 @@ START_ARM_JPOS = [-0.15498, -1.0932, 1.386, 1.3362, 0.01256]
 def decide_cube_id(camera):
     # setup visualizer so you can see camera image with identified cubes
     # when the user enters a number on the keypad, that will be returned
-    tag_ids = list(range(12))
-    modifier = ShowCubes(cam.unpack_configs(False), include_id=True)
-    exit_keys = [ord(str(i)) for i in tag_ids]
-    exit_key = cam.gui.show(modifier_fns=[modifier],
+    modifier = ShowCubes(camera.unpack_configs(False), include_id=True)
+    exit_keys = [ord(str(i)[0]) for i in range(12)]
+    exit_key = camera.gui.show(modifier_fns=[modifier],
                             exit_keys=exit_keys,
                             window_name='Press cube number to grab it',
                            )
@@ -29,8 +28,8 @@ def decide_cube_id(camera):
 
 def pickup_cube(camera, robot, cube_id):
     # identify all cubes in current image
-    img = cam.get_image()
-    cubes = camera_utils.find_cubes(img, cam._mtx, cam._dist_coeffs, cam._cam2world)
+    img = camera.get_image()
+    cubes = camera_utils.find_cubes(img, camera._mtx, camera._dist_coeffs, camera._cam2world)
 
     # filter the list of cubes for the one with the right cube_id
     cube = next((c for c in cubes if c.id_==cube_id), None)
