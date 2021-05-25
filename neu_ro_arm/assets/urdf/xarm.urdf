@@ -307,7 +307,7 @@
         <child link="gripper_left_link"/>
         <origin rpy="0.0 0. 0.0" xyz="0.014 0.0 0.062"/>
         <limit lower="1e-4" upper="0.04243" velocity="0.001"/>
-        <axis xyz="1 0 -1"/>
+        <axis xyz="0.7071067811865476 0 -0.7071067811865476"/>
       </joint>
 
       <joint name="gripper_right_joint" type="prismatic">
@@ -315,7 +315,7 @@
         <child link="gripper_right_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="-0.014 0.0 0.062"/>
         <limit lower="1e-4" upper="0.04243" velocity="0.001"/>
-		<axis xyz="-1 0 -1"/>
+		<axis xyz="-0.7071067811865476 0 -0.7071067811865476"/>
       </joint>
 
 
