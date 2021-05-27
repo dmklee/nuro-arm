@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -126,15 +127,18 @@ class RobotArm:
     def get_hand_pose(self):
         return self.mp.get_hand_pose()
 
-    def move_hand_to(self, pos, rot=None, verbose=True):
+    def move_hand_to(self,
+                     pos,
+                     pitch_roll=None,
+                     verbose=True,
+                     **ik_kwargs
+                    ):
         '''Moves end effector to desired pose in world
 
         Parameters
         ----------
         pos : ndarray
             desired 3d position of end effector; shape=(3,); dtype=float
-        rot : ndarray
-            desired euler angles of end effector; shape=(3,); dtype=float
         verbose : bool
             Whether to print error messages in case of an issue
 
@@ -151,9 +155,18 @@ class RobotArm:
         -------
         bool
             True if joint angles returned from IK were achieved
+        dict
+            contains information about IK solution
         '''
+        if pitch_roll is None:
+            rot = None
+        else:
+            yaw = np.arctan2(-pos[0], pos[1])
+            rot = R.from_euler('z', yaw) * R.from_euler('XZ', pitch_roll)
+            rot = rot.as_quat()
+
         try:
-            jpos, data = self.mp.calculate_ik(pos, rot)
+            jpos, data = self.mp.calculate_ik(pos, rot, **ik_kwargs)
         except ProbitedHandPosition as e:
             if verbose:
                 print(f"[MOVE FAILED] {e}")

@@ -40,7 +40,7 @@ class MotionPlanner(BasePybullet):
         return np.bitwise_and(pos > self._hand_position_limits[:,0],
                               pos < self._hand_position_limits[:,1]).all()
 
-    def calculate_ik(self, pos, rot=None):
+    def calculate_ik(self, pos, rot=None, **ik_kwargs):
         '''Performs inverse kinematics to generate hand link pose
 
         Pybullet IK is influenced by current joint state so it is best to make
@@ -51,7 +51,7 @@ class MotionPlanner(BasePybullet):
         pos : array_like
             desired 3D position of end effector
         rot : array_like, optional
-            desired euler angle of end effector
+            desired quaternion of end effector
 
         Raises
         ------
@@ -71,19 +71,8 @@ class MotionPlanner(BasePybullet):
         if not self.safe_hand_position(pos):
             raise ProbitedHandPosition
 
-        if rot is not None:
-            rot = pb.getQuaternionFromEuler(rot)
-
-        jpos = pb.calculateInverseKinematics(self.robot_id,
-                                             self.end_effector_link_index,
-                                             pos,
-                                             rot,
-                                             maxNumIterations=500,
-                                             physicsClientId=self._client,
-                                            )
-
-        num_arm_joints = len(self.arm_joint_idxs)
-        arm_jpos = jpos[:num_arm_joints]
+        jpos = self._iterative_ik(pos, rot, **ik_kwargs)
+        arm_jpos = jpos[:len(self.arm_joint_idxs)]
 
         is_collision, collision_data = self._check_collisions(arm_jpos)
         if is_collision:
@@ -97,6 +86,23 @@ class MotionPlanner(BasePybullet):
         data['pos_error'] = np.linalg.norm(np.subtract(pos, achieved_pos))
 
         return arm_jpos, data
+
+    def _iterative_ik(self, pos, rot, n_repeats=3, n_iters=50, jd=0.01):
+        # TODO: add threshold to stop iteration
+        #https://github.com/bulletphysics/bullet3/issues/1380
+        for _ in range(n_repeats):
+            jpos = pb.calculateInverseKinematics(self.robot_id,
+                                                 self.end_effector_link_index,
+                                                 pos,
+                                                 rot,
+                                                 maxNumIterations=n_iters,
+                                                 jointDamping=7*[jd],
+                                                 physicsClientId=self._client
+                                                )
+            for i, jp in enumerate(jpos):
+                pb.resetJointState(self.robot_id, i, jp, physicsClientId=self._client)
+
+        return jpos
 
     def mirror(self, arm_jpos=None, gripper_state=None):
         '''Set simulators joint state to some desired joint state

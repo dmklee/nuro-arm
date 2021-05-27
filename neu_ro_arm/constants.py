@@ -44,7 +44,8 @@ GRIPPER_CLOSED = 0
 GRIPPER_OPENED = 1
 
 ##############################################
-# useful euler angles for hand during grasping
+# useful pitch-roll tuples for RobotArm.move_hand_to
 ##############################################
-TOP_DOWN_GRASP = np.array((-np.pi, 0., 0.))
-STANDARD_GRASP = np.array((-3*np.pi/4, 0., 0.))
+TOP_DOWN_GRASP = np.array((-np.pi, 0.,))
+STANDARD_GRASP = np.array((-2.6, 0.))
+HORIZONTAL_GRASP = np.array((-np.pi/2, 0.))

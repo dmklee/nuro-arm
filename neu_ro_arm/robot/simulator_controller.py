@@ -6,6 +6,7 @@ from neu_ro_arm.robot.base_pybullet import BasePybullet
 
 class SimulatorController(BaseController, BasePybullet):
     def __init__(self):
+        BaseController.__init__(self)
         BasePybullet.__init__(self, pb.GUI)
         pb.setGravity(0,0,-10,self._client)
         pb.setRealTimeSimulation(1, self._client)
