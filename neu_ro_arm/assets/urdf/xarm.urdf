@@ -14,9 +14,9 @@
             </material>
 		</visual>
 		<collision>
-			<origin rpy="0 0 0.0" xyz="0 0 0.025"/>
+			<origin rpy="0 0 0.0" xyz="0 0 0.0025"/>
       		<geometry>
-                <box size="0.154 0.14 0.05"/>
+                <box size="0.154 0.14 0.005"/>
       		</geometry>
 		</collision>
         <inertial>
@@ -47,7 +47,7 @@
 		<collision>
 			<origin rpy="0 0 0.0" xyz="0 0 0.0"/>
       		<geometry>
-                <cylinder length="0.04" radius="0.08"/>
+                <cylinder length="0.04" radius="0.075"/>
       		</geometry>
 		</collision>
         <inertial>
@@ -181,7 +181,7 @@
                 <sphere radius="0.005"/>
               </geometry>
               <material name="red">
-                <color rgba="0.8 0.2 0.2 1.0"/>
+                <color rgba="0.8 0.2 0.2 0.5"/>
               </material>
         </visual>
         <inertial>
@@ -255,7 +255,7 @@
         <parent link="base_link"/>
         <child link="base_swivel_link"/>
         <origin rpy="0.0 0.0 -1.5708" xyz="0.0 0.0 0.034"/>
-        <limit lower="-3" upper="3" velocity="2.09"/>
+        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
 		<dynamics damping="10" friction="0.0"/>
         <axis xyz="0 0 1"/>
       </joint>
@@ -264,7 +264,7 @@
         <parent link="base_swivel_link"/>
         <child link="upperarm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.031"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
 		<dynamics damping="10" friction="0.0"/>
         <axis xyz="-1 0 0"/>
       </joint>
@@ -273,7 +273,7 @@
         <parent link="upperarm_link"/>
         <child link="forearm_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.101"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
 		<dynamics damping="10" friction="0.0"/>
         <axis xyz="-1 0 0"/>
       </joint>
@@ -282,7 +282,7 @@
         <parent link="forearm_link"/>
         <child link="wrist_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0965"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
 		<dynamics damping="10" friction="0.0"/>
         <axis xyz="-1 0 0"/>
       </joint>
@@ -291,7 +291,7 @@
         <parent link="wrist_link"/>
         <child link="hand_link"/>
         <origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.052"/>
-        <limit lower="-1.5708" upper="1.5708" velocity="2.09"/>
+        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
 		<dynamics damping="10" friction="0.0"/>
         <axis xyz="0 0 1"/>
       </joint>
@@ -306,7 +306,7 @@
         <parent link="hand_link"/>
         <child link="gripper_left_link"/>
         <origin rpy="0.0 0. 0.0" xyz="0.014 0.0 0.062"/>
-        <limit lower="1e-4" upper="0.04243" velocity="0.001"/>
+        <limit lower="5e-4" upper="0.04243" velocity="0.001"/>
         <axis xyz="0.7071067811865476 0 -0.7071067811865476"/>
       </joint>
 
@@ -314,7 +314,7 @@
         <parent link="hand_link"/>
         <child link="gripper_right_link"/>
         <origin rpy="0.0 0.0 0.0" xyz="-0.014 0.0 0.062"/>
-        <limit lower="1e-4" upper="0.04243" velocity="0.001"/>
+        <limit lower="5e-4" upper="0.04243" velocity="0.001"/>
 		<axis xyz="-0.7071067811865476 0 -0.7071067811865476"/>
       </joint>
 
