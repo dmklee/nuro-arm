@@ -27,11 +27,13 @@ class ProbitedHandPosition(Exception):
         super().__init__(msg)
 
 class MotionPlanner(BasePybullet):
-    def __init__(self):
+    def __init__(self, headless=True):
         '''Pybullet simulator of robot used to perform inverse kinematics
         and collision detection quickly in background
         '''
-        super(MotionPlanner, self).__init__(pb.DIRECT)
+        connection_mode = pb.DIRECT if headless else pb.GUI
+        self.headless = headless
+        super(MotionPlanner, self).__init__(connection_mode)
         self._hand_position_limits = np.array(((-0.18,0.18),
                                                (0.08,0.30),
                                                (0.0, 0.30)))
