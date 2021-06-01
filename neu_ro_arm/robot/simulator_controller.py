@@ -66,21 +66,3 @@ class SimulatorController(BaseController, BasePybullet):
         jpos = [pb.getJointState(self.robot_id, j_idx, physicsClientId=self._client)[0]
                            for j_idx in j_idxs]
         return jpos
-
-if __name__ == "__main__":
-    import time
-    arm = SimulatorController()
-    # arm.power_off()
-    names = ['base', 'shoulder', 'elbow', 'wrist', 'wristRotation']
-    while True:
-        jpos = arm.read_command(arm.arm_joint_idxs)
-        print([f"{n}:{jp:.2f}" for jp,n in zip(jpos, names)])
-        # arm.move_command(arm.gripper_joint_idxs, arm.gripper_opened)
-        # time.sleep(1)
-        # arm.move_command(arm.gripper_joint_idxs, arm.gripper_closed)
-        # time.sleep(1)
-        # pos = [arm._to_pos_units(jp) for jp in jpos]
-        # print([f"{n}:{p}" for p,n in zip(pos, names)])
-
-        # print([f"{a:0.2f}" for a in arm._read_all_servos_pos_angle()])
-
