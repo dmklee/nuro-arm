@@ -63,9 +63,9 @@ def place(robot, position):
     robot.open_gripper()
 
 if __name__ == "__main__":
-    POSITION_CORRECTION = [0, -0.01, 0.015] # units are in meters
+    POSITION_CORRECTION = [0.005, -0.009, 0.02] # units are in meters
 
-    DEFAULT_ARM_JPOS = []
+    DEFAULT_ARM_JPOS = [0, -0.87, 1.3, 0.75, 0]
 
     # connect to robot
     robot = RobotArm()
@@ -79,6 +79,9 @@ if __name__ == "__main__":
     cube_id = get_user_choice(camera, title='Choose cube id to pick up')
     cubes = get_cubes(camera)
     cube = filter_cubes(cubes, cube_id)
+    if cube is None:
+        print('cube was not found')
+        exit()
 
     position = add_correction(cube.pos, POSITION_CORRECTION)
 
@@ -93,6 +96,9 @@ if __name__ == "__main__":
     cube_id = get_user_choice(camera, title='Choose cube id to place upon')
     cubes = get_cubes(camera)
     cube = filter_cubes(cubes, cube_id)
+    if cube is None:
+        print('cube was not found')
+        exit()
 
     position = add_correction(cube.pos, POSITION_CORRECTION)
 
