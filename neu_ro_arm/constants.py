@@ -3,7 +3,7 @@ import cv2
 
 # all positional units are in meters, since this is the unit in the urdf
 
-tvec_world2rightfoot = np.array((0.0635, 0.0905, 0.0))
+tvec_world2rightfoot = np.array((0.0635, 0.091, 0.0))
 
 calibration_gridsize = 0.020
 calibration_gridshape = (7,9)
@@ -11,7 +11,8 @@ calibration_gridshape = (7,9)
 aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
 aruco_params = cv2.aruco.DetectorParameters_create()
 
-tag_size = 0.020
+# this is the measure of the black square that contains the pattern
+tag_size = 0.0188976
 
 cube_size = 0.0254
 cube_vertices = 0.5 * cube_size * np.array((( 1, 1, 1),
