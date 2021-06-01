@@ -25,7 +25,6 @@ t = time.time()
 while 1:
     xarm._mirror_planner()
     try:
-        rvecs = get_checkerboard(camera)
         cube = camera_utils.find_cubes(camera.get_image(),
                                         camera._mtx,
                                         camera._dist_coeffs,
