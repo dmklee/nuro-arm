@@ -19,10 +19,6 @@ class BasePybullet:
 
         Attributes
         ----------
-        link_names : list of str
-            names of links in robot urdf
-        joint_names : list of str
-            names of joints in robot urdf
         end_effector_link_index : int
             index of hand link, this is used to specify which link
             should be used for IK
@@ -41,16 +37,16 @@ class BasePybullet:
         camera_exists : bool
             True if camera collision object has been added to simulator
         '''
-        self._client = self._init_pybullet(connection_mode)
-        self.link_names = self._get_link_names()
-        self.joint_names = self._get_joint_names()
-
         self.arm_joint_idxs = [1,2,3,4,5]
-        self.end_effector_link_index = 6
-        self.gripper_joint_idxs = [7,8]
+        self.linkage_joint_idxs = [6,9]
+        self.gripper_joint_idxs = [7,10]
+        self.finger_joint_idxs = [8,11]
+        self.end_effector_link_index = 12
 
-        self.gripper_closed = np.array([0.001, 0.001])
-        self.gripper_opened = np.array([0.04, 0.04])
+        self._init_pybullet(connection_mode)
+
+        self.gripper_closed = np.array([0.05, 0.05])
+        self.gripper_opened = np.array([1.38, 1.38])
         self.camera_exists = False
 
     def _init_pybullet(self, connection_mode):
@@ -67,19 +63,54 @@ class BasePybullet:
             Identifier used to specify simulator client. This is needed when
             making calls because there might be multiple clients running
         '''
-        client = pb.connect(connection_mode)
+        self._client = pb.connect(connection_mode)
 
         # this path is where we find platform
         pb.setAdditionalSearchPath(pybullet_data.getDataPath())
-        # shift plane by 0.5 m to put workspace on single colored tile
         self.plane_id = pb.loadURDF('plane.urdf', [0,0.5,0],
-                                    physicsClientId=client)
+                                    physicsClientId=self._client)
 
         self.robot_id = pb.loadURDF(self.ROBOT_URDF_PATH, [0,0,0],[0,0,0,1],
-                                    flags=pb.URDF_USE_SELF_COLLISION,
-                                    physicsClientId=client)
+                                    flags=pb.URDF_USE_SELF_COLLISION | pb.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS,
+                                    physicsClientId=self._client)
+        for i in [0,1]:
+            pb.resetJointState(self.robot_id, self.gripper_joint_idxs[i], np.pi/3)
+            pb.resetJointState(self.robot_id, self.linkage_joint_idxs[i], np.pi/3)
 
-        return client
+        # set up constraints for linkage in gripper fingers
+        left_linkage_constraint = pb.createConstraint(self.robot_id,
+                                                      self.linkage_joint_idxs[0],
+                                                      self.robot_id,
+                                                      self.finger_joint_idxs[0],
+                                                      pb.JOINT_POINT2POINT,
+                                                      (0,0,0),
+                                                      (0.03,0,0.0),
+                                                      (-0.022,0.00,0.0),
+                                                      physicsClientId= self._client
+                                                     )
+        pb.changeConstraint(left_linkage_constraint, maxForce=1000000)
+        right_linkage_constraint = pb.createConstraint(self.robot_id,
+                                                       self.linkage_joint_idxs[1],
+                                                       self.robot_id,
+                                                       self.finger_joint_idxs[1],
+                                                       pb.JOINT_POINT2POINT,
+                                                       (0,0,0),
+                                                       (-0.03,0,0.0),
+                                                       (0.014,-0.017,0.0),
+                                                       physicsClientId= self._client
+                                                      )
+        pb.changeConstraint(right_linkage_constraint, maxForce=1000000)
+
+        # allow finger and linkages to move freely
+        pb.setJointMotorControlArray(self.robot_id,
+                                     self.arm_joint_idxs,
+                                     pb.POSITION_CONTROL,
+                                     targetPositions=[0,0,0,0,0],
+                                    )
+        pb.setJointMotorControlArray(self.robot_id,
+                                     self.linkage_joint_idxs+self.finger_joint_idxs,
+                                     pb.POSITION_CONTROL,
+                                     forces=[0,0,0,0])
 
     def add_camera(self, pose_mtx):
         '''Adds or moves collision object to simulator where camera is located.
@@ -106,32 +137,6 @@ class BasePybullet:
                                          physicsClientId=self._client)
             self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, rod_pos, rod_quat,
                                       physicsClientId=self._client)
-
-
-    def _get_joint_names(self):
-        '''Returns list of joints for robot urdf
-        '''
-        num_joints = pb.getNumJoints(self.robot_id)
-
-        joint_names = [pb.getJointInfo(self.robot_id, j_idx, physicsClientId=self._client)[1]
-                       for j_idx in range(num_joints)]
-
-        # remove "_joint" from name
-        joint_names = [name.decode("utf-8").replace('_joint','') for name in joint_names]
-
-        return joint_names
-
-    def _get_link_names(self):
-        '''Returns list of names for each link in robot urdf
-        '''
-        num_joints = pb.getNumJoints(self.robot_id, physicsClientId=self._client)
-
-        link_names = [pb.getJointInfo(self.robot_id, j_idx, physicsClientId=self._client)[12]
-                           for j_idx in range(num_joints)]
-
-        link_names = [name.decode("utf-8").replace('_link','') for name in link_names]
-
-        return link_names
 
     def _unpack_camera_pose(self, cam_pose_mtx):
         '''Get params for positioning camera and rod based on pose of camera
@@ -229,3 +234,64 @@ class BasePybullet:
         pos = link_state[4]
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot
+
+if __name__ == "__main__":
+    import time
+    sim = BasePybullet(pb.GUI)
+    # pb.setGravity(0,0,-10)
+    pb.setRealTimeSimulation(1)
+
+    # pb.resetJointState(sim.robot_id, sim.link_names.index('left_finger_bar'), np.pi/3)
+    # pb.resetJointState(sim.robot_id, sim.link_names.index('right_finger_bar'), np.pi/3)
+    # pb.resetJointState(sim.robot_id, sim.joint_names.index('left_knuckle'), np.pi/3)
+    # pb.resetJointState(sim.robot_id, sim.joint_names.index('right_knuckle'), np.pi/3)
+    # left_linkage_constraint = pb.createConstraint(sim.robot_id,
+                                                  # sim.link_names.index('left_finger_bar'),
+                                                  # sim.robot_id,
+                                                  # sim.link_names.index('left_finger_tip'),
+                                                  # pb.JOINT_POINT2POINT,
+                                                  # (0,0,0), (0.03,0,0.0), (-0.022,0.00,0.0),
+                                                  # physicsClientId= sim._client
+                                                 # )
+    # pb.changeConstraint(left_linkage_constraint, maxForce=10000)
+    # right_linkage_constraint = pb.createConstraint(sim.robot_id,
+                                                  # sim.link_names.index('right_finger_bar'),
+                                                  # sim.robot_id,
+                                                  # sim.link_names.index('right_finger_tip'),
+                                                  # pb.JOINT_POINT2POINT,
+                                                  # (0,0,0), (-0.03,0,0.0), (0.014,-0.017,0.0),
+                                                  # physicsClientId= sim._client
+                                                 # )
+    # pb.changeConstraint(right_linkage_constraint, maxForce=10000)
+
+
+    pb.setJointMotorControlArray(sim.robot_id,
+                                 sim.arm_joint_idxs,
+                                 pb.POSITION_CONTROL,
+                                 targetPositions=[0]*5,
+                                )
+    # pb.setJointMotorControlArray(sim.robot_id,
+                                 # [6,8,9,11],
+                                 # pb.POSITION_CONTROL,
+                                 # forces=[0]*4,
+                                # )
+    # for i,j in enumerate(sim.link_names):
+        # print(i,j)
+    # time.sleep(0.5)
+    while 1:
+        pb.setJointMotorControlArray(sim.robot_id,
+                                     sim.gripper_joint_idxs,
+                                     controlMode=pb.POSITION_CONTROL,
+                                     targetPositions=[0.05, 0.05],
+                                     positionGains=2*[0.01],
+                                     velocityGains=2*[0.5],
+                                    )
+        time.sleep(1.5)
+        pb.setJointMotorControlArray(sim.robot_id,
+                                     sim.gripper_joint_idxs,
+                                     controlMode=pb.POSITION_CONTROL,
+                                     targetPositions=[1.38,1.38],
+                                     positionGains=2*[0.01],
+                                     velocityGains=2*[0.5],
+                                    )
+        time.sleep(1.5)

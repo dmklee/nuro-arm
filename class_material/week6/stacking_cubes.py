@@ -109,4 +109,3 @@ if __name__ == "__main__":
     #####################
 
     robot.move_arm_jpos(DEFAULT_ARM_JPOS)
-    time.sleep(0.5)

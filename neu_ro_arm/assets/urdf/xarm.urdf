@@ -1,322 +1,467 @@
-<?xml version="1.0" ?>
-<robot name="xArm">
-
+<?xml version="1.0"?>
+<!-- created with Phobos 1.0.1 "Capricious Choutengan" -->
+  <robot name="xarm">
  	<link name="world"/>
 
-	<link name="base_link">
-		<visual>
-			<origin rpy="0 0 0.0" xyz="0 0 0"/>
-      		<geometry>
-                <mesh filename="neu_ro_arm/assets/meshes/base.dae"/>
-      		</geometry>
-            <material name="blue">
-                <color rgba="0.3 0.5 0.9 1.0"/>
-            </material>
-		</visual>
-		<collision>
-			<origin rpy="0 0 0.0" xyz="0 0 0.0025"/>
-      		<geometry>
-                <box size="0.154 0.14 0.005"/>
-      		</geometry>
-		</collision>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-  	</link>
+    <link name="base_link">
+      <inertial>
+        <origin xyz="0 0 0.01319212" rpy="0 0 0"/>
+        <mass value="0.15"/>
+        <inertia ixx="1368.19627286" ixy="0" ixz="0" iyy="1295.53672831" iyz="0" izz="0.0744866"/>
+      </inertial>
+      <visual name="base_columns">
+        <origin xyz="0 0 0.00003818" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/base_columns.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+        <material name="blue"/>
+      </visual>
+      <visual name="base_lower_part">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/base_lower_part.dae" scale="38.5 35.0 1.0"/>
+        </geometry>
+      </visual>
+      <visual name="base_upper_part">
+        <origin xyz="0 0 0.03953818" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/base_upper_part.dae" scale="28.5 28.5 0.75"/>
+        </geometry>
+      </visual>
+      <collision name="base_001">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.15400229 0.1400 0.0020"/>
+        </geometry>
+      </collision>
+      <collision name="hex-columns">
+        <origin xyz="0 0 0.01703818" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.07606218 0.0770 0.0320"/>
+        </geometry>
+      </collision>
+      <collision name="hexplates">
+        <origin xyz="0 0 0.03953818" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.06164659" length="0.0130"/>
+        </geometry>
+      </collision>
+    </link>
 
-      <link name="base_swivel_link">
-        <visual>
-              <origin rpy="0 0 0" xyz="0.0 0.0 0.034"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/lx225.dae"/>
-              </geometry>
-              <material name="black">
-                <color rgba="0.2 0.2 0.2 1.0"/>
-              </material>
-        </visual>
-        <visual>
-          <origin rpy="0 0 0" xyz="0 0 0"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/base_swivel.dae"/>
-              </geometry>
-              <material name="blue">
-                <color rgba="0.3 0.5 0.9 1.0"/>
-              </material>
-        </visual>
-		<collision>
-			<origin rpy="0 0 0.0" xyz="0 0 0.0"/>
-      		<geometry>
-                <cylinder length="0.04" radius="0.075"/>
-      		</geometry>
-		</collision>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-      </link>
+    <link name="swivel_link">
+      <inertial>
+        <origin xyz="0 -0.006 0.01046303" rpy="0 0 0"/>
+        <mass value="0.15"/>
+        <inertia ixx="0.95028073" ixy="-0.2352502" ixz="-0.42875996" iyy="0.7482846" iyz="0.06185786" izz="0.9494582"/>
+      </inertial>
+      <visual name="shoulder_servo">
+        <origin xyz="0 -0.00100 0.02419454" rpy="0 0 -1.5708"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/shoulder_servo.dae" scale="20.0 20.0 10.0"/>
+        </geometry>
+        <material name="blue"/>
+      </visual>
+      <visual name="swivel">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/swivel.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </visual>
+      <visual name="swivel_servo_holder">
+        <origin xyz="0 -0.008 0.00719454" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/swivel_servo_holder.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </visual>
+      <collision name="swivel-servo-holder">
+        <origin xyz="0 -0.0080 0.02031954" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.04350001 0.0400 0.02775"/>
+        </geometry>
+      </collision>
+    </link>
 
-      <link name="upperarm_link">
-        <visual>
-              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/upperarm_link.dae"/>
-              </geometry>
-              <material name="blue">
-                <color rgba="0.3 0.5 0.9 1.0"/>
-              </material>
-        </visual>
-		<collision>
-			<origin rpy="0 0 0.0" xyz="0 0 0.055"/>
-      		<geometry>
-                <box size="0.06 0.04 0.11" />
-      		</geometry>
-		</collision>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-      </link>
+    <link name="upperarm_link">
+      <inertial>
+        <origin xyz="-0.02716456 0 0" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0002"/>
+      </inertial>
+      <visual name="upperarm_lower">
+        <origin xyz="0 0 0" rpy="0 1.5708 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/upperarm_lower.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+        <material name="blue"/>
+      </visual>
+      <visual name="upperarm_plastic_part">
+        <origin xyz="-0.05432911 0 0" rpy="-1.5708 1.5708 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/upperarm_plastic_part.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </visual>
+      <visual name="upperarm_small_metal_part">
+        <origin xyz="-0.09882912 -0.0000231 0" rpy="1.5708 0 -1.5708"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/upperarm_small_metal_part.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </visual>
+      <collision name="upperarm">
+        <origin xyz="-0.05 0 0" rpy="0 1.5708 0"/>
+        <geometry>
+          <box size="0.05600002 0.0320 0.11"/>
+        </geometry>
+      </collision>
+    </link>
 
-      <link name="forearm_link">
-        <visual>
-              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/lx15d_double.dae"/>
-              </geometry>
-              <!--<material name="black">-->
-                <!--<color rgba="0.2 0.2 0.2 1.0"/>-->
-              <!--</material>-->
-        </visual>
-        <visual>
-              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/forearm_link.dae"/>
-              </geometry>
-        </visual>
-        <visual>
-              <origin rpy="0 3.14159 0" xyz="0.0 0.0 0.095"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/lx15d_double.dae"/>
-              </geometry>
-        </visual>
-        <collision>
-            <origin rpy="0 0 0.0" xyz="0 0 0.05"/>
-              <geometry>
-                <box size="0.05 0.05 0.11" />
-              </geometry>
-        </collision>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-      </link>
+    <link name="forearm_link">
+      <inertial>
+        <origin xyz="0 0.04168909 0" rpy="0 0 0"/>
+        <mass value="0.04"/>
+        <inertia ixx="0.0002" ixy="0.0002" ixz="0" iyy="0.0002" iyz="0" izz="0.0002"/>
+      </inertial>
+      <visual name="forearm_lower_servo">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/forearm_lower_servo.dae" scale="11.5 22.00001 13.5"/>
+        </geometry>
+        <material name="blue"/>
+      </visual>
+      <visual name="forearm_metal_part">
+        <origin xyz="0 0.03608548 0" rpy="-1.5708 0 -3.14159"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/forearm_metal_part.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </visual>
+      <visual name="forearm_plastic_part">
+        <origin xyz="0 0.04733547 0" rpy="0 -1.5708 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/forearm_plastic_part.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </visual>
+      <visual name="wrist_servo">
+        <origin xyz="0 0.08333548 0" rpy="3.14159 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/wrist_servo.dae" scale="11.5 22.00001 13.5"/>
+        </geometry>
+      </visual>
+      <collision name="forearm">
+        <origin xyz="0 0.05 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.0230 0.09 0.03512"/>
+        </geometry>
+      </collision>
+    </link>
 
-      <link name="wrist_link">
-        <visual>
-              <origin rpy="1.5708 1.5708 0" xyz="0.0 0.0 0.0365"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/lx15d_double.dae"/>
-              </geometry>
-              <material name="black">
-                <color rgba="0.2 0.2 0.2 1.0"/>
-              </material>
-        </visual>
-        <visual>
-              <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
-              <geometry>
-                  <mesh filename="neu_ro_arm/assets/meshes/wrist_link.dae"/>
-              </geometry>
-              <material name="blue">
-                <color rgba="0.3 0.5 0.9 1.0"/>
-              </material>
-        </visual>
-		<collision>
-			<origin rpy="0 0 0.0" xyz="0 -0.01 0.025"/>
-      		<geometry>
-                <box size="0.05 0.055 0.06" />
-      		</geometry>
-		</collision>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-      </link>
+    <link name="wrist_link">
+      <inertial>
+        <origin xyz="-0.00566908 -0.01834498 0" rpy="0 0 0"/>
+        <mass value="0.02"/>
+        <inertia ixx="0.1629017" ixy="0.00069143" ixz="-0.00103996" iyy="0.42251036" iyz="-0.30887766" izz="0.59882158"/>
+      </inertial>
+      <visual name="wrist_metal_part">
+        <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/wrist_metal_part.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+        <material name="blue"/>
+      </visual>
+      <visual name="wrist_rotation_servo">
+        <origin xyz="-0.01133817 -0.03669003 0" rpy="1.5708 -1.5708 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/wrist_rotation_servo.dae" scale="11.5 22.0 13.5"/>
+        </geometry>
+      </visual>
+      <collision name="wrist">
+        <origin xyz="-0.0101 -0.01937499 0" rpy="-1.5708 0 0"/>
+        <geometry>
+          <box size="0.0470 0.0405 0.06475"/>
+        </geometry>
+      </collision>
+    </link>
 
-      <link name="hand_link">
-        <visual>
-              <origin rpy="0 0 0.0" xyz="0 0 0.003"/>
-              <geometry>
-                <cylinder length="0.004" radius="0.0125"/>
-              </geometry>
-              <material name="black">
-                <color rgba="0.2 0.2 0.2 1.0"/>
-              </material>
-        </visual>
-        <visual>
-              <origin rpy="0 0 0" xyz="0.0 -0.0215 0.032"/>
-              <geometry>
-                <box size="0.04 0.04 0.02"/>
-              </geometry>
-              <material name="black">
-                <color rgba="0.2 0.2 0.2 1"/>
-              </material>
-        </visual>
-        <collision>
-              <origin rpy="0 0 0" xyz="0.0 -0.0115 0.027"/>
-              <geometry>
-                <box size="0.06 0.05 0.05"/>
-              </geometry>
-        </collision>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-      </link>
+    <link name="hand_link">
+      <inertial>
+        <origin xyz="0.00133091 0.01253 0" rpy="0 0 0"/>
+        <mass value="0.02"/>
+        <inertia ixx="18.15680311" ixy="0.00001878" ixz="-0.0711049" iyy="0.05046617" iyz="-0.02529274" izz="0.05071621"/>
+      </inertial>
+      <visual name="hand_part">
+        <origin xyz="0 0 0" rpy="-1.5708 -3.14159 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/hand_part.dae" scale="28.5 12.0 1.5"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <visual name="hand_servo">
+        <origin xyz="0.00266182 0.02506001 2e-08" rpy="1.5708 1.5708 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/hand_servo.dae" scale="11.5 22.0 13.5"/>
+        </geometry>
+      </visual>
+      <collision name="LX-15D.001">
+        <origin xyz="0.00266182 0.002303001 0" rpy="1.57061 1.5708 0"/>
+        <geometry>
+          <box size="0.0230 0.0440 0.03106"/>
+        </geometry>
+      </collision>
+      <collision name="hand">
+        <origin xyz="0.00348131 0 -0.001" rpy="1.55239 -3.14159 0"/>
+        <geometry>
+          <cylinder radius="0.03339804" length="0.00451872"/>
+        </geometry>
+      </collision>
+    </link>
 
-      <link name="virtual_palm_link">
+    <link name="left_finger_bar_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="2e-08" iyz="0" izz="2e-08"/>
+      </inertial>
+      <visual name="left_finger_bar">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/left_finger_bar.dae" scale="10.0 1.0 1.0"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision name="left-finger-bar">
+        <origin xyz="0.015 0.0015 0.0015" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.018 0.003 0.003"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="left_finger_base_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+      <visual name="left_finger_base">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/right_finger_base.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision name="left-finger-lower">
+        <origin xyz="0 0.011125001 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.0375 0.003"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="left_finger_tip_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+      <visual name="left_finger_tip">
+        <origin xyz="-3e-08 4e-08 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/left_finger_tip.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision name="left-finger-upper">
+        <origin xyz="-0.02841921 0.00624356 0.00303819" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/Circle.002.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="right_finger_bar_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+      <visual name="right_finger_bar">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/right_finger_bar.dae" scale="10.0 1.0 1.0"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision name="right-finger-bar">
+        <origin xyz="-0.015 0.0015 0.0015" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.018 0.003 0.003"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="right_finger_base_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+      <visual name="right_finger_base">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/right_finger_base.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision name="right-finger-lower">
+        <origin xyz="0 0.011125001 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.01 0.0375 0.003"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="right_finger_tip_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+      </inertial>
+      <visual name="right_finger_tip">
+        <origin xyz="0 1e-05 0" rpy="0 -3.14159 -0.88718"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/right_finger_tip.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+        <material name="black"/>
+      </visual>
+      <collision name="right-finger-upper">
+        <origin xyz="0.02279521 -0.01810865 -0.00294544" rpy="0 -3.14159 -0.88718"/>
+        <geometry>
+          <mesh filename="neu_ro_arm/assets/meshes/Circle.003.dae" scale="1.0 1.0 1.0"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <link name="virtual_grasp_link">
         <visual>
               <origin rpy="0 0 0.0" xyz="0 0.0 0.0"/>
               <geometry>
-                <sphere radius="0.005"/>
+                <sphere radius="0.003"/>
               </geometry>
               <material name="red">
                 <color rgba="0.8 0.2 0.2 0.5"/>
               </material>
         </visual>
         <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+            <mass value="0.001"/>
+            <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
         </inertial>
-      </link>
+    </link>
 
-      <link name="gripper_left_link">
-        <visual>
-              <origin rpy="0 0 0.0" xyz="-0.004 0.0 0.025"/>
-              <geometry>
-                <box size="0.02 0.008 0.06"/>
-              </geometry>
-              <material name="black">
-                <color rgba="0.2 0.2 0.2 1.0"/>
-              </material>
-        </visual>
-        <collision>
-              <origin rpy="0 0 0.0" xyz="-0.004 0.0 0.025"/>
-              <geometry>
-                <box size="0.02 0.008 0.06"/>
-              </geometry>
-        </collision>
-		<contact>
-			<lateral_friction value="20.0"/>
-			<spinning_friction value="0.0"/>
-			<rolling_friction value="0.0"/>
-		</contact>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-      </link>
-    
-      <link name="gripper_right_link">
-		<visual>
-			<origin rpy="0 0 0.0" xyz="0.004 0.00 0.025"/>
-			<geometry>
-				<box size="0.02 0.008 0.06"/>
-			</geometry>
-			<material name="black">
-				<color rgba="0.2 0.2 0.2 1.0"/>
-			</material>
-		</visual>
-        <collision>
-              <origin rpy="0 0 0.0" xyz="0.004 0.0 0.025"/>
-              <geometry>
-                <box size="0.02 0.008 0.06"/>
-              </geometry>
-        </collision>
-		<contact>
-			<lateral_friction value="20.0"/>
-			<spinning_friction value="0.0"/>
-			<rolling_friction value="0.0"/>
-		</contact>
-        <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
-        </inertial>
-      </link>
-
-
-     <joint name="world_joint" type="fixed">
+    <joint name="world_joint" type="fixed">
         <parent link="world"/>
         <child link="base_link"/>
-	   	<origin rpy="0.0 0.0 1.5708" xyz="0.0 0.0 0.012"/>
-     </joint>
+		<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.012"/>
+    </joint>
 
-      <joint name="base_joint" type="revolute">
-        <parent link="base_link"/>
-        <child link="base_swivel_link"/>
-        <origin rpy="0.0 0.0 -1.5708" xyz="0.0 0.0 0.034"/>
-        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
-		<dynamics damping="10" friction="0.0"/>
-        <axis xyz="0 0 1"/>
-      </joint>
+    <joint name="base_joint" type="revolute">
+      <origin xyz="0 0 0.03953818" rpy="0 0 1.5708"/>
+      <parent link="base_link"/>
+      <child link="swivel_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-2.0" upper="2.0" effort="0" velocity="2.0"/>
+    </joint>
 
-      <joint name="shoulder_joint" type="revolute">
-        <parent link="base_swivel_link"/>
-        <child link="upperarm_link"/>
-        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.031"/>
-        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
-		<dynamics damping="10" friction="0.0"/>
-        <axis xyz="-1 0 0"/>
-      </joint>
+    <joint name="shoulder_joint" type="revolute">
+      <origin xyz="0 0 0.024195" rpy="0 1.5708 0"/>
+      <parent link="swivel_link"/>
+      <child link="upperarm_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-1.58" upper="1.58" effort="0" velocity="2.0"/>
+    </joint>
 
-      <joint name="elbow_joint" type="revolute">
-        <parent link="upperarm_link"/>
-        <child link="forearm_link"/>
-        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.101"/>
-        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
-		<dynamics damping="10" friction="0.0"/>
-        <axis xyz="-1 0 0"/>
-      </joint>
+    <joint name="elbow_joint" type="revolute">
+      <origin xyz="-0.09883501 0 0" rpy="0 0 1.5708"/>
+      <parent link="upperarm_link"/>
+      <child link="forearm_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-2.0" upper="2.0" effort="0" velocity="2.0"/>
+    </joint>
 
-      <joint name="wrist_joint" type="revolute">
-        <parent link="forearm_link"/>
-        <child link="wrist_link"/>
-        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0965"/>
-        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
-		<dynamics damping="10" friction="0.0"/>
-        <axis xyz="-1 0 0"/>
-      </joint>
+    <joint name="wrist_joint" type="revolute">
+      <origin xyz="0 0.09468611 0" rpy="0 0 3.14159"/>
+      <parent link="forearm_link"/>
+      <child link="wrist_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-2.0" upper="2.0" effort="0" velocity="2.0"/>
+    </joint>
 
-      <joint name="wristRotation_joint" type="revolute">
-        <parent link="wrist_link"/>
-        <child link="hand_link"/>
-        <origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.052"/>
-        <limit lower="-2.0" upper="2.0" velocity="2.09"/>
-		<dynamics damping="10" friction="0.0"/>
-        <axis xyz="0 0 1"/>
-      </joint>
+    <joint name="wrist_rotation_joint" type="revolute">
+      <origin xyz="0 -0.08378503 0" rpy="1.5708 -1.5708 0"/>
+      <parent link="wrist_link"/>
+      <child link="hand_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-2.0" upper="2.0" effort="0" velocity="2.0"/>
+    </joint>
 
-      <joint name="virtual_palm_joint" type="fixed">
+    <joint name="left_finger_linkage_joint" type="revolute">
+      <origin xyz="0.0045 -0.00852974 0.01950001" rpy="1.5708 -1.5708 0"/>
+      <parent link="hand_link"/>
+      <child link="left_finger_bar_link"/>
+      <axis xyz="0 0 -1.0"/>
+      <limit lower="0.0" upper="1.5" effort="0" velocity="2.0"/>
+    </joint>
+
+    <joint name="left_knuckle_joint" type="revolute">
+        <origin xyz="0.014 -0.006 0" rpy="1.5708 0 0"/>
+      <parent link="hand_link"/>
+      <child link="left_finger_base_link"/>
+      <axis xyz="0 0 -1.0"/>
+      <limit lower="0.05" upper="1.38" effort="0" velocity="2.0"/>
+    </joint>
+
+    <joint name="left_finger_joint" type="revolute">
+      <origin xyz="0.00002379 0.03001281 -0.0075" rpy="0 0 0.44359"/>
+      <parent link="left_finger_base_link"/>
+      <child link="left_finger_tip_link"/>
+      <axis xyz="0 0 -1.0"/>
+      <limit lower="-2.0" upper="2.0" velocity="2.0"/>
+    </joint>
+
+    <joint name="right_finger_linkage_joint" type="revolute">
+      <origin xyz="-0.0045 -0.00852974 0.01950001" rpy="1.5708 1.5708 0"/>
+      <parent link="hand_link"/>
+      <child link="right_finger_bar_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="0.0" upper="1.5" effort="0" velocity="2.0"/>
+    </joint>
+
+    <joint name="right_knuckle_joint" type="revolute">
+      <origin xyz="-0.0140 -0.006 0" rpy="1.5708 0 0"/>
+      <parent link="hand_link"/>
+      <child link="right_finger_base_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="0.05" upper="1.38" effort="0" velocity="2.0"/>
+    </joint>
+
+    <joint name="right_finger_joint" type="revolute">
+      <origin xyz="-0.00002379 0.03001281 -0.0015" rpy="0 0 2.01439"/>
+      <parent link="right_finger_base_link"/>
+      <child link="right_finger_tip_link"/>
+      <axis xyz="0 0 1.0"/>
+      <limit lower="-2.0" upper="2.0" effort="0" velocity="2.0"/>
+    </joint>
+
+    <joint name="virtual_grasp_joint" type="fixed">
         <parent link="hand_link"/>
-        <child link="virtual_palm_link"/>
-        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.110"/>
-      </joint>
+        <child link="virtual_grasp_link"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.076"/>
+    </joint>
 
-      <joint name="gripper_left_joint" type="prismatic">
-        <parent link="hand_link"/>
-        <child link="gripper_left_link"/>
-        <origin rpy="0.0 0. 0.0" xyz="0.014 0.0 0.062"/>
-        <limit lower="5e-4" upper="0.04243" velocity="0.001"/>
-        <axis xyz="0.7071067811865476 0 -0.7071067811865476"/>
-      </joint>
+    <material name="black">
+      <color rgba="0.2 0.2 0.2 1.0"/>
+    </material>
 
-      <joint name="gripper_right_joint" type="prismatic">
-        <parent link="hand_link"/>
-        <child link="gripper_right_link"/>
-        <origin rpy="0.0 0.0 0.0" xyz="-0.014 0.0 0.062"/>
-        <limit lower="5e-4" upper="0.04243" velocity="0.001"/>
-		<axis xyz="-0.7071067811865476 0 -0.7071067811865476"/>
-      </joint>
+    <material name="blue">
+      <!--<color rgba="0.1216 0.6236 0.8784 1.0"/>-->
+      <color rgba="0.5 0.5 0.5 1.0"/>
+    </material>
 
-
-</robot>
+  </robot>
