@@ -13,7 +13,7 @@ setup(
     install_requires=[
         "numpy",
         "opencv-contrib-python",
-        "pybullet",
+        "pybullet==3.1.7",
         "matplotlib",
         "easyhid;platform_system=='Linux'",
         "hid;platform_system=='Windows'",
