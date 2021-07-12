@@ -229,7 +229,7 @@
       <collision name="left-finger-bar">
         <origin xyz="0.015 0.0015 0.0015" rpy="0 0 0"/>
         <geometry>
-          <box size="0.012 0.003 0.003"/>
+          <box size="0.003 0.003 0.003"/>
         </geometry>
       </collision>
     </link>
@@ -292,7 +292,7 @@
       <collision name="right-finger-bar">
         <origin xyz="-0.015 0.0015 0.0015" rpy="0 0 0"/>
         <geometry>
-          <box size="0.012 0.003 0.003"/>
+          <box size="0.003 0.003 0.003"/>
         </geometry>
       </collision>
     </link>

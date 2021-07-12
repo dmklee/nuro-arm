@@ -161,8 +161,9 @@ class RobotArm:
         if pitch_roll is None:
             rot = None
         else:
-            yaw = np.arctan2(-pos[0], pos[1])
-            rot = R.from_euler('z', yaw) * R.from_euler('XZ', pitch_roll)
+            yaw = np.arctan2(pos[1], pos[0])
+            pitch, roll = pitch_roll
+            rot = R.from_euler('z', yaw) * R.from_euler('YZ', (pitch, roll + np.pi/2) )
             rot = rot.as_quat()
 
         try:
