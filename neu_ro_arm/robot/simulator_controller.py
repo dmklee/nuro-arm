@@ -9,7 +9,7 @@ class SimulatorController(BaseController, BasePybullet):
         BaseController.__init__(self)
         BasePybullet.__init__(self, pb.GUI)
         pb.setGravity(0,0,-10,self._client)
-        pb.setRealTimeSimulation(1, self._client)
+        pb.setRealTimeSimulation(1)
         self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
         self.joint_limits =  { 1 : (-3, 3),
                                2 : (-np.pi, np.pi),
@@ -19,6 +19,9 @@ class SimulatorController(BaseController, BasePybullet):
                                6 : (0, 0.042),
                                7 : (0, 0.042),
                              }
+
+    def timestep(self):
+        [pb.stepSimulation() for _ in range(int(240/self.measurement_frequency))]
 
     def move_command(self, j_idxs, jpos, speed=None):
         '''Issue move command to specified joint indices

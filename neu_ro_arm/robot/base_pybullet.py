@@ -110,7 +110,15 @@ class BasePybullet:
                                      pb.POSITION_CONTROL,
                                      forces=[0,0,0,0])
 
-        [pb.stepSimulation(self._client) for _ in range(50)]
+        # make arm joints rigid
+        pb.setJointMotorControlArray(self.robot_id,
+                                     self.arm_joint_idxs,
+                                     pb.POSITION_CONTROL,
+                                     5*[0],
+                                     positionGains=5*[0.1],
+                                    )
+
+        pb.stepSimulation(self._client)
 
     def add_camera(self, pose_mtx):
         '''Adds or moves collision object to simulator where camera is located.

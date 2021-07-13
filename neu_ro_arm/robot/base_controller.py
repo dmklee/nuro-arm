@@ -18,6 +18,10 @@ class BaseController:
         self.measurement_frequency = 20
 
     @abstractmethod
+    def timestep(self):
+        pass
+
+    @abstractmethod
     def move_command(self, j_idxs, jpos, speed=None):
         '''Issue move command to specified joint indices
 
@@ -117,9 +121,9 @@ class BaseController:
         # give some initial time for motion to start
         # otherwise, it may terminate prematurely because it detects no motion
         # this is mainly an issue for the gripper only
-        time.sleep(4./self.measurement_frequency)
+        [self.timestep() for _ in range(4)]
         while True:
-            time.sleep(1./self.measurement_frequency)
+            self.timestep()
 
             new_jpos = self.read_command(j_idxs)
             if np.allclose(new_jpos, target_jpos, atol=self.movement_precision):

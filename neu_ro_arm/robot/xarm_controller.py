@@ -172,6 +172,8 @@ class XArmController(BaseController):
                              j_idx)
             self._write_servo_offset(j_idx, new_offset)
 
+    def timestep(self):
+        time.sleep(1/self.measurement_frequency)
 
     def connect(self):
         device = Device()
