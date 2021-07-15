@@ -46,19 +46,19 @@ class GUI(tk.Frame):
         scale_width = 300
 
         # create scales for arm joints
-        for i in range(len(self.robot.joint_names)):
+        for i in range(len(self.controller.arm_joint_ids)):
             joint_name = self.robot.joint_names[i]
-            joint_idx = self.controller.arm_joint_idxs[i]
+            joint_id = self.controller.arm_joint_ids[i]
 
             label = tk.Label(master=self.body, text=f"{joint_name}:")
             scale = tk.Scale(master=self.body,
-                             from_=self.controller.joint_limits[joint_idx][0],
-                             to=self.controller.joint_limits[joint_idx][1],
+                             from_=self.controller.arm_joint_limits[0,i],
+                             to=self.controller.arm_joint_limits[1,i],
                              resolution=1e-3,
                              orient="horizontal",
                              length=scale_width,
                             )
-            scale_value = self.controller.read_command([joint_idx])[0]
+            scale_value = self.controller._read_jpos([joint_id])[0]
             scale.set(scale_value)
             self.scales.append(scale)
             labels.append(label)
@@ -68,7 +68,7 @@ class GUI(tk.Frame):
         scale = tk.Scale(master=self.body,
                          from_=GRIPPER_CLOSED,
                          to=GRIPPER_OPENED,
-                         resolution=0.05,
+                         resolution=0.01,
                          orient="horizontal",
                          length=scale_width,
                         )
@@ -123,22 +123,20 @@ class GUI(tk.Frame):
             arm_jpos = [scl.get() for scl in self.scales[:-1]]
             if self.last_arm_command is None \
                         or not np.allclose(self.last_arm_command, arm_jpos):
-                self.controller.move_command(self.controller.arm_joint_idxs, arm_jpos)
+                self.robot.move_arm_jpos(arm_jpos)
                 self.last_arm_command = arm_jpos
 
             gripper_state = self.scales[-1].get()
             if self.last_gripper_command is None \
                         or self.last_gripper_command != gripper_state:
-                self.controller.move_command(self.controller.gripper_joint_idxs,
-                                             self.controller.gripper_state_to_jpos(gripper_state))
+                self.robot.set_gripper_state(gripper_state)
                 self.last_gripper_command = gripper_state
         else:
             # read positions and update scales
-            gripper_jpos = self.controller.read_command(self.controller.gripper_joint_idxs)
-            gripper_state = self.controller.gripper_jpos_to_state(gripper_jpos)
-            arm_jpos = self.controller.read_command(self.controller.arm_joint_idxs)
+            gripper_state = self.robot.get_gripper_state()
+            arm_jpos = self.robot.get_arm_jpos()
             self.scales[-1].set(gripper_state)
-            [scl.set(jpos) for scl, jpos in zip(self.scales[:-1], arm_jpos)]
+            [scl.set(jp) for scl, jp in zip(self.scales[:-1], arm_jpos)]
 
         self.after(self.cycle_time, self.update)
 

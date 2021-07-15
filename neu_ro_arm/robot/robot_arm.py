@@ -6,13 +6,18 @@ matplotlib.use('TkAgg')
 import tkinter as tk
 
 from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
-from neu_ro_arm.robot.motion_planner import (MotionPlanner, UnsafeTrajectoryError,
-                                             UnsafeJointPosition, ProbitedHandPosition)
+from neu_ro_arm.robot.motion_planner import MotionPlanner
+from neu_ro_arm.robot.pybullet_simulator import PybulletSimulator
 from neu_ro_arm.robot.simulator_controller import SimulatorController
 from neu_ro_arm.robot.xarm_controller import XArmController
 
 class RobotArm:
-    def __init__(self, controller_type='real'):
+    def __init__(self,
+                 controller_type='real',
+                 headless=True,
+                 realtime=True,
+                 workspace=None,
+                ):
         '''Real or simulated xArm robot interface for safe, high-level motion commands
 
         Parameters
@@ -30,17 +35,18 @@ class RobotArm:
             Internal simulator of robot used to perform IK and collision
             detection
         '''
-        self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation')
+        self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation', 'gripper')
 
+        self._sim = PybulletSimulator(headless)
+        self.mp = MotionPlanner(self._sim, workspace)
         if controller_type == 'real':
             self.controller = XArmController()
         elif controller_type == 'sim':
-            self.controller = SimulatorController()
+            self.controller = SimulatorController(self._sim, realtime)
         else:
             raise TypeError('invalid controller type')
         self.controller_type = controller_type
 
-        self.mp = MotionPlanner()
         self._mirror_planner()
 
     def home(self):
@@ -50,34 +56,13 @@ class RobotArm:
         self._mirror_planner()
 
     def passive_mode(self):
-        if self.controller_type == 'real':
-            self.controller.power_off()
-        else:
-            print('WARNING: passive mode does not exist for simulated robot')
+        self.controller.power_off_servos()
+
+    def passive_mode(self):
+        self.controller.power_off_servos()
 
     def active_mode(self):
-        if self.controller_type == 'real':
-            self.controller.power_on()
-            self.mp.mirror(arm_jpos=self.get_arm_jpos(),
-                           gripper_state=self.get_gripper_state())
-        else:
-            print('WARNING: active mode does not exist for simulated robot')
-
-
-    def add_camera(self, pose_mtx):
-        '''Add camera object to motion planner's internal simulator so that it is
-        included in collision checking
-
-        Parameters
-        ----------
-        pose_mtx : ndarray
-            pose matrix of camera in world coordinate frame; shape=(4,4);
-            dtype=float
-        '''
-        self.mp.add_camera(pose_mtx)
-
-        if self.controller_type == 'sim':
-            self.controller.add_camera(pose_mtx)
+        self.controller.power_on_servos()
 
     def get_arm_jpos(self):
         '''Get positions of the arm joints
@@ -87,7 +72,7 @@ class RobotArm:
         ndarray
             joint angles in radians; shape=(5,); dtype=float
         '''
-        arm_jpos = self.controller.read_command(self.controller.arm_joint_idxs)
+        arm_jpos = self.controller.read_arm_jpos()
         return arm_jpos
 
     def move_arm_jpos(self, jpos, verbose=True):
@@ -106,22 +91,21 @@ class RobotArm:
         bool
             True if joint angles returned from IK were achieved
         '''
-        try:
-            self.mp.check_arm_trajectory(jpos)
-        except UnsafeTrajectoryError as e:
+        current_jpos = self.get_arm_jpos()
+        if not self.mp.is_collision_free_trajectory(current_jpos, jpos):
             if verbose:
                 print(f"[MOVE FAILED] Trajectory would result in collision"
                       f" of robot:{e.robot_link} and {e.other_body}.")
             return False
 
-        duration = self.controller.move_command(self.controller.arm_joint_idxs, jpos)
-        success, achieved_jpos = self.controller.monitor(self.controller.arm_joint_idxs,
+        duration = self.controller.write_arm_jpos(jpos)
+        success, achieved_jpos = self.controller.monitor(self.controller.arm_joint_ids,
                                                          jpos, duration)
         if not success:
             # to avoid leaving motors under load, move to achieved jpos
-            self.controller.move_command(self.controller.arm_joint_idxs, achieved_jpos)
+            self.controller.write_arm_jpos(achieved_jpos)
 
-        self.mp.mirror(arm_jpos=achieved_jpos)
+        self._mirror_planner()
         return success
 
     def get_hand_pose(self):
@@ -137,7 +121,9 @@ class RobotArm:
 
         Parameters
         ----------
-        pos : ndarray
+        pos : array_like
+            desired 3d position of end effector; shape=(3,); dtype=float
+        pos : array_like
             desired 3d position of end effector; shape=(3,); dtype=float
         verbose : bool
             Whether to print error messages in case of an issue
@@ -166,17 +152,7 @@ class RobotArm:
             rot = R.from_euler('z', yaw) * R.from_euler('YZ', (pitch, roll + np.pi/2) )
             rot = rot.as_quat()
 
-        try:
-            jpos, data = self.mp.calculate_ik(pos, rot, **ik_kwargs)
-        except ProbitedHandPosition as e:
-            if verbose:
-                print(f"[MOVE FAILED] {e}")
-            return False
-        except UnsafeJointPosition as e:
-            if verbose:
-                print(f"[MOVE FAILED] Target configuration would result in collision"
-                      f" of robot:{e.robot_link} and {e.other_body}.")
-            return False
+        jpos, ik_info = self.mp.calculate_ik(pos, rot, **ik_kwargs)
 
         return self.move_arm_jpos(jpos)
 
@@ -198,9 +174,9 @@ class RobotArm:
         bool
             True if desired gripper state was achieved
         '''
-        return self.set_gripper_state(GRIPPER_CLOSED)
+        return self.set_gripper_state(GRIPPER_CLOSED, backoff=-0.01)
 
-    def set_gripper_state(self, state):
+    def set_gripper_state(self, state, backoff=-0.01):
         '''Get state of gripper
 
         Parameters
@@ -208,24 +184,32 @@ class RobotArm:
         state : float
             gripper state to move to; will be clipped to range [0,1]
 
+        backoff : float
+            amount of back off if move fails (in radians). a positive value of
+            backoff means the gripper will be more open than the acheived position
+
         Returns
         -------
         bool
-            True if desired gripper state was achieved
+            gripper state that is achieved
         '''
         state = np.clip(state, 0, 1)
-        jpos = self.controller.gripper_state_to_jpos(state)
+        duration = self.controller.write_gripper_state(state)
 
-        duration = self.controller.move_command(self.controller.gripper_joint_idxs, jpos)
-        success, achieved_jpos = self.controller.monitor(self.controller.gripper_joint_idxs,
-                                                         jpos, duration)
+        gripper_jpos = self.controller._gripper_state_to_jpos(state)
+        success, achieved_jpos = self.controller.monitor(self.controller.gripper_joint_ids,
+                                                         gripper_jpos,
+                                                         duration)
         if not success:
             # to avoid leaving motors under load, move to achieved jpos
-            self.controller.move_command(self.controller.gripper_joint_idxs, achieved_jpos)
+            achieved_jpos += backoff
+            achieved_state = self.controller._gripper_jpos_to_state(np.mean(achieved_jpos))
+            self.controller.write_gripper_state(achieved_state)
+            self.controller.timestep()
 
-        achieved_gripper_state = self.controller.gripper_jpos_to_state(achieved_jpos)
-        self.mp.mirror(gripper_state=achieved_gripper_state)
-        return success
+        achieved_gripper_state = self.get_gripper_state()
+        self._mirror_planner()
+        return achieved_gripper_state
 
     def get_gripper_state(self):
         '''Get state of gripper
@@ -236,11 +220,9 @@ class RobotArm:
             value in range [0,1] describing how close to open(1) or closed(0)
             the gripper is
         '''
-        jpos = self.controller.read_command(self.controller.gripper_joint_idxs)
-        jpos = np.mean(jpos)
-        state = self.controller.gripper_jpos_to_state(jpos)
-        return state
+        return self.controller.read_gripper_state()
 
     def _mirror_planner(self):
-        self.mp.mirror(arm_jpos=self.get_arm_jpos(),
-                       gripper_state=self.get_gripper_state())
+        if self.controller_type == 'real':
+            self.mp.mirror(arm_jpos=self.get_arm_jpos(),
+                           gripper_state=self.get_gripper_state())
