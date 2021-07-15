@@ -1,12 +1,10 @@
-import time
-from enum import IntEnum
+import os
 import platform
+import time
 import numpy as np
-
-import matplotlib
-matplotlib.use('TkAgg')
-
+import yaml
 import threading
+
 from neu_ro_arm.robot.base_controller import BaseController
 
 class InvalidServoOffset(Exception):
@@ -18,6 +16,14 @@ def itos(v):
     lsb = v & 0xFF
     msb = v >> 8
     return lsb, msb
+
+class CmdLib:
+    SIGNATURE = 85
+    MOVE = 3
+    POWER_OFF = 20
+    POSITION_READ = 21
+    OFFSET_READ = 23
+    OFFSET_WRITE = 24
 
 class Device:
     def __init__(self):
@@ -40,6 +46,7 @@ class Device:
         '''
         if platform.system() == 'Linux':
             import easyhid
+            self.exception = easyhid.easyhid.HIDException
             en = easyhid.Enumeration()
             devices = en.find(vid=1155, pid=22352)
             assert len(devices) == 1
@@ -66,10 +73,13 @@ class Device:
         msg : list
             list of data to be written
         '''
-        if self.type == 0:
-            self.device.write(bytearray(msg[1:]))
-        elif self.type == 1:
-            self.device.write(bytes(msg))
+        try:
+            if self.type == 0:
+                self.device.write(bytearray(msg[1:]))
+            elif self.type == 1:
+                self.device.write(bytes(msg))
+        except self.exception:
+            pass
 
     def read(self, timeout):
         '''Read message from device
@@ -101,97 +111,68 @@ class XArmController(BaseController):
     SERVO_LOWER_LIMIT = 0
     SERVO_UPPER_LIMIT = 1000
     SERVO_HOME = 500
-    SERVO_MAX_SPEED = 0.5 # positional units per millisecond
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
-    CONFIG_FILE = "neu_ro_arm/robot/configs.npz"
-
-    class CommandLibrary:
-        SIGNATURE = 85
-        MOVE = 3
-        POWER_OFF = 20
-        POSITION_READ = 21
-        OFFSET_READ = 23
-        OFFSET_WRITE = 24
-
-    class Servos(IntEnum):
-        base = 6
-        shoulder = 5
-        elbow = 4
-        wrist = 3
-        wristRotation = 2
-        gripper = 1
+    CONFIG_FILE = "neu_ro_arm/robot/configs.yaml"
 
     def __init__(self):
         super().__init__()
-        self.cmd_lib = XArmController.CommandLibrary()
-        self._max_speed = self.SERVO_MAX_SPEED*self.POS2RADIANS
-        self._normal_speed = self._max_speed / 2
-        self._slow_speed = self._normal_speed / 2
+        # speed in radians per second
+        self.max_speed = 2.0
+        self.default_speed = 0.8
 
-        self.arm_joint_idxs = [6,5,4,3,2]
-        self.gripper_joint_idxs = [1]
+        self.arm_joint_ids = [6,5,4,3,2]
+        self.gripper_joint_ids = [1]
         self.movement_precision = 0.04
         self.measurement_precision = 0.01
-        self.measurement_frequency = 20
+        self.measurement_frequency = 10
 
-        # load params from config file
-        configs = np.load(self.CONFIG_FILE)
-        self.gripper_closed = configs.get('gripper_closed', None)
-        self.gripper_opened = configs.get('gripper_opened', None)
-        self.arm_motor_directions = {k:v for k,v in zip(self.arm_joint_idxs,
-                                                        configs['arm_motor_directions'])}
+        self.arm_joint_limits = np.array(((-2, -1.58, -2, -1.8, -2),
+                                          ( 2,  1.58,  2,  2.0,  2)))
 
+        self.arm_jpos_home = np.zeros(len(self.arm_joint_ids))
 
-        self.arm_jpos_home = np.array([self._to_radians(idx, self.SERVO_HOME)
-                                       for idx in self.arm_joint_idxs])
-
-        # servo limits end at -2.09, +2.09, so add a bit of a cushion
-        self.joint_limits = { 1 : (-2.0, 2.0),
-                              2 : (-2.0, 2.0),
-                              3 : (-2.0, 2.0),
-                              4 : (-2.0, 2.0),
-                              5 : (-2.0, 2.0),
-                              6 : (-2.0, 2.0)
-                            }
-
-        self.servos = XArmController.Servos
-        self.n_servos = len(self.servos)
+        self.servo_ids = self.arm_joint_ids + self.gripper_joint_ids
+        self.n_servos = len(self.servo_ids)
         self._lock = threading.Lock()
         self.device = self.connect()
-        self.power_on()
+
+        # if you dont load configs (like motor direction) before powering on then
+        # the servos can potentially move very rapidly)
+        self.load_configs()
+        self.power_on_servos()
 
         # write servo offsets from config file,
         # set movement command first to prevent jerky movement
-        for j_idx in self.arm_joint_idxs:
-            new_offset = configs.get(f'offset_j{j_idx}', 0)
-            old_offset = self._read_servo_offset(j_idx)
-            pos = self._to_pos_units(j_idx, self.read_command([j_idx])[0])
-            self._move_servo(self._to_radians(j_idx, pos-new_offset+old_offset),
-                             j_idx)
-            self._write_servo_offset(j_idx, new_offset)
+        print('??? Do I need to re-write servo offsets every time?')
+        # for j_id in self.arm_joint_ids:
+            # new_offset = configs.get(f'offset_j{j_id}', 0)
+            # old_offset = self._read_servo_offset(j_id)
+            # pos = self._to_pos_units(j_id, self.read_command([j_id])[0])
+            # self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
+            # self._write_servo_offset(j_id, new_offset)
 
+    def load_configs(self):
+        if os.path.exists(self.CONFIG_FILE):
+            data = yaml.safe_load(self.CONFIG_FILE)
+            self.arm_joint_directions = data['arm_joint_directions']
+            self.gripper_joint_limits = np.array(data['gripper_joint_limits'])
+            self.servo_offsets = data['servo_offsets']
+        else:
+            print('[WARNING] xArm config file not found. '
+                  ' Calibration should be performed.')
+            self.arm_joint_directions = {i:1. for i in self.arm_joint_ids}
+            self.gripper_joint_limits = np.array(((0.9,),(-1.,)))
+            self.servo_offsets = {i:0 for i in self.servo_ids}
+
+    def timestep(self):
+        time.sleep(1/self.measurement_frequency)
 
     def connect(self):
         device = Device()
         print('Connected to xArm')
         return device
-
-    def power_on(self):
-        '''Powers off servos, used to enable passive mode or before disconnecting
-        '''
-        jpos = self.read_command(self.servos)
-        self.move_command(self.servos, jpos)
-
-    def power_off(self):
-        '''Powers off servos, used to enable passive mode or before disconnecting
-
-        This can be done in a single command but sometimes the shoulder and elbow
-        do not power off when you do them all in one command
-        '''
-        for servo in self.servos:
-            self._send(self.cmd_lib.POWER_OFF, [1, servo.value])
 
     def disconnect(self):
         '''Closes HID connection to xArm
@@ -199,42 +180,69 @@ class XArmController(BaseController):
         self.device.close()
         print('Disconnected xArm')
 
-    def move_command(self, j_idxs, jpos, speed='normal'):
-        '''Issue move command to specified joint indices
+    def power_on_servos(self):
+        '''Turn on all servos so all joints are rigid
+        '''
+        current_jpos = self._read_jpos(self.servo_ids)
+        self._write_jpos(self.servo_ids, current_jpos)
 
-        This simulator runs realtime and I have not tried to mimic the movement
-        speed of the real robot.  The movements are meant to be linear in joint
-        space to reflect movements of xArm.
+    def power_off_servos(self):
+        '''Turn off all servos so all joints are passive
+        '''
+        [self.power_off_servo(i) for i in self.servo_ids]
+
+    def power_on_servo(self, joint_id):
+        '''Turn on single servo so the joint is rigid
+        '''
+        current_jpos = self._read_jpos([joint_id])
+        self._write_jpos([joint_id], current_jpos)
+
+    def power_off_servo(self, joint_id):
+        '''Turn off single servo so the joint is passive
+        '''
+        self._send(CmdLib.POWER_OFF, [1, joint_id])
+
+    def get_joint_id(self, joint_name):
+        return {'base' : 6,
+                'shoulder' : 5,
+                'elbow' : 4,
+                'wrist' : 3,
+                'wristRotation' : 2,
+                'gripper' : 1
+               }[joint_name]
+
+    def _write_jpos(self, joint_ids, jpos, speed=None):
+        '''Issue move command to specified joint indices
 
         Parameters
         ----------
-        j_idxs : array_like of int
+        joint_ids : array_like of int
             joint indices to be moved
         jpos : array_like of float
             target joint positions corresponding to the joint indices
-        speed : {'normal', 'max', 'slow'}
+        speed : float
 
         Returns
         -------
         float
             expected time (s) to complete movement
         '''
+        if speed is None:
+            speed = self.default_speed
+
         # we need to ensure linear motion without violating max speed
-        current_jpos = self.read_command(j_idxs)
+        current_jpos = self._read_jpos(joint_ids)
         delta_jpos = np.abs(np.subtract(jpos, current_jpos))
 
-        speed = {'max' : self._max_speed,
-                 'normal' : self._normal_speed,
-                 'slow' : self._slow_speed,
-                }[speed]
-        duration = int(np.max(delta_jpos) / speed)
+        # milliseconds
+        duration = int(1000 * np.max(delta_jpos) / speed)
 
-        [self._move_servo(j_p, j_id, duration)
-             for j_p, j_id in zip(jpos, j_idxs)]
+        [self._move_servo(j_i, j_p, duration)
+             for j_i, j_p in zip(joint_ids, jpos)]
 
         return duration/1000
 
-    def read_command(self, j_idxs):
+    def _read_jpos(self, j_idxs):
         '''Read some joint positions
 
         Parameters
@@ -247,9 +255,9 @@ class XArmController(BaseController):
         jpos : list of float
             joint positions in radians, will be same length as j_idxs
         '''
-        self._send(self.cmd_lib.POSITION_READ,
+        self._send(CmdLib.POSITION_READ,
                    [len(j_idxs), *j_idxs])
-        pos = self._recv(self.cmd_lib.POSITION_READ, ret_type='short')
+        pos = self._recv(CmdLib.POSITION_READ, ret_type='short')
 
         # ensure no readings are outside range
         pos = np.clip(pos, self.SERVO_LOWER_LIMIT, self.SERVO_UPPER_LIMIT)
@@ -258,25 +266,24 @@ class XArmController(BaseController):
         jpos = [self._to_radians(i, p) for i,p in zip(j_idxs, pos)]
         return jpos
 
-    def _move_servo(self, jpos, j_idx, duration=1000):
+    def _move_servo(self, joint_id, jpos, duration=1000):
         '''I have been unable to get multi-servo move command to work,
         so each servo must be commanded separately
         '''
-        # prevent motion outside of joint limits
-        jpos = np.clip(jpos, *self.joint_limits[j_idx])
+        #TODO: what is the maximum allowable duration
 
         # convert to positional units
-        pos = self._to_pos_units(j_idx, jpos)
+        pos = self._to_pos_units(joint_id, jpos)
 
         # ensure pos is within servo limits to prevent servo damage
         pos = np.clip(pos, self.SERVO_LOWER_LIMIT, self.SERVO_UPPER_LIMIT)
 
-        data = [1, *itos(duration), j_idx, *itos(pos)]
-        self._send(self.cmd_lib.MOVE, data)
+        data = [1, *itos(duration), joint_id, *itos(pos)]
+        self._send(CmdLib.MOVE, data)
 
     def _read_servo_offset(self, servo_id):
         # returns in positional units
-        self._send(self.cmd_lib.OFFSET_READ, [1, servo_id])
+        self._send(CmdLib.OFFSET_READ, [1, servo_id])
         pos = self._recv(self.cmd_lib.OFFSET_READ, ret_type='char')[0]
         return pos
 
@@ -285,13 +292,13 @@ class XArmController(BaseController):
         offset = int(np.clip(offset, -127, 127))
         if offset < 0:
             offset = 255 + offset
-        self._send(self.cmd_lib.OFFSET_WRITE, [servo_id, offset])
+        self._send(CmdLib.OFFSET_WRITE, [servo_id, offset])
 
     def _send(self, cmd, data=[]):
         msg = [
             0, # this will be deleted for easyhid
-            self.cmd_lib.SIGNATURE,
-            self.cmd_lib.SIGNATURE,
+            CmdLib.SIGNATURE,
+            CmdLib.SIGNATURE,
             len(data)+2,
             cmd,
             *data
@@ -329,130 +336,38 @@ class XArmController(BaseController):
             recv_data.append(data)
         return recv_data
 
-    def _to_radians(self, idx, pos):
+    def _to_radians(self, joint_id, pos):
         jpos = (pos - self.SERVO_HOME) * self.POS2RADIANS
-        if idx in self.arm_joint_idxs:
-            jpos *= self.arm_motor_directions[idx]
+        if joint_id in self.arm_joint_ids:
+            jpos *= self.arm_joint_directions[joint_id]
 
         return jpos
 
-    def _to_pos_units(self, idx, jpos):
-        if idx in self.arm_joint_idxs:
-            jpos *= self.arm_motor_directions[idx]
+    def _to_pos_units(self, joint_id, jpos):
+        if joint_id in self.arm_joint_ids:
+            jpos *= self.arm_joint_directions[joint_id]
 
         return int( jpos / self.POS2RADIANS + self.SERVO_HOME )
-
-    def __del__(self):
-        '''Makes sure servos are off before disconnecting'''
-        self.power_off()
-        self.disconnect()
 
     def _reset_servo_offsets(self):
         """Assumes robot is already in home position and servos are off"""
         offsets = {}
         # for servo in self.servos:
-        for j_idx in self.arm_joint_idxs:
-            old_offset = self._read_servo_offset(j_idx)
+        for j_id in self.arm_joint_ids:
+            old_offset = self._read_servo_offset(j_id)
             true_home = self.SERVO_HOME - old_offset
-            pos = self._to_pos_units(j_idx, self.read_command([j_idx])[0])
+            pos = self._to_pos_units(j_id, self.read_command([j_id])[0])
             new_offset = pos - true_home
             if abs(new_offset) > 127:
-                raise InvalidServoOffset(j_idx)
+                raise InvalidServoOffset(j_id)
 
-            self._move_servo(self._to_radians(j_idx, pos-new_offset+old_offset),
-                             j_idx)
+            self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
             self._write_servo_offset(j_idx, new_offset)
             offsets[f"offset_j{j_idx}"] = new_offset
         return offsets
 
-    def calibrate_arm(self):
-        #TODO: this form of absolute joint space calibration is not very accurate.
-        # future version should either use the camera for calibration or
-        # incorporate more positions in a passive method
-        print('Moving to HOME position...')
-        time.sleep(0.5)
-        self.home()
-        time.sleep(3)
+    def __del__(self):
+        '''Makes sure servos are off before disconnecting'''
+        self.power_off_servos()
+        self.disconnect()
 
-        #enter passive mode
-        self.power_off()
-        data = {}
-        print('  =====================  ')
-        print('  == Calibrating arm ==  ')
-        print('  =====================  ')
-        print('Please move arm into home position. Follow along in Installation Guide for picture.')
-        inp = input('  ready? [y/n]: ')
-        if inp == 'y':
-            pass
-        else:
-            print('Calibration terminated.')
-            return False, data
-
-        print('performing servo offset correction...')
-        arm_servo_offsets = self._reset_servo_offsets()
-        data.update(arm_servo_offsets)
-        print('finished servo offset correction.')
-
-        print()
-
-        # motor direction correction is important because some of the servos
-        # (ids 3,4&5) can be installed in two possible configurations. We need to
-        # ensure that the motion planner's joint motors are set up in the same 
-        # manner, else the forward kinematics will be wrong
-        print('Checking motor directions...')
-        print('Please move robot into the bent-arm configuration.'
-              ' Refer to Installation Guide for picture.')
-        self.power_off()
-        if input('  ready? [y/n]: ') != 'y':
-            print('Calibration terminated')
-            return False, data
-        arm_jpos = self.read_command(self.arm_joint_idxs)
-        data['arm_motor_directions'] = np.sign(arm_jpos)
-
-        # we must leave a positve direction for wristRotation
-        # it is a one-sided servo so it will always be correctly installed
-        data['arm_motor_directions'][4] = 1
-
-        self.power_on()
-        return True, data
-
-    def calibrate_gripper(self):
-        self.power_off()
-        data = {}
-        print('  =========================  ')
-        print('  == Calibrating gripper ==  ')
-        print('  =========================  ')
-        print('Move gripper to fully closed position.'
-              ' Use two hands and move gently.')
-        if input('   ready? [y/n]: ') != 'y':
-            print('Calibration terminated.')
-            return False, data
-        gripper_closed = self.read_command(self.gripper_joint_idxs)
-        data.update({'gripper_closed' : np.array(gripper_closed)})
-        print()
-
-        print('Move gripper to fully opened position.'
-              ' Use two hands and move gently.')
-        if input('   ready? [y/n]: ') != 'y':
-            print('Calibration terminated.')
-            return False, data
-        gripper_opened = self.read_command(self.gripper_joint_idxs)
-        data.update({'gripper_opened' : np.array(gripper_opened)})
-        self.power_on()
-        return True, data
-
-    def calibrate(self):
-        data = {}
-        ret, new_data = self.calibrate_arm()
-        if ret:
-            data.update(new_data)
-        else:
-            return False, None
-
-        ret, new_data = self.calibrate_gripper()
-        if ret:
-            data.update(new_data)
-        else:
-            return False, None
-
-        return True, data
