@@ -21,32 +21,44 @@ body = pb.createMultiBody(1, -1, id_, pos_body)
 d_toggle = pb.addUserDebugParameter('toggle orientation specification',
                                     1, 0, 0,
                                     physicsClientId=client)
-d_pitch = pb.addUserDebugParameter('gripper pitch', rangeMin=0, rangeMax=PI,
-                                    startValue= 2*PI, physicsClientId=client)
-d_roll = pb.addUserDebugParameter('gripper roll', rangeMin=-PI/2, rangeMax= PI/2,
-                                    startValue= 0.0, physicsClientId=client)
-d_x = pb.addUserDebugParameter('cube x', rangeMin=0., rangeMax= 0.25,
-                                startValue= 0.15, physicsClientId=client)
-d_y = pb.addUserDebugParameter('cube y', rangeMin=-0.15, rangeMax= 0.15,
-                                startValue= 0.0, physicsClientId=client)
-d_z = pb.addUserDebugParameter('cube z', rangeMin=cube_size/2, rangeMax= 0.45,
-                                startValue= 0.2, physicsClientId=client)
+dbg_params = {
+    'pitch': pb.addUserDebugParameter('gripper_pitch', rangeMin=0, rangeMax=PI,
+                                    startValue= 2*PI, physicsClientId=client),
+    'roll' : pb.addUserDebugParameter('gripper_roll', rangeMin=-PI/2, rangeMax= PI/2,
+                                    startValue= 0.0, physicsClientId=client),
+    'x' : pb.addUserDebugParameter('cube_x', rangeMin=0., rangeMax= 0.25,
+                                startValue= 0.15, physicsClientId=client),
+    'y' : pb.addUserDebugParameter('cube_y', rangeMin=-0.15, rangeMax= 0.15,
+                                startValue= 0.0, physicsClientId=client),
+    'z' : pb.addUserDebugParameter('cube_z', rangeMin=cube_size/2, rangeMax= 0.45,
+                                startValue= 0.2, physicsClientId=client),
+}
 
-def grab_specific_cube(robot, camera, tag_id):
-    pass
-
+dbg_values = {d:pb.readUserDebugParameter(i, physicsClientId=client)
+              for d,i in dbg_params.items()}
 while True:
-    pitch = pb.readUserDebugParameter(d_pitch, physicsClientId=client)
-    roll = pb.readUserDebugParameter(d_roll, physicsClientId=client)
-    x = pb.readUserDebugParameter(d_x, physicsClientId=client)
-    y = pb.readUserDebugParameter(d_y, physicsClientId=client)
-    z = pb.readUserDebugParameter(d_z, physicsClientId=client)
     button_val = pb.readUserDebugParameter(d_toggle, physicsClientId=client)
+    reset_cube = False
+    move_arm = False
+    for name, prm in dbg_params.items():
+        new_val = pb.readUserDebugParameter(prm, physicsClientId=client)
+        if abs(new_val-dbg_values[name]) > 1e-4:
+            dbg_values[name] = new_val
+            if name in 'xyz':
+                reset_cube = True
+                move_arm = True
+            elif name in ('pitch', 'roll') and button_val % 2 == 1:
+                move_arm = True
 
-    pb.resetBasePositionAndOrientation(body, (x,y,z), (0,0,0,1),physicsClientId=client)
+    pos = (dbg_values['x'],dbg_values['y'],dbg_values['z'])
+    if reset_cube:
+        pb.resetBasePositionAndOrientation(body, pos, (0,0,0,1),physicsClientId=client)
 
-    if button_val % 2 == 0:
-        robot.move_hand_to((x,y,z))
-    else:
-        robot.move_hand_to((x,y,z), (pitch,roll))
-    time.sleep(0.5)
+    if move_arm:
+        if button_val % 2 == 0:
+            robot.move_hand_to(pos)
+        else:
+            robot.move_hand_to(pos, (dbg_values['pitch'],dbg_values['roll']))
+        time.sleep(1)
+        print('done')
+    time.sleep(0.1)
