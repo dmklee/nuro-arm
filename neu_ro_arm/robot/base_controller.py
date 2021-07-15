@@ -7,87 +7,92 @@ class BaseController:
     def __init__(self):
         '''Base class for controller to implement move and read commands
         '''
-        self.gripper_opened = None
-        self.gripper_closed = None
-        self.arm_joint_idxs = None
+        self.joint_names = ('base', 'shoulder','elbow',
+                            'wrist','wristRotation', 'gripper')
+
+        self.arm_joint_ids = None
+        self.gripper_joint_ids = None
+
+        self.arm_joint_limits = None
+        self.gripper_joint_limits = None
+
         self.arm_jpos_home = None
-        self.gripper_joint_idxs = None
-        self.joint_limits = None
+
         self.movement_precision = 1e-4
         self.measurement_precision = 1e-4
-        self.measurement_frequency = 20
+        self.measurement_frequency = 10
+
+    def read_arm_jpos(self):
+        return self._read_jpos(self.arm_joint_ids)
+
+    def read_gripper_state(self):
+        gripper_jpos = self._read_jpos(self.gripper_joint_ids)
+        gripper_state = self._gripper_jpos_to_state(gripper_jpos)
+        return gripper_state
+
+    def write_arm_jpos(self, jpos, speed=None):
+        return self._write_jpos(self.arm_joint_ids, jpos, speed)
+
+    def write_gripper_state(self, state, speed=None):
+        gripper_jpos = self._gripper_state_to_jpos(state)
+        return self._write_jpos(self.gripper_joint_ids, gripper_jpos, speed)
 
     @abstractmethod
     def timestep(self):
+        '''
+        '''
         pass
 
     @abstractmethod
-    def move_command(self, j_idxs, jpos, speed=None):
-        '''Issue move command to specified joint indices
+    def get_joint_id(self, joint_name):
+        '''
+        '''
+        pass
 
-        All movements are linear in joint space
+    @abstractmethod
+    def power_on_servos(self):
+        '''Turn on all servos so all joints are rigid
+        '''
+        return
+
+    @abstractmethod
+    def power_off_servos(self):
+        '''Turn off all servos so all joints are passive
+        '''
+        return
+
+    @abstractmethod
+    def power_on_servo(self, joint_id):
+        '''Turn on single servo so the joint is rigid
+        '''
+        pass
+
+    @abstractmethod
+    def power_off_servo(self, joint_id):
+        '''Turn off single servo so the joint is passive
+        '''
+        pass
+
+    @abstractmethod
+    def _write_jpos(self, joint_ids, jpos, speed):
+        '''Issue move command to specified joint indices
 
         Parameters
         ----------
-        j_idxs : array_like of int
-            joint indices to be moved
         jpos : array_like of float
             target joint positions corresponding to the joint indices
-        speed : {'normal', 'max', 'slow'}, optional
-            designate movement speed. Not used by simulator controller
+        speed : float, array_like of float
+            designate movement speed.
 
         Returns
         -------
         float
             expected time (s) to complete movement, used for monitoring
         '''
-        return
+        pass
 
-    @abstractmethod
-    def read_command(self, j_idxs):
-        return
-
-    def home(self):
-        '''Move arm to home joint positions
-        '''
-        self.move_command(self.arm_joint_idxs,
-                          self.arm_jpos_home)
-
-    def gripper_jpos_to_state(self, jpos):
-        '''Convert gripper joint position to state
-
-        Parameters
-        ----------
-        jpos : array_like of float
-            gripper joint positions
-
-        Returns
-        -------
-        float
-            gripper state
-        '''
-        jpos = np.mean(jpos)
-        return (jpos - self.gripper_closed[0]) \
-                / (self.gripper_opened[0] - self.gripper_closed[0])
-
-    def gripper_state_to_jpos(self, state):
-        '''Convert gripper state to gripper joint positions
-
-        Parameters
-        ----------
-        state : float
-            gripper state, should be in range from 0 to 1
-
-        Returns
-        -------
-        array_like
-            gripper joint position
-        '''
-        return state*self.gripper_opened + (1-state)*self.gripper_closed
-
-
-    def monitor(self, j_idxs, target_jpos, duration=2):
-        '''Monitor controller motion to detect failure or collision
+    def monitor(self, joint_ids, target_jpos, expected_duration):
+        '''Monitor arm movement to detect failure or collision
 
         With simulated controller, failure indicates collision.  With xArm, it
         is also possible that the joint precision is too small (I have tried to
@@ -101,7 +106,7 @@ class BaseController:
             target_jpos
         target_jpos : array_like of float
             target joint positions in radians, length should match j_idxs
-        duration : float, default 2
+        duration : float
             number of seconds that the movement is expected to take. a movement
             will be labeled a failure if it takes longer than 1.5x duration
 
@@ -116,7 +121,7 @@ class BaseController:
         t_factor = 1.5
         start_time = time.time()
 
-        jpos = self.read_command(j_idxs)
+        jpos = self._read_jpos(joint_ids)
 
         # give some initial time for motion to start
         # otherwise, it may terminate prematurely because it detects no motion
@@ -125,17 +130,51 @@ class BaseController:
         while True:
             self.timestep()
 
-            new_jpos = self.read_command(j_idxs)
+            new_jpos = self._read_jpos(joint_ids)
             if np.allclose(new_jpos, target_jpos, atol=self.movement_precision):
                 # success
-                return True, new_jpos
+                return True, np.array(new_jpos)
 
-            if time.time()-start_time > t_factor * duration:
+            if time.time()-start_time > t_factor * expected_duration:
                 # movement has taken too much time
-                return False, new_jpos
+                return False, np.array(new_jpos)
 
             if (np.abs(np.subtract(new_jpos, jpos)) < self.measurement_precision).all():
                 # all movements are within measurement precision so motion has stopped
-                return False, new_jpos
+                return False, np.array(new_jpos)
 
             jpos = new_jpos
+
+
+    def _gripper_jpos_to_state(self, jpos):
+        '''Convert gripper joint position to state
+
+        Parameters
+        ----------
+        jpos : array_like of float
+            gripper joint position
+
+        Returns
+        -------
+        float
+            gripper state
+        '''
+        state = (jpos - self.gripper_joint_limits[1]) \
+                / (self.gripper_joint_limits[0] - self.gripper_joint_limits[1])
+        return np.mean(state)
+
+    def _gripper_state_to_jpos(self, state):
+        '''Convert gripper state to gripper joint positions
+
+        Parameters
+        ----------
+        state : float
+            gripper state, should be in range from 0 to 1
+
+        Returns
+        -------
+        array_like of float
+            gripper joint position
+        '''
+        state = np.clip(state, 0, 1)
+        return state*self.gripper_joint_limits[0] + (1-state)*self.gripper_joint_limits[1]
