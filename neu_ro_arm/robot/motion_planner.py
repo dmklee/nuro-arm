@@ -1,118 +1,137 @@
 import pybullet as pb
 import numpy as np
 
-from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
-from neu_ro_arm.robot.base_pybullet import BasePybullet
+class Collision:
+    def __init__(self, contact_pt, pb_client):
+        # assumes bodyA is the robot
+        self.pb_client = pb_client
+        self.robot_body = contact_pt[1]
+        self.other_body = contact_pt[2]
+        self.robot_link = contact_pt[3]
+        self.other_link = contact_pt[4]
+        self.self_collision = self.other_body == self.robot_body
 
-class CollisionError(Exception):
-    def __init__(self, robot_link, other_body, **kwargs):
-        self.robot_link = robot_link
-        self.other_body = other_body
-        msg = f"Collision detected between xarm:{robot_link}_link and {other_body}"
-        super().__init__(msg)
-
-class UnsafeTrajectoryError(CollisionError):
-    '''A collision was detected at some intermediate joint position in trajectory
-    '''
-
-class UnsafeJointPosition(CollisionError):
-    '''A collision was detected at specified joint position
-    '''
-
-class ProbitedHandPosition(Exception):
-    '''A collision was detected at specified joint position
-    '''
-    def __init__(self):
-        msg = f"This hand position is not allowed for safety reasons."
-        super().__init__(msg)
-
-class MotionPlanner(BasePybullet):
-    def __init__(self, headless=True):
-        '''Pybullet simulator of robot used to perform inverse kinematics
-        and collision detection quickly in background
+    def check(self, ignored_link_ids):
+        '''Return True if collision is valid, False if it is to be ignored
         '''
-        connection_mode = pb.DIRECT if headless else pb.GUI
-        self.headless = headless
-        super(MotionPlanner, self).__init__(connection_mode)
-        self._hand_position_limits = np.array(((0.08,0.30),
-                                               (-0.18,0.18),
-                                               (-0.1, 0.35)))
+        if self.robot_link not in ignored_link_ids:
+            return True
+        if self.self_collision and self.other_link not in ignored_link_ids:
+            return True
+        return False
 
-    def safe_hand_position(self, pos):
-        return np.bitwise_and(pos > self._hand_position_limits[:,0],
-                              pos < self._hand_position_limits[:,1]).all()
+    def __str__(self):
+        robot_link_name = pb.getJointInfo(self.robot_body, self.robot_link,
+                                          physicsClientId=self.pb_client)[12].decode('ascii')
+        if self.collision:
+            other_link_name = pb.getJointInfo(self.other_body, self.other_link,
+                                              physicsClientId=self.pb_client)[12].decode('ascii')
+            return f"Collision between xarm:{robot_link_name} and xarm:{other_link_name}"
+        else:
+            other_body_name = pb.getBodyInfo(self.other_body,
+                                              physicsClientId=self.pb_client)[1].decode('ascii')
+            return f"Collision between xarm:{robot_link}_link and {other_body_name}"
 
-    def calculate_ik(self, pos, rot=None, **ik_kwargs):
-        '''Performs inverse kinematics to generate hand link pose
+class MotionPlanner:
+    def __init__(self, pb_sim, workspace=None):
+        '''Class that performs collision detection, inverse kinematics using
+        pybullet simulator
+        '''
+        # unpack info needed to probe the pybullet simulator
+        self.pb_sim = pb_sim
+        self._unpack_simulator_params()
 
-        Pybullet IK is influenced by current joint state so it is best to make
-        a mirror call before using this method
+        if workspace is None:
+            self.workspace = np.array(((0.08,0.30),
+                                       (-0.18,0.18),
+                                       (-0.1, 0.35)))
+        else:
+            self.workspace = np.array(workspace)
+            assert workspace.shape == (3,2), \
+                    "Invalid workspace: must be of shape 3x2"
+            assert (workspace[:,0] <= workspace[:,1]).all(), \
+                    "Invalid workspace: first column must be less than second column"
+
+    def is_safe_hand_position(self, pos):
+        '''Checks if hand position is within workspace
+        '''
+        return np.bitwise_and(pos > self.workspace[:,0],
+                              pos < self.workspace[:,1]).all()
+
+    def is_safe_arm_jpos(self, jpos):
+        '''Checks if joint positions are within limits
+        '''
+        return np.bitwise_and(jpos > self.arm_joint_limits[:,0],
+                              jpos < self.arm_joint_limits[:,1]).all()
+
+    def is_collision_free(self, jpos, ignore_gripper=True):
+        '''Checks if configuration is collision free
+        '''
+        self._teleport_arm(jpos)
+        collisions = self.find_collisions(jpos, ignore_gripper)
+        return len(collisions) == 0, collisions
+
+    def is_collision_free_trajectory(self,
+                                     start_jpos,
+                                     end_jpos,
+                                     ignore_gripper=True,
+                                     n_substeps=10):
+        '''Checks if a trajectory is free from collisions, by checking a set of
+        intermediate configurations
 
         Parameters
         ----------
-        pos : array_like
-            desired 3D position of end effector
-        rot : array_like, optional
-            desired quaternion of end effector
+        start_jpos : array_like of float
+            joint positions of arm at start of trajectory
+        end_jpos : array_like of float
+            joint positions of arm at end of trajectory
+        ignore_gripper : bool
+        n_substeps : int, default=10
+            number of collision checking samples taken within trajectory
 
-        Raises
-        ------
-        ProbitedHandPosition
-            hand position is outside of allowable limits
-        UnsafeJointPosition
-            joint positions needed to achieve hand pose is in
-            collision with environment
-
-        Returns
-        -------
-        ndarray
-            joint position of arm joints; shape=(5,); dtype=float
-        dict
-            data on achieved pose and error
         '''
-        if not self.safe_hand_position(pos):
-            raise ProbitedHandPosition
+        #TODO: handle trajectories with differing servo speeds
+        substeps = np.linspace(start_jpos, end_jpos, num=n_substeps, endpoint=True)
 
-        jpos = self._iterative_ik(pos, rot, **ik_kwargs)
-        arm_jpos = jpos[:len(self.arm_joint_idxs)]
+        for jpos in substeps:
+            is_free, collision_info = self.is_collision_free(jpos, ignore_gripper)
+            if not is_free:
+                return is_free, collision_info
 
-        is_collision, collision_data = self._check_collisions(arm_jpos)
-        if is_collision:
-            raise UnsafeJointPosition(**collision_data)
+        return True, []
 
-        # check collision teleports arm so we can check IK solution error here
-        achieved_pos, achieved_rot = self.get_hand_pose()
-        data = dict()
-        data['achieved_pos'] = achieved_pos
-        data['achieved_rot'] = achieved_rot
-        data['pos_error'] = np.linalg.norm(np.subtract(pos, achieved_pos))
-
-        return arm_jpos, data
-
-    def _iterative_ik(self,
-                      pos,
-                      rot,
-                      n_iters_outer=3,
-                      n_iters_inner=50,
-                      jd=0.01,
+    def calculate_ik(self,
+                     pos,
+                     rot=None,
+                     n_iters_outer=3,
+                     n_iters_inner=50,
+                     jd=0.005,
+                     residual_threshold=1e-4,
                      ):
-        # TODO: add threshold to stop iteration
         #https://github.com/bulletphysics/bullet3/issues/1380
-        n_arm_motors = len(self.arm_joint_idxs)
+        n_arm_joints = len(self.arm_joint_ids)
+
         for _ in range(n_iters_outer):
             jpos = pb.calculateInverseKinematics(self.robot_id,
                                                  self.end_effector_link_index,
                                                  pos,
                                                  rot,
                                                  maxNumIterations=n_iters_inner,
-                                                 jointDamping=self.num_joints*[jd],
+                                                 # residualThreshold=residual_threshold,
+                                                 jointDamping=self.n_joints*[jd],
                                                  physicsClientId=self._client
                                                 )
-            # early stoppage would occur here
+            self._teleport_arm(jpos[:n_arm_joints])
 
-            self._teleport_arm(jpos[:n_arm_motors])
+        solved_pos, solved_rot = self.pb_sim.get_hand_pose()
+        info = {
+            'ik_pos' : solved_pos,
+            'ik_rot' : solved_rot,
+            'ik_pos_error' : np.linalg.norm(np.subtract(pos, solved_pos)),
+            #TODO: add rotation error
+        }
 
-        return jpos[:n_arm_motors]
+        return jpos[:n_arm_joints], info
 
     def mirror(self, arm_jpos=None, gripper_state=None):
         '''Set simulators joint state to some desired joint state
@@ -133,114 +152,70 @@ class MotionPlanner(BasePybullet):
         '''Resets joint states of arm joints
         '''
         [pb.resetJointState(self.robot_id, i, jp, physicsClientId=self._client)
-            for i,jp in zip(self.arm_joint_idxs, jpos)]
-        pb.setJointMotorControlArray(self.robot_id,
-                                     self.arm_joint_idxs,
-                                     pb.POSITION_CONTROL,
-                                     jpos,
-                                     positionGains=len(self.arm_joint_idxs)*[0.05],
-                                     physicsClientId=self._client)
+            for i,jp in zip(self.arm_joint_ids, jpos)]
+        # pb.setJointMotorControlArray(self.robot_id,
+                                     # self.arm_joint_ids,
+                                     # pb.POSITION_CONTROL,
+                                     # jpos,
+                                     # positionGains=len(self.arm_joint_ids)*[0.05],
+                                     # physicsClientId=self._client)
 
     def _teleport_gripper(self, state):
         '''Resets joint states of gripper joints
         '''
-        jpos = state*self.gripper_opened + (1 - state)*self.gripper_closed
+        jpos = state*self.gripper_joint_limits[0] + (1 - state)*self.gripper_joint_limits[1]
 
         [pb.resetJointState(self.robot_id, i, jp, physicsClientId=self._client)
-             for i,jp in zip(self.gripper_joint_idxs, jpos)]
-        pb.setJointMotorControlArray(self.robot_id,
-                                     self.gripper_joint_idxs,
-                                     pb.POSITION_CONTROL,
-                                     jpos,
-                                     positionGains=2*[0.05],
-                                     physicsClientId=self._client,
-                                    )
+             for i,jp in zip(self.gripper_joint_ids, jpos)]
+        # pb.setJointMotorControlArray(self.robot_id,
+                                     # self.gripper_joint_ids,
+                                     # pb.POSITION_CONTROL,
+                                     # 2*[jpos],
+                                     # positionGains=2*[0.05],
+                                     # physicsClientId=self._client,
+                                    # )
 
-    def check_arm_trajectory(self, target_jpos, num_steps=10):
-        '''Checks collision of arm links along linear path in joint space
-
-        Parameters
-        ----------
-        target_jpos : array_like
-            joint positions of arm at end of trajectory; shape=(5,); dtype=float
-        num_steps : int
-            number of collision checking samples taken within trajectory
-
-        Raises
-        -------
-        UnsafeTrajectoryError
-            some joint configuration along trajectory results in collision
-        '''
-        assert len(target_jpos) == len(self.arm_joint_idxs)
-        current_jpos = [pb.getJointState(self.robot_id, j_idx, physicsClientId=self._client)[0]
-                            for j_idx in self.arm_joint_idxs]
-
-        inter_jpos = np.linspace(current_jpos, target_jpos,
-                                 num=num_steps, endpoint=True)
-
-        is_collision = False
-        for jpos in inter_jpos[1:]:
-            is_collision, collision_data = self._check_collisions(jpos)
-            if is_collision:
-                break
-
-        self._teleport_arm(current_jpos)
-        if is_collision:
-            raise UnsafeTrajectoryError(**collision_data)
-
-    def _check_collisions(self, jpos=None, gripper_mode='ignore'):
+    def find_collisions(self, jpos, ignore_gripper=False):
         '''Returns True if collisions present as arm joint position
 
         Parameters
         ----------
-        jpos : array_like
-            positions of arm joints in radians
-        gripper_mode : {'closed', 'open', 'ignore', 'current'}
-            how to treat gripper during collision check. if 'current' then the
-            gripper position will not be changed
+        ignore_gripper : bool, default to False
 
         Returns
         -------
-        bool
-            True if collision was detected
-        dict
-            data about collision
+        list of Collision objects
         '''
-        if jpos is not None:
-            self._teleport_arm(jpos)
+        self._teleport_arm(jpos)
 
-        if gripper_mode == 'open':
-            self._teleport_gripper(state=GRIPPER_OPENED)
-        elif gripper_mode == 'closed':
-            self._teleport_gripper(state=GRIPPER_CLOSED)
-
-        # ignore base because it doesnt move and will likely be in collision
-        # with camera at all times
-        if gripper_mode == 'ignore':
-            ignored_links = ['left_finger_base',
-                             'left_finger_linkage',
-                             'left_finger_tip',
-                             'right_finger_base',
-                             'right_finger_linkage',
-                             'right_finger_tip']
+        ignored_link_ids = set(self.gripper_link_ids) if ignore_gripper else set()
 
         pb.performCollisionDetection(self._client)
         contact_points = pb.getContactPoints(bodyA=self.robot_id,
                                              physicsClientId=self._client)
 
+        collisions = []
         for cont_pt in contact_points:
-            robot_link = cont_pt[3]
-            robot_link_name = self.link_names[robot_link]
-            robot_link_name = self.link_names[robot_link]
-            if robot_link_name not in ignored_links:
-                other_body_id = cont_pt[2]
-                other_body_name = pb.getBodyInfo(other_body_id,
-                                                 physicsClientId=self._client
-                                                )[1].decode('ascii')
+            new_collision = Collision(cont_pt, self._client)
+            if new_collision.check(ignored_link_ids):
+                collisions.append(new_collision)
 
-                return True, {'robot_link' : robot_link_name,
-                              'other_body' : other_body_name,
-                              'other_link' : self.link_names[cont_pt[4]],
-                             }
+        return collisions
 
-        return False, {}
+    def _unpack_simulator_params(self):
+        self.robot_id = self.pb_sim.robot_id
+        self._client = self.pb_sim._client
+        self.n_joints = self.pb_sim.n_joints
+        self.arm_joint_ids = self.pb_sim.arm_joint_ids
+        self.arm_joint_limits = self.pb_sim.arm_joint_limits
+        self.gripper_joint_ids = self.pb_sim.gripper_joint_ids
+        self.gripper_joint_limits = self.pb_sim.gripper_joint_limits
+        self.link_names = self.pb_sim.link_names
+        self.joint_ll = self.pb_sim.joint_ll
+        self.joint_ul = self.pb_sim.joint_ul
+        self.end_effector_link_index = self.pb_sim.end_effector_link_index
+
+        self.gripper_link_ids = list(self.pb_sim.gripper_joint_ids) \
+                                 + list(self.pb_sim.linkage_joint_ids) \
+                                 + list(self.pb_sim.finger_joint_ids)
+

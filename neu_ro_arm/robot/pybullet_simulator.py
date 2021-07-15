@@ -46,7 +46,7 @@ class PybulletSimulator:
         self.arm_joint_limits = np.array(((-2, -1.58, -2, -1.8, -2),
                                           ( 2,  1.58,  2,  2.0,  2)))
 
-        self.gripper_joint_limits = np.array([0.05, 1.38])
+        self.gripper_joint_limits = np.array(((0.05,0.05),(1.38, 1.38)))
 
         connection_mode = pb.DIRECT if headless else pb.GUI
         self._initialize(connection_mode)

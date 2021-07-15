@@ -1,71 +1,136 @@
 import numpy as np
 import pybullet as pb
+import time
 
 from neu_ro_arm.robot.base_controller import BaseController
-from neu_ro_arm.robot.base_pybullet import BasePybullet
 
-class SimulatorController(BaseController, BasePybullet):
-    def __init__(self):
+class SimulatorController(BaseController):
+    def __init__(self,
+                 pb_sim,
+                 realtime=True,
+                ):
         BaseController.__init__(self)
-        BasePybullet.__init__(self, pb.GUI)
+
+        self.pb_sim = pb_sim
+        self._unpack_simulator_params()
+        self.arm_jpos_home = np.zeros(len(self.arm_joint_ids))
+
         pb.setGravity(0,0,-10,self._client)
-        pb.setRealTimeSimulation(1)
-        self.arm_jpos_home = np.zeros(len(self.arm_joint_idxs))
-        self.joint_limits =  { 1 : (-3, 3),
-                               2 : (-np.pi, np.pi),
-                               3 : (-np.pi, np.pi),
-                               4 : (-np.pi, np.pi),
-                               5 : (-np.pi, np.pi),
-                               6 : (0, 0.042),
-                               7 : (0, 0.042),
-                             }
+        self.realtime = realtime
+        if self.realtime:
+            pb.setRealTimeSimulation(1)
+
+        self.p_gain = 0.1
 
     def timestep(self):
-        [pb.stepSimulation() for _ in range(int(240/self.measurement_frequency))]
+        if not self.realtime:
+            [pb.stepSimulation() for _ in range(int(240/self.measurement_frequency))]
+        else:
+            time.sleep(1./self.measurement_frequency)
 
-    def move_command(self, j_idxs, jpos, speed=None):
+    def power_on_servos(self):
+        '''Turn on all servos so all joints are rigid
+        '''
+        joint_ids = self.arm_joint_ids + self.gripper_joint_ids
+        current_jpos = self._read_jpos(joint_ids)
+        pb.setJointMotorControlArray(self.robot_id,
+                                     joint_ids,
+                                     pb.POSITION_CONTROL,
+                                     current_jpos,
+                                     positionGains=len(joint_ids)*[self.p_gain]
+                                    )
+
+    def power_off_servos(self):
+        '''Turn off all servos so all joints are passive
+        '''
+        pb.setJointMotorControlArray(self.robot_id,
+                                     self.arm_joint_ids+self.gripper_joint_ids,
+                                     pb.POSITION_CONTROL,
+                                     forces=[0,0,0,0]
+                                    )
+
+    def power_on_servo(self, joint_id):
+        '''Turn on single servo so the joint is rigid
+        '''
+        current_jpos = self._read_jpos([joint_id])[0]
+        pb.setJointMotorControl2(self.robot_id,
+                                 joint_id,
+                                 pb.POSITION_CONTROL,
+                                 current_jpos,
+                                 positionGain=self.p_gain)
+
+    def power_off_servo(self, joint_id):
+        '''Turn off single servo so the joint is passive
+        '''
+        pb.setJointMotorControl2(self.robot_id,
+                                 joint_id,
+                                 pb.POSITION_CONTROL,
+                                 force=0)
+
+    def get_joint_id(self, joint_name):
+        return {'base' : 1,
+                'shoulder' : 2,
+                'elbow' : 3,
+                'wrist' : 4,
+                'wristRotation' : 5,
+                'gripper' : (7,10)}[joint_name]
+
+    def _write_jpos(self, joint_ids, jpos, speed=None):
         '''Issue move command to specified joint indices
-
-        This simulator runs realtime and I have not tried to mimic the movement
-        speed of the real robot.  The movements are meant to be linear in joint
-        space to reflect movements of xArm.
 
         Parameters
         ----------
-        j_idxs : array_like of int
-            joint indices to be moved
         jpos : array_like of float
             target joint positions corresponding to the joint indices
-        speed
-            ignored
+        speed : float, array_like of float
+            designate movement speed.
 
         Returns
         -------
         float
-            expected time (s) to complete movement
+            expected time (s) to complete movement, used for monitoring
         '''
+        if speed is None:
+            speed = self.p_gain
+        if isinstance(speed, float):
+            speed = len(joint_ids) * [speed]
+
         pb.setJointMotorControlArray(self.robot_id,
-                                     j_idxs,
+                                     joint_ids,
                                      pb.POSITION_CONTROL,
                                      jpos,
-                                     physicsClientId=self._client
+                                     positionGains=speed,
+                                     physicsClientId=self._client,
                                     )
-        # TODO: calculate expected time
-        return 0.5
+        return 10
 
-    def read_command(self, j_idxs):
-        '''Read some joint positions
+    def _read_jpos(self, joint_ids):
+        '''Read current joint positions
 
         Parameters
         ----------
-        j_idxs : array_like of int
-            joint indices whose position should be read
+        joint_ids : array_like of int
+            indices of joints
 
         Returns
         -------
-        jpos : list of float
-            joint positions in radians, will be same length as j_idxs
+        array_like of float
+            joint positions in radians in same order as joint_ids
         '''
-        jpos = [pb.getJointState(self.robot_id, j_idx, physicsClientId=self._client)[0]
-                           for j_idx in j_idxs]
+        jpos = next(zip(*pb.getJointStates(self.robot_id,
+                                           joint_ids,
+                                           physicsClientId=self._client
+                                          )))
         return jpos
+
+    def _unpack_simulator_params(self):
+        self.robot_id = self.pb_sim.robot_id
+        self._client = self.pb_sim._client
+        self.n_joints = self.pb_sim.n_joints
+        self.arm_joint_ids = self.pb_sim.arm_joint_ids
+        self.arm_joint_limits = self.pb_sim.arm_joint_limits
+        self.gripper_joint_ids = self.pb_sim.gripper_joint_ids
+        self.gripper_joint_limits = self.pb_sim.gripper_joint_limits
+        self.link_names = self.pb_sim.link_names
+        self.end_effector_link_index = self.pb_sim.end_effector_link_index
+
