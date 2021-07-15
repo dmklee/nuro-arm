@@ -49,7 +49,7 @@ class PybulletSimulator:
         self.gripper_joint_limits = np.array([0.05, 1.38])
 
         connection_mode = pb.DIRECT if headless else pb.GUI
-        self._init_pybullet(connection_mode)
+        self._initialize(connection_mode)
         self.n_joints = pb.getNumJoints(self.robot_id,
                                           physicsClientId=self._client)
 
