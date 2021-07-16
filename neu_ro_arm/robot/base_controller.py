@@ -159,8 +159,8 @@ class BaseController:
         float
             gripper state
         '''
-        state = (jpos - self.gripper_joint_limits[1]) \
-                / (self.gripper_joint_limits[0] - self.gripper_joint_limits[1])
+        state = (jpos - self.gripper_joint_limits[0]) \
+                / (self.gripper_joint_limits[1] - self.gripper_joint_limits[0])
         return np.mean(state)
 
     def _gripper_state_to_jpos(self, state):
@@ -177,4 +177,4 @@ class BaseController:
             gripper joint position
         '''
         state = np.clip(state, 0, 1)
-        return state*self.gripper_joint_limits[0] + (1-state)*self.gripper_joint_limits[1]
+        return (1-state)*self.gripper_joint_limits[0] + state*self.gripper_joint_limits[1]

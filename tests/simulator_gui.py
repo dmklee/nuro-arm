@@ -8,7 +8,7 @@ from neu_ro_arm.constants import cube_size
 
 PI = 3.141592653589793
 
-robot = RobotArm('sim')
+robot = RobotArm('sim', headless=False)
 robot.set_gripper_state(0.5)
 client = robot.controller._client
 
@@ -29,20 +29,10 @@ while True:
         if 1 or abs(new_val-dbg_values[name]) > 1e-4:
             dbg_values[name] = new_val
             if name == 'gripper':
-                gripper_jpos = 0.05*(new_val) + 1.45*(1-new_val)
-                pb.setJointMotorControlArray(robot.controller.robot_id,
-                                             robot.controller.gripper_joint_ids,
-                                             pb.POSITION_CONTROL,
-                                             2*[gripper_jpos],
-                                             positionGains=2*[0.05],
-                                             physicsClientId=client)
+                robot.controller.write_gripper_state(new_val)
             else:
-                pb.setJointMotorControl2(robot.controller.robot_id,
-                                         robot.joint_names.index(name)+1,
-                                         pb.POSITION_CONTROL,
-                                         new_val,
-                                         positionGain=0.1,
-                                         physicsClientId=client)
+                joint_id = robot.controller.get_joint_id(name)
+                robot.controller._write_jpos([joint_id], [new_val])
     robot._mirror_planner()
     # [robot.controller.timestep() for _ in range(2)]
 

@@ -49,7 +49,7 @@ class GUI(tk.Frame):
         self.header.grid_columnconfigure(0, weight=1)
         self.footer = tk.Frame(self)
 
-        field_names = list(robot.joint_names) + ['gripper']
+        field_names = list(robot.joint_names)
         self.table = ttk.Treeview(self,
                              show='headings',
                              columns=list(range(len(field_names))),
