@@ -132,20 +132,16 @@ class XArmController(BaseController):
         self._lock = threading.Lock()
         self.device = self.connect()
 
-        # if you dont load configs (like motor direction) before powering on then
-        # the servos can potentially move very rapidly)
         if self.load_configs():
             self.power_on_servos()
 
-            # write servo offsets from config file,
-            # set movement command first to prevent jerky movement
-            print('??? Do I need to re-write servo offsets every time?')
-            # for j_id in self.arm_joint_ids:
-                # new_offset = configs.get(f'offset_j{j_id}', 0)
-                # old_offset = self._read_servo_offset(j_id)
-                # pos = self._to_pos_units(j_id, self.read_command([j_id])[0])
-                # self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
-                # self._write_servo_offset(j_id, new_offset)
+            # write servo offsets, these get reset during power cycles
+            for j_id in self.arm_joint_ids:
+                new_offset = self.servo_offsets[j_id]
+                old_offset = self._read_servo_offset(j_id)
+                pos = self._to_pos_units(j_id, self._read_jpos([j_id])[0])
+                self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
+                self._write_servo_offset(j_id, new_offset)
 
     def load_configs(self):
         if os.path.exists(self.CONFIG_FILE):
