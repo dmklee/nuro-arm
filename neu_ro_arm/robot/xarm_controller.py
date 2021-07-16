@@ -2,15 +2,9 @@ import os
 import platform
 import time
 import numpy as np
-import yaml
 import threading
 
 from neu_ro_arm.robot.base_controller import BaseController
-
-class InvalidServoOffset(Exception):
-    def __init__(self, j_idx):
-        message = f"Servo offset is too large for motor id={j_idx}. Servo must be re-installed."
-        super().__init__(message)
 
 def itos(v):
     lsb = v & 0xFF
@@ -114,7 +108,7 @@ class XArmController(BaseController):
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
-    CONFIG_FILE = "neu_ro_arm/robot/configs.yaml"
+    CONFIG_FILE = "neu_ro_arm/robot/configs.npy"
 
     def __init__(self):
         super().__init__()
@@ -140,31 +134,36 @@ class XArmController(BaseController):
 
         # if you dont load configs (like motor direction) before powering on then
         # the servos can potentially move very rapidly)
-        self.load_configs()
-        self.power_on_servos()
+        if self.load_configs():
+            self.power_on_servos()
 
-        # write servo offsets from config file,
-        # set movement command first to prevent jerky movement
-        print('??? Do I need to re-write servo offsets every time?')
-        # for j_id in self.arm_joint_ids:
-            # new_offset = configs.get(f'offset_j{j_id}', 0)
-            # old_offset = self._read_servo_offset(j_id)
-            # pos = self._to_pos_units(j_id, self.read_command([j_id])[0])
-            # self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
-            # self._write_servo_offset(j_id, new_offset)
+            # write servo offsets from config file,
+            # set movement command first to prevent jerky movement
+            print('??? Do I need to re-write servo offsets every time?')
+            # for j_id in self.arm_joint_ids:
+                # new_offset = configs.get(f'offset_j{j_id}', 0)
+                # old_offset = self._read_servo_offset(j_id)
+                # pos = self._to_pos_units(j_id, self.read_command([j_id])[0])
+                # self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
+                # self._write_servo_offset(j_id, new_offset)
 
     def load_configs(self):
         if os.path.exists(self.CONFIG_FILE):
-            data = yaml.safe_load(self.CONFIG_FILE)
-            self.arm_joint_directions = data['arm_joint_directions']
-            self.gripper_joint_limits = np.array(data['gripper_joint_limits'])
-            self.servo_offsets = data['servo_offsets']
-        else:
-            print('[WARNING] xArm config file not found. '
-                  ' Calibration should be performed.')
-            self.arm_joint_directions = {i:1. for i in self.arm_joint_ids}
-            self.gripper_joint_limits = np.array(((0.9,),(-1.,)))
-            self.servo_offsets = {i:0 for i in self.servo_ids}
+            data = np.load(self.CONFIG_FILE, allow_pickle=True).item()
+            try:
+                self.arm_joint_directions = data.get('arm_joint_directions')
+                self.gripper_joint_limits = data.get('gripper_joint_limits')
+                self.servo_offsets = data.get('servo_offsets')
+                return True
+            except IndexError:
+                pass
+
+        print('[WARNING] xArm config file not found. '
+              ' Calibration should be performed.')
+        self.arm_joint_directions = {i:1. for i in self.arm_joint_ids}
+        self.gripper_joint_limits = np.array(((0.9,),(-1.,)))
+        self.servo_offsets = {i:0 for i in self.servo_ids}
+        return False
 
     def timestep(self):
         time.sleep(1/self.measurement_frequency)
@@ -210,6 +209,15 @@ class XArmController(BaseController):
                 'wristRotation' : 2,
                 'gripper' : 1
                }[joint_name]
+
+    def get_joint_name(self, joint_id):
+        return {6 : 'base',
+                5 : 'shoulder',
+                4 : 'elbow',
+                3 : 'wrist',
+                2 : 'wristRotation',
+                1 : 'gripper'
+               }[joint_id]
 
     def _write_jpos(self, joint_ids, jpos, speed=None):
         '''Issue move command to specified joint indices
@@ -284,7 +292,7 @@ class XArmController(BaseController):
     def _read_servo_offset(self, servo_id):
         # returns in positional units
         self._send(CmdLib.OFFSET_READ, [1, servo_id])
-        pos = self._recv(self.cmd_lib.OFFSET_READ, ret_type='char')[0]
+        pos = self._recv(CmdLib.OFFSET_READ, ret_type='char')[0]
         return pos
 
     def _write_servo_offset(self, servo_id, offset):
@@ -351,20 +359,21 @@ class XArmController(BaseController):
 
     def _reset_servo_offsets(self):
         """Assumes robot is already in home position and servos are off"""
+        success = True
         offsets = {}
-        # for servo in self.servos:
         for j_id in self.arm_joint_ids:
             old_offset = self._read_servo_offset(j_id)
             true_home = self.SERVO_HOME - old_offset
-            pos = self._to_pos_units(j_id, self.read_command([j_id])[0])
+            pos = self._to_pos_units(j_id, self._read_jpos([j_id])[0])
             new_offset = pos - true_home
             if abs(new_offset) > 127:
-                raise InvalidServoOffset(j_id)
+                success = False
+            else:
+                self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
+                self._write_servo_offset(j_id, new_offset)
 
-            self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
-            self._write_servo_offset(j_idx, new_offset)
-            offsets[f"offset_j{j_idx}"] = new_offset
-        return offsets
+            offsets[j_id] = new_offset
+        return success, offsets
 
     def __del__(self):
         '''Makes sure servos are off before disconnecting'''
