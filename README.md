@@ -27,6 +27,7 @@ Description  | Price
 [ELP Megapixel 720p USB Camera 100 deg lens](https://www.amazon.com/ELP-megapixel-Camera-Module-120degree/dp/B01DRJXDEA/ref=sr_1_1?crid=12SN0I987B5WH&dchild=1&keywords=elp+megapixel+super+mini+720p+usb+camera+module+with+120degree+lens&qid=1618417242&sprefix=elp+camera+megapix%2Caps%2C157&sr=8-1) | $30
 [Small (~1") toy cubes](https://www.amazon.com/ETA-hand2mind-1-inch-Color-Cubes/dp/B01J6GC83U/ref=sr_1_13?dchild=1&keywords=wooden+cubes+color&qid=1619112911&sr=8-13) or find similar items around the house | $19 (or free)
 3D Printed parts ([stl files](https://github.com/dmklee/neu-ro-arm/blob/main/neu_ro_arm/assets/meshes/)) | ~$10
+computer with 2 USB-A ports or equivalent adapters | -
 
 ### Assembly
 The assembly process takes around 3 hours, including calibration.  Detailed instructions can be found in our <a href="https://github.com/dmklee/nuro-arm/blob/main/assembly_guide.md">Assembly Guide</a>.
