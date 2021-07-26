@@ -79,6 +79,8 @@ class BaseController:
 
         Parameters
         ----------
+        joint_ids : array_like of int
+            joint indices
         jpos : array_like of float
             target joint positions corresponding to the joint indices
         speed : float, array_like of float

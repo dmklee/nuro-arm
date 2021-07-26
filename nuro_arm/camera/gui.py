@@ -18,7 +18,7 @@ class GUI:
 
     def show(self,
              img=None,
-             window_name='',
+             window_name='press ESC to close',
              exit_keys=[],
              modifier_fns=[]
             ):
