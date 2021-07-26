@@ -4,24 +4,27 @@
 		<visual>
 			<origin rpy="0 0 0.0" xyz="0 0 0"/>
       		<geometry>
-                <box size="0.0254 0.0254 0.0254"/>
+                <box size="1 1 1"/>
       		</geometry>
-            <material name="red">
-                <color rgba="0.8 0.2 0.2 1"/>
+            <material name="green">
+                <color rgba="0.3 0.8 0.2 1"/>
             </material>
 		</visual>
 		<collision>
 			<origin rpy="0 0 0.0" xyz="0 0 0"/>
       		<geometry>
-                <box size="0.0254 0.0254 0.0254"/>
+                <box size="1 1 1"/>
       		</geometry>
 		</collision>
 		<contact>
-			<lateral_friction value="10.0"/>
+			<friction_anchor/>
+			<lateral_friction value="0.5"/>
+			<spinning_friction value="0"/>
 		</contact>
         <inertial>
-            <mass value="1"/>
-            <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+			<origin rpy="0 0 0" xyz="0 0 0"/>
+            <mass value="0.1"/>
+            <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
         </inertial>
   	</link>
 </robot>

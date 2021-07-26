@@ -53,7 +53,6 @@ class RobotArm:
         '''Moves to home arm positions
         '''
         self.move_arm_jpos(self.controller.arm_jpos_home)
-        self._mirror_planner()
 
     def passive_mode(self):
         self.controller.power_off_servos()
@@ -109,6 +108,7 @@ class RobotArm:
         return success
 
     def get_hand_pose(self):
+        self._mirror_planner()
         return self.mp.get_hand_pose()
 
     def move_hand_to(self,
@@ -174,9 +174,9 @@ class RobotArm:
         bool
             True if desired gripper state was achieved
         '''
-        return self.set_gripper_state(GRIPPER_CLOSED, backoff=-0.01)
+        return self.set_gripper_state(GRIPPER_CLOSED, backoff=-0.05)
 
-    def set_gripper_state(self, state, backoff=-0.01):
+    def set_gripper_state(self, state, backoff=-0.05):
         '''Get state of gripper
 
         Parameters
@@ -185,8 +185,9 @@ class RobotArm:
             gripper state to move to; will be clipped to range [0,1]
 
         backoff : float
-            amount of back off if move fails (in radians). a positive value of
-            backoff means the gripper will be more open than the acheived position
+            amount of back off if move fails (as fraction of gripper range). a
+            positive value of backoff means the gripper will be more open
+            than the acheived position
 
         Returns
         -------
@@ -202,8 +203,8 @@ class RobotArm:
                                                          duration)
         if not success:
             # to avoid leaving motors under load, move to achieved jpos
-            achieved_jpos += backoff
-            achieved_state = self.controller._gripper_jpos_to_state(np.mean(achieved_jpos))
+            achieved_state = self.controller._gripper_jpos_to_state(achieved_jpos)
+            achieved_state += backoff
             self.controller.write_gripper_state(achieved_state)
             self.controller.timestep()
 

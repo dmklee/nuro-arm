@@ -67,8 +67,13 @@ class MotionPlanner:
     def is_collision_free(self, jpos, ignore_gripper=True):
         '''Checks if configuration is collision free
         '''
+        current_joint_states = self.get_joint_states()
+
         self._teleport_arm(jpos)
         collisions = self.find_collisions(jpos, ignore_gripper)
+
+        # reset arm to previous joint states
+        self.set_joint_states(current_joint_states)
         return len(collisions) == 0, collisions
 
     def is_collision_free_trajectory(self,
@@ -88,7 +93,6 @@ class MotionPlanner:
         ignore_gripper : bool
         n_substeps : int, default=10
             number of collision checking samples taken within trajectory
-
         '''
         #TODO: handle trajectories with differing servo speeds
         substeps = np.linspace(start_jpos, end_jpos, num=n_substeps, endpoint=True)
@@ -106,9 +110,13 @@ class MotionPlanner:
                      n_iters_outer=3,
                      n_iters_inner=50,
                      jd=0.005,
-                     residual_threshold=1e-4,
                      ):
+        """
+        WARNING: this will reset joint states of arm
+        """
         #https://github.com/bulletphysics/bullet3/issues/1380
+        current_joint_states = self.get_joint_states()
+
         n_arm_joints = len(self.arm_joint_ids)
 
         for _ in range(n_iters_outer):
@@ -117,7 +125,6 @@ class MotionPlanner:
                                                  pos,
                                                  rot,
                                                  maxNumIterations=n_iters_inner,
-                                                 # residualThreshold=residual_threshold,
                                                  jointDamping=self.n_joints*[jd],
                                                  physicsClientId=self._client
                                                 )
@@ -131,6 +138,8 @@ class MotionPlanner:
             #TODO: add rotation error
         }
 
+        # reset arm to previous joint states
+        self.set_joint_states(current_joint_states)
         return jpos[:n_arm_joints], info
 
     def mirror(self, arm_jpos=None, gripper_state=None):
@@ -202,6 +211,21 @@ class MotionPlanner:
 
         return collisions
 
+    def get_joint_states(self):
+        return pb.getJointStates(self.robot_id,
+                                 self.arm_joint_ids +self.gripper_joint_ids,
+                                 self._client)
+
+    def set_joint_states(self, joint_states):
+        joint_ids = self.arm_joint_ids+self.gripper_joint_ids
+        for j_state, j_id in zip(joint_states, joint_ids):
+            pb.resetJointState(self.robot_id,
+                               j_id,
+                               j_state[0],
+                               j_state[1],
+                               self._client)
+
+
     def _unpack_simulator_params(self):
         self.robot_id = self.pb_sim.robot_id
         self._client = self.pb_sim._client
@@ -216,6 +240,6 @@ class MotionPlanner:
         self.end_effector_link_index = self.pb_sim.end_effector_link_index
 
         self.gripper_link_ids = list(self.pb_sim.gripper_joint_ids) \
-                                 + list(self.pb_sim.linkage_joint_ids) \
+                                 + list(self.pb_sim.dummy_joint_ids) \
                                  + list(self.pb_sim.finger_joint_ids)
 

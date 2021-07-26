@@ -17,15 +17,12 @@ class SimulatorController(BaseController):
 
         pb.setGravity(0,0,-10,self._client)
         self.realtime = realtime
-        if self.realtime:
-            pb.setRealTimeSimulation(1)
 
         self.p_gain = 0.1
 
     def timestep(self):
-        if not self.realtime:
-            [pb.stepSimulation() for _ in range(int(240/self.measurement_frequency))]
-        else:
+        [pb.stepSimulation() for _ in range(int(24/self.measurement_frequency))]
+        if self.realtime:
             time.sleep(1./self.measurement_frequency)
 
     def power_on_servos(self):
@@ -100,6 +97,7 @@ class SimulatorController(BaseController):
                                      pb.POSITION_CONTROL,
                                      jpos,
                                      positionGains=speed,
+                                     forces=len(joint_ids)*[10],
                                      physicsClientId=self._client,
                                     )
         return 10
