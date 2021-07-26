@@ -4,7 +4,7 @@ import time
 import numpy as np
 import threading
 
-from neu_ro_arm.robot.base_controller import BaseController
+from nuro_arm.robot.base_controller import BaseController
 
 def itos(v):
     lsb = v & 0xFF
@@ -108,7 +108,7 @@ class XArmController(BaseController):
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
-    CONFIG_FILE = "neu_ro_arm/robot/configs.npy"
+    CONFIG_FILE = "nuro_arm/robot/configs.npy"
 
     def __init__(self):
         super().__init__()

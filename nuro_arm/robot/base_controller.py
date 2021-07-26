@@ -28,12 +28,14 @@ class BaseController:
     def read_gripper_state(self):
         gripper_jpos = self._read_jpos(self.gripper_joint_ids)
         gripper_state = self._gripper_jpos_to_state(gripper_jpos)
+        gripper_state = np.clip(gripper_state, 0, 1)
         return gripper_state
 
     def write_arm_jpos(self, jpos, speed=None):
         return self._write_jpos(self.arm_joint_ids, jpos, speed)
 
     def write_gripper_state(self, state, speed=None):
+        state = np.clip(state, 0, 1)
         gripper_jpos = self._gripper_state_to_jpos(state)
         return self._write_jpos(self.gripper_joint_ids, gripper_jpos, speed)
 

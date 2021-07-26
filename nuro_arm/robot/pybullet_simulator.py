@@ -1,13 +1,13 @@
 import pybullet_data
 import pybullet as pb
 import numpy as np
-from neu_ro_arm import transformation_utils, constants
+from nuro_arm import transformation_utils, constants
 
 class PybulletSimulator:
-    ROBOT_URDF_PATH = "neu_ro_arm/assets/urdf/xarm.urdf"
-    CAMERA_URDF_PATH = "neu_ro_arm/assets/urdf/camera.urdf"
-    ROD_URDF_PATH = "neu_ro_arm/assets/urdf/camera_rod.urdf"
-    CUBE_URDF_PATH = "neu_ro_arm/assets/urdf/cube.urdf"
+    ROBOT_URDF_PATH = "nuro_arm/assets/urdf/xarm.urdf"
+    CAMERA_URDF_PATH = "nuro_arm/assets/urdf/camera.urdf"
+    ROD_URDF_PATH = "nuro_arm/assets/urdf/camera_rod.urdf"
+    CUBE_URDF_PATH = "nuro_arm/assets/urdf/cube.urdf"
     def __init__(self, headless):
         '''Base class for pybullet simulator to handle initialization and attributes
         about robot joints

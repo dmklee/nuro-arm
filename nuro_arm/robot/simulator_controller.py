@@ -2,7 +2,7 @@ import numpy as np
 import pybullet as pb
 import time
 
-from neu_ro_arm.robot.base_controller import BaseController
+from nuro_arm.robot.base_controller import BaseController
 
 class SimulatorController(BaseController):
     def __init__(self,

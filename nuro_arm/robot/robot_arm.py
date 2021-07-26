@@ -5,17 +5,17 @@ import matplotlib
 matplotlib.use('TkAgg')
 import tkinter as tk
 
-from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
-from neu_ro_arm.robot.motion_planner import MotionPlanner
-from neu_ro_arm.robot.pybullet_simulator import PybulletSimulator
-from neu_ro_arm.robot.simulator_controller import SimulatorController
-from neu_ro_arm.robot.xarm_controller import XArmController
+from nuro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
+from nuro_arm.robot.motion_planner import MotionPlanner
+from nuro_arm.robot.pybullet_simulator import PybulletSimulator
+from nuro_arm.robot.simulator_controller import SimulatorController
+from nuro_arm.robot.xarm_controller import XArmController
 
 class RobotArm:
     def __init__(self,
                  controller_type='real',
-                 headless=True,
                  realtime=True,
+                 headless=True,
                  workspace=None,
                 ):
         '''Real or simulated xArm robot interface for safe, high-level motion commands
