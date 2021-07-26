@@ -1,73 +1,112 @@
-from neu_ro_arm.camera.camera import Camera
-from neu_ro_arm.camera.capturer import Capturer
-from neu_ro_arm.camera.gui import GUI
+import numpy as np
 
-def determine_camera_id():
+from nuro_arm.camera.camera import Camera
+from nuro_arm.camera.gui import GUI, ShowCheckerboard
+from nuro_arm.gui_utils import Popup, VideoPopup, ImagePopup, Colors
+
+def calibrate_camera():
     '''Scans over available cameras, prompting user to select which camera is
     to be used with the robot
     '''
-    print('Performing scan over available cameras...')
-    cap = Capturer()
-    gui = GUI(cap)
+    popup = Popup(
+        title='Camera Set-up: step 0 of 2',
+        text='Setting up the camera will take less than a minute. Please ensure \n' \
+             'that the camera is plugged into your computer and the lens cover is \n' \
+             'removed. \n\n' \
+             'Press BEGIN to start the set-up process.',
+        button_names=['BEGIN', 'QUIT']
+    )
+    if popup.response() != 'BEGIN':
+        exit()
 
-    max_camera_id = 5
-    for c_id in range(max_camera_id):
-        is_valid = cap.set_camera_id(c_id)
-        if is_valid:
-            name = f"Camera{c_id}: is this the camera you want to use? [y/n]"
-            k = gui.show(window_name=name,
-                          exit_keys=[ord('y'), ord('n')]
-                             )
-            if k == ord('y'):
-                print(f'Video capture enabled with camera{c_id}.')
-                cap.release()
-                return c_id
-        # else:
-            # print(f'  Camera{c_id} not available.')
-    print('[ERROR] No other cameras were found.')
-    cap.release()
-    return None
+    # Determine the ID of the camera
+    cam_id = 0
+    camera = Camera(cam_id)
+    while True:
+        if cam_id > 10:
+            popup = Popup(
+                title='Camera Warning',
+                text='No more cameras have been found.  Double-check that the \n' \
+                     'camera is plugged in to your computer and try again.',
+                text_color=Colors.ALARM,
+                button_names=['CLOSE'],
+                button_colors=[Colors.NEUTRAL]
+            )()
+            exit()
 
-def calc_camera_location(camera_id=None):
-    '''Calculates camera position in world coordinate frame using checkerboard
-    pattern
+        if camera.change_camera_id(cam_id):
+            img = camera.get_image()
+            popup = ImagePopup(
+                title='Camera Set-up: step 1 of 2',
+                text='First, we will make sure that we have selected the correct camera. \n\n' \
+                     'If this appears to be the right camera feed, click YES.  Otherwise \n' \
+                     'click NO to search for another available camera. \n\n',
+                button_names=['YES', 'NO', 'QUIT'],
+                images=[img],
+                image_shape=(300,400),
+                button_colors=[Colors.YES, Colors.NEUTRAL, Colors.NO]
+            )
+            if popup.response() == 'YES':
+                break
+            elif popup.response() != 'NO':
+                exit()
 
-    Parameters
-    ----------
-    camera_id : int, optional
-        identifier of camera to open; if not provided then the camera opened
-        will be the one saved in the camera config file
-    '''
-    camera = Camera(camera_id)
+        cam_id += 1
 
-    print()
-    print('Place checkerboard pattern in front of robot such that the semicircles'
-          ' align with the suction cups')
-    input('   hit enter when ready...')
+    class HighlightedCheckerboard:
+        def __init__(self, camera):
+            self.camera = camera
+            self.modifier = ShowCheckerboard({})
 
-    print()
-    print('Position camera such that the view includes the checkerboard,'
-          ' this may require adjusting the bolts on the top camera assembly.')
-    print('Tighten collars firmly once camera view is good. We do not want'
-          ' the camera to move around after we have calibrated its location.')
-    camera.gui.show(window_name='Hit ESC once camera view is good.')
+        def read(self):
+            img = self.camera.get_image()
+            return self.modifier(img, img)
+
+    popup = VideoPopup(
+        HighlightedCheckerboard(camera),
+        title='Camera Set-up: step 2 of 2',
+        text='Now, we will determine the location of the camera in relation to the \n' \
+             'robot.  Place the checkerboard calibration pattern in front of the robot \n' \
+             '(e.g. opposite the control board) such that the suction cups are aligned\n' \
+             'with the corresponding semicircles on the page. Angle the camera such that  \n' \
+             'the pattern fits fully within the image then tighten the screws on the \n' \
+             'camera stand to ensure so that it does not rotate. \n\n' \
+             'Click CONTINUE once you are ready (there should be rainbow highlighting).\n\n',
+        button_names=['CONTINUE', 'QUIT'],
+        image_shape=(375,500),
+        button_colors=[Colors.YES, Colors.NO]
+    )
+    if popup.response() != 'CONTINUE':
+        exit()
 
     ret, location_data = camera.calc_location()
-    if ret:
-        print()
-        print('[SUCCESS] Camera location has been identified!')
-        rvec, tvec, world2cam, cam2world = location_data
-        camera._update_config_file({'camera_id': camera_id,
-                                    'rvec' : rvec,
-                                    'tvec' : tvec,
-                                    'world2cam' : world2cam,
-                                    'cam2world' : cam2world
-                                   })
-        print('Location information has been saved to config file.')
-    else:
-        print('[ERROR] Checkerboard pattern was not identified. Please try again.')
+    if not ret:
+        popup = Popup(
+            title='Camera Warning',
+            text='Camera failed to identify checkerboard pattern. Ensure it is \n' \
+                 'completely located within image and try again.',
+            text_color=Colors.ALARM,
+            button_names=['CLOSE'],
+            button_colors=[Colors.NEUTRAL]
+        )()
+        exit()
+
+    rvec, tvec, world2cam, cam2world = location_data
+    data = {'camera_id': cam_id,
+            'rvec' : rvec,
+            'tvec' : tvec,
+            'world2cam' : world2cam,
+            'cam2world' : cam2world,
+           }
+    np.save(camera.CONFIG_FILE, data)
+
+    popup = Popup(
+        title='Success',
+        text='Camera was successfully calibrated. All data has been logged\n' \
+             'and you can now use the camera for finding object poses.',
+        button_names=['CLOSE'],
+        button_colors=[Colors.NEUTRAL]
+    )()
 
 if __name__ == "__main__":
-    camera_id = determine_camera_id()
-    if camera_id is not None:
-        calc_camera_location(camera_id)
+    calibrate_camera()

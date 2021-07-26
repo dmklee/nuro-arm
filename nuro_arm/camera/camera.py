@@ -1,16 +1,16 @@
 import numpy as np
 import cv2
 import time
+import os
 
-
-import neu_ro_arm.transformation_utils as tfm
-from neu_ro_arm.camera import camera_utils
-from neu_ro_arm.camera.gui import GUI
-from neu_ro_arm.camera.capturer import Capturer
-import neu_ro_arm.constants as constants
+import nuro_arm.transformation_utils as tfm
+from nuro_arm.camera import camera_utils
+from nuro_arm.camera.gui import GUI
+from nuro_arm.camera.capturer import Capturer
+import nuro_arm.constants as constants
 
 class Camera:
-    CONFIG_FILE = "neu_ro_arm/camera/configs.npz"
+    CONFIG_FILE = "nuro_arm/camera/configs.npy"
     def __init__(self, camera_id=None):
         '''Changes video capture to a different camera id number
 
@@ -31,7 +31,7 @@ class Camera:
         self.cap = Capturer()
         self.gui = GUI(self.cap)
 
-        self.unpack_configs()
+        self.load_configs()
 
         # override camera_id config
         if camera_id is not None:
@@ -53,6 +53,12 @@ class Camera:
         is_connected = self.cap.set_camera_id(self._camera_id)
         return is_connected
 
+    def change_camera_id(self, cam_id):
+        if cam_id == self._camera_id:
+            return True
+        self._camera_id = cam_id
+        return self.cap.set_camera_id(self._camera_id)
+
     @property
     def frame_rate(self):
         '''Frame rate of the Capturer attribute
@@ -63,15 +69,6 @@ class Camera:
             Frames per second
         '''
         return self.cap._frame_rate
-
-    def _calc_distortion_matrix(self):
-        mtx, newcameramtx, roi, dist = camera_utils.calc_distortion_matrix()
-        self._update_config_file({
-            'mtx' : mtx.tolist(),
-            'undistort_mtx' : newcameramtx,
-            'undistort_roi' : roi,
-            'dist_coeffs' : dist,
-        })
 
     def calc_location(self):
         '''Determine camera pose in world frame by localizing checkerboard pattern
@@ -149,30 +146,6 @@ class Camera:
             time.sleep(0.1)
         return self.cap.get_recording()
 
-    def undistort(self, img):
-        '''Corrects for distortion in image
-
-        Parameters
-        ----------
-        img : ndarray
-            2D or 3D image
-
-        Returns
-        -------
-        ndarray
-            image that will be strictly smaller in height/width than input image
-        '''
-        dst = cv2.undistort(img,
-                            self._mtx,
-                            self._dist_coeffs,
-                            None,
-                            self._undistort_mtx
-                           )
-        # crop the image
-        x, y, w, h = self._undistort_roi
-        cropped = dst[y:y+h, x:x+w]
-        return cropped
-
     def project_world_points(self, pts_wframe):
         '''Projects 3D world points to pixel locations in camera feed
 
@@ -194,27 +167,8 @@ class Camera:
                                            self._dist_coeffs
                                           )
 
-    def _update_config_file(self, new_configs):
-        '''Adds new configs to config file, or updates those that already exist.
-
-        Parameters
-        ----------
-        new_configs : dict
-            Dictionary of configs.  Values should be ndarray type
-        '''
-        configs = np.load(self.CONFIG_FILE)
-        configs = dict(configs) if configs is not None else dict()
-
-        configs.update(new_configs)
-        np.savez(self.CONFIG_FILE, **configs)
-
-    def unpack_configs(self, write=True):
-        '''Reads config file, writing to private attributes if desired
-
-        Parameters
-        ----------
-        write : bool, default to True
-            True if configs should be written to private attributes
+    def load_configs(self):
+        '''Reads config file writing to private attributes
 
         Raises
         ------
@@ -227,24 +181,34 @@ class Camera:
         dict
             configs that were found in config file
         '''
-        configs = dict(np.load(self.CONFIG_FILE))
+        self._mtx = constants.cam_mtx
+        self._dist_coeffs = constants.cam_dist_coeffs
+        self._camera_id = 0
 
-        if write:
+        if os.path.exists(self.CONFIG_FILE):
+            data = np.load(self.CONFIG_FILE, allow_pickle=True).item()
             try:
-                self._camera_id = int(configs['camera_id'])
-                self._rvec = configs['rvec']
-                self._tvec = configs['tvec']
-                self._mtx = configs['mtx']
-                self._undistort_mtx = configs['undistort_mtx']
-                self._undistort_roi = configs['undistort_roi']
-                self._dist_coeffs = configs['dist_coeffs']
-                self._world2cam = configs['world2cam']
-                self._cam2world = configs['cam2world']
-            except KeyError as e:
-                print(f'[ERROR] Some camera configs [{e}] are missing. Run setup_camera.py '
-                      'to properly populate config file.')
+                self._camera_id = data.get('camera_id')
+                self._rvec = data.get('rvec')
+                self._tvec = data.get('tvec')
+                self._world2cam = data.get('world2cam')
+                self._cam2world = data.get('cam2world')
+            except IndexError:
+                pass
 
-        return configs
+        print('[WARNING] Camera config file not found. '
+              ' Calibration should be performed.')
+
+    @property
+    def configs(self):
+        return {'camera_id' : self._camera_id,
+                'rvec' : self._rvec,
+                'tvec' : self._tvec,
+                'world2cam' : self._world2cam,
+                'cam2world' : self._cam2world,
+                'mtx' : self._mtx,
+                'dist_coeffs': self._dist_coeffs,
+               }
 
     def get_image(self):
         '''Get frame from capturer
@@ -287,6 +251,6 @@ class Camera:
         return self.get_image()
 
 if __name__ == "__main__":
-    from neu_ro_arm.camera.gui import ShowCubes
+    from nuro_arm.camera.gui import ShowCubes
     cam = Camera()
-    cam.gui.show(modifier_fns=[ShowCubes(cam.unpack_configs(False))])
+    cam.gui.show(modifier_fns=[ShowCubes(cam.configs)])

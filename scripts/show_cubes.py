@@ -1,6 +1,6 @@
 import cv2
-from neu_ro_arm.camera.camera import Camera
-from neu_ro_arm.camera.gui import ShowCubes
+from nuro_arm.camera.camera import Camera
+from nuro_arm.camera.gui import ShowCubes
 
 def show_cubes():
     cam = Camera()

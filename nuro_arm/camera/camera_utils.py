@@ -2,13 +2,13 @@ import numpy as np
 import cv2
 from collections import namedtuple
 
-import neu_ro_arm.constants as constants
-import neu_ro_arm.transformation_utils as tfm
+import nuro_arm.constants as constants
+import nuro_arm.transformation_utils as tfm
 
 ArucoTag = namedtuple('ArucoTag', ['id_', 'corners', 'tag2cam'])
 Cube = namedtuple('Cube', ['id_', 'pos', 'euler', 'vertices'])
 
-face_detector = cv2.CascadeClassifier('neu_ro_arm/camera/haarcascade_frontalface_default.xml')
+face_detector = cv2.CascadeClassifier('nuro_arm/camera/haarcascade_frontalface_default.xml')
 
 def find_face(img):
     '''Detects location of face in image

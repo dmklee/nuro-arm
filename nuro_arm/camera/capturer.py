@@ -4,7 +4,7 @@ import threading
 import time
 import pybullet as pb
 
-import neu_ro_arm.constants as constants
+import nuro_arm.constants as constants
 
 class Capturer:
     def __init__(self):
@@ -34,7 +34,7 @@ class Capturer:
         -------
         bool
             flag indicating if a connection was made to the camera.  a value of
-            False suggests either an invalid camera id or the camera is already 
+            False suggests either an invalid camera id or the camera is already
             being used by another application
         '''
         # release any old connections

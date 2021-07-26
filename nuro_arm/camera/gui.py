@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 from abc import abstractmethod
 
-from neu_ro_arm.camera import camera_utils
-import neu_ro_arm.constants as constants
+from nuro_arm.camera import camera_utils
+import nuro_arm.constants as constants
 
 class GUI:
     def __init__(self, capturer):
@@ -187,5 +187,19 @@ class ShowFace(ImageModifierFunction):
                                  0, 0, 360, color=(0,0,255), thickness=4)
             canvas = cv2.drawMarker(canvas, (x,y), markerType=cv2.MARKER_CROSS,
                                     color=(0,0,255), markerSize=10, thickness=2)
+
+        return canvas
+
+class ShowCheckerboard(ImageModifierFunction):
+    def __call__(self, original, canvas):
+        # highlight center of image
+        ret, corners = cv2.findChessboardCorners(original,
+                                                 constants.calibration_gridshape,
+                                                 None)
+        if ret:
+            cv2.drawChessboardCorners(canvas,
+                                      constants.calibration_gridshape,
+                                      corners,
+                                      ret)
 
         return canvas
