@@ -172,7 +172,7 @@ class MotionPlanner:
     def _teleport_gripper(self, state):
         '''Resets joint states of gripper joints
         '''
-        jpos = state*self.gripper_joint_limits[0] + (1 - state)*self.gripper_joint_limits[1]
+        jpos = (1-state)*self.gripper_joint_limits[0] + state*self.gripper_joint_limits[1]
 
         [pb.resetJointState(self.robot_id, i, jp, physicsClientId=self._client)
              for i,jp in zip(self.gripper_joint_ids, jpos)]
