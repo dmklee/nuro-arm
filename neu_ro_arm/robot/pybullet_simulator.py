@@ -1,7 +1,7 @@
 import pybullet_data
 import pybullet as pb
 import numpy as np
-from neu_ro_arm import transformation_utils
+from neu_ro_arm import transformation_utils, constants
 
 class PybulletSimulator:
     ROBOT_URDF_PATH = "neu_ro_arm/assets/urdf/xarm.urdf"
@@ -38,10 +38,10 @@ class PybulletSimulator:
             True if camera collision object has been added to simulator
         '''
         self.arm_joint_ids = [1,2,3,4,5]
-        self.linkage_joint_ids = [6,9]
-        self.gripper_joint_ids = [7,10]
-        self.finger_joint_ids = [8,11]
-        self.end_effector_link_index = 12
+        self.gripper_joint_ids = [6,7]
+        self.dummy_joint_ids = [8]
+        self.finger_joint_ids = [9,10]
+        self.end_effector_link_index = 11
 
         self.arm_joint_limits = np.array(((-2, -1.58, -2, -1.8, -2),
                                           ( 2,  1.58,  2,  2.0,  2)))
@@ -83,11 +83,21 @@ class PybulletSimulator:
             making calls because there might be multiple clients running
         '''
         self._client = pb.connect(connection_mode)
+        pb.setPhysicsEngineParameter(numSubSteps=0,
+                                     numSolverIterations=100,
+                                     solverResidualThreshold=1e-7,
+                                     constraintSolverType=pb.CONSTRAINT_SOLVER_LCP_SI)
 
         # this path is where we find platform
         pb.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.plane_id = pb.loadURDF('plane.urdf', [0,0.5,0],
                                     physicsClientId=self._client)
+        pb.changeDynamics(self.plane_id, -1,
+                          linearDamping=0.04,
+                          angularDamping=0.04,
+                          restitution=0,
+                          contactStiffness=3000,
+                          contactDamping=100)
 
         suction_cup_height = 0.012
         self.robot_id = pb.loadURDF(self.ROBOT_URDF_PATH,
@@ -95,41 +105,28 @@ class PybulletSimulator:
                                     [0,0,0,1],
                                     flags=pb.URDF_USE_SELF_COLLISION,
                                     physicsClientId=self._client)
+
+        # # set up constraints for linkage in gripper fingers
         for i in [0,1]:
-            pb.resetJointState(self.robot_id, self.gripper_joint_ids[i], np.pi/2)
-            pb.resetJointState(self.robot_id, self.linkage_joint_ids[i], np.pi/2)
+            constraint = pb.createConstraint(self.robot_id,
+                                             self.gripper_joint_ids[i],
+                                             self.robot_id,
+                                             self.finger_joint_ids[i],
+                                             pb.JOINT_POINT2POINT,
+                                             (0,0,0),
+                                             (0,0,0.03),
+                                             (0,0,0),
+                                             physicsClientId= self._client
+                                             )
+            pb.changeConstraint(constraint, maxForce=1000000)
 
-        # set up constraints for linkage in gripper fingers
-        left_linkage_constraint = pb.createConstraint(self.robot_id,
-                                                      self.linkage_joint_ids[0],
-                                                      self.robot_id,
-                                                      self.finger_joint_ids[0],
-                                                      pb.JOINT_POINT2POINT,
-                                                      (0,0,0),
-                                                      (0.03,0,0.0),
-                                                      (-0.022,0.0,0.0),
-                                                      physicsClientId= self._client
-                                                     )
-        pb.changeConstraint(left_linkage_constraint, maxForce=10000)
-        right_linkage_constraint = pb.createConstraint(self.robot_id,
-                                                       self.linkage_joint_ids[1],
-                                                       self.robot_id,
-                                                       self.finger_joint_ids[1],
-                                                       pb.JOINT_POINT2POINT,
-                                                       (0,0,1),
-                                                       (-0.03,0,0.0),
-                                                       (0.022,0.0,0.0),
-                                                       physicsClientId= self._client
-                                                      )
-        pb.changeConstraint(right_linkage_constraint, maxForce=10000)
-
-        # allow finger and linkages to move freely
+        # # allow finger and linkages to move freely
         pb.setJointMotorControlArray(self.robot_id,
-                                     self.linkage_joint_ids+self.finger_joint_ids,
+                                     self.dummy_joint_ids+self.finger_joint_ids,
                                      pb.POSITION_CONTROL,
-                                     forces=[0,0,0,0])
+                                     forces=[0,0,0])
 
-        # make arm joints rigid
+        # # make arm joints rigid
         pb.setJointMotorControlArray(self.robot_id,
                                      self.arm_joint_ids,
                                      pb.POSITION_CONTROL,
@@ -239,8 +236,13 @@ class PybulletSimulator:
 
         return cam_pos, cam_quat, rod_pos, rod_quat
 
-    def add_cube(self, pos, euler):
-        '''Add 1" cube to simulator
+    def add_cube(self,
+                 pos,
+                 euler=[0,0,0],
+                 rgba=None,
+                 size=None,
+                ):
+        '''Add cube to simulator
 
         Parameters
         ----------
@@ -255,11 +257,20 @@ class PybulletSimulator:
             body id of cube in simulator
         '''
         quat = pb.getQuaternionFromEuler(euler)
+        if size is None:
+            size = constants.cube_size
+
         cube_id = pb.loadURDF(self.CUBE_URDF_PATH,
                               pos,
                               quat,
+                              globalScaling=size,
                               physicsClientId=self._client,
                              )
+        if rgba is not None:
+            pb.changeVisualShape(cube_id, -1,
+                                 rgbaColor=rgba,
+                                 physicsClientId=self._client)
+
         return cube_id
 
     def close(self):
