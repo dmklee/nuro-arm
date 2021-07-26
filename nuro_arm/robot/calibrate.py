@@ -1,8 +1,7 @@
 import numpy as np
 
-from nuro_arm.gui_utils import Popup
+from nuro_arm.gui_utils import ImagePopup, Popup, Colors
 from nuro_arm.robot.xarm_controller import XArmController
-
 
 def calibrate_xarm():
     '''Calibrates servos in xArm so that the internal motion planner is accurate
@@ -17,7 +16,7 @@ def calibrate_xarm():
     popup = Popup(
         title='xArm Calibration: step 0 of 4',
         text='The calibration process will take a minute or two. Please ensure \n' \
-             'that the area around the arm is free of objects and people. \n' \
+             'that the area around the arm is free of objects and people. \n\n' \
              'Press BEGIN to start the calibration process.',
         button_names=['BEGIN', 'QUIT']
     )
@@ -25,12 +24,12 @@ def calibrate_xarm():
         exit()
 
     # SERVO OFFSETS
-    popup = Popup(
+    popup = ImagePopup(
         title='xArm Calibration: step 1 of 4',
         text='The first step is to set the home configuration of the arm. \n' \
              'Please move the arm such that it is vertically aligned as shown in \n' \
              'the images below. You do not need to adjust the gripper fingers yet, \n' \
-             'although the hand itself should be properly aligned as shown. \n' \
+             'although the hand itself should be properly aligned as shown. \n\n' \
              'Click CONTINUE once the arm is in the home configuration.',
         images=['images/xarm_calibration/home.png'],
         image_shape=(250,250),
@@ -48,21 +47,21 @@ def calibrate_xarm():
                  f'{joint_names}\n\n' \
                  'You will need to reinstall these servos. Refer to installation \n' \
                  'guide for instructions on reinstalling servos.',
-            text_color=ALARM,
+            text_color=Colors.ALARM,
             button_names=['CLOSE'],
-            button_colors=[NEUTRAL]
+            button_colors=[Colors.NEUTRAL]
         )()
         exit()
 
     # SERVO DIRECTIONS
     xarm.power_off_servos()
     while 1:
-        popup = Popup(
+        popup = ImagePopup(
             title='xArm Calibration: step 2 of 4',
             text='Next, we need to put the arm in a bent configuration, to evaluate what\n'\
                  'direction the servos are oriented. Please move the arm such that it looks\n'\
                  'like the pictures below. You do not need to be exact, but ensure that the\n'\
-                 'arm is bent. You do not need to adjust the gripper fingers.\n'\
+                 'arm is bent. You do not need to adjust the gripper fingers.\n\n'\
                  'Click CONTINUE once the arm is in the bent configuration.',
             images=['images/xarm_calibration/bent_arm.png'],
             image_shape=(200,400),
@@ -71,31 +70,35 @@ def calibrate_xarm():
         if popup.response() != 'CONTINUE':
             exit()
         arm_jpos = xarm.read_arm_jpos()
-        arm_joint_directions = {i:s for i,s in zip(xarm.arm_joint_ids,np.sign(arm_jpos))}
 
-        # base&wristRotation joints will always be in the same direction
-        arm_joint_directions[xarm.get_joint_id('base')] = 1.
-        arm_joint_directions[xarm.get_joint_id('wristRotation')] = 1.
+        arm_joint_directions = {}
+        for i, j_id in enumerate(xarm.arm_joint_ids):
+            # base and wristRotation joints are always same direction
+            if j_id in [6,2]:
+                arm_joint_directions[j_id] = 1
+            else:
+                arm_joint_directions[j_id] = np.sign(arm_jpos[i]) \
+                                             * xarm.arm_joint_directions[j_id]
 
         if any([v==0 for v in arm_joint_directions.values()]):
             popup = Popup(
                 title='Calibration Warning',
                 text='We have detected an error in the bent configuration.\n' \
                      'Please close this window and try again. ',
-                text_color=ALARM,
+                text_color=Colors.ALARM,
                 button_names=['CLOSE'],
-                button_colors=[NEUTRAL]
+                button_colors=[Colors.NEUTRAL]
             )()
         else:
             break
 
     # GRIPPER
     while 1:
-        popup = Popup(
+        popup = ImagePopup(
             title='xArm Calibration: step 3 of 4',
             text='Finally, we need to set the limits of the gripper fingers. \n' \
                  'Using two hands, gently close the gripper fingers until they\n'\
-                 'are touching like shown in the picture.\n'\
+                 'are touching like shown in the picture.\n\n'\
                  'Click CONTINUE once the gripper has been closed.',
             images=['images/xarm_calibration/gripper_closed.png'],
             image_shape=(250,250),
@@ -105,11 +108,11 @@ def calibrate_xarm():
             exit()
         gripper_closed = xarm._read_jpos(xarm.gripper_joint_ids)[0]
 
-        popup = Popup(
+        popup = ImagePopup(
             title='xArm Calibration: step 4 of 4',
             text='Now, again using two hands, open the gripper fingers (pushing\n' \
                  'down works better than pulling apart).  The lower parts of the\n'\
-                 'finger should be perpindicular to the hand as shown in the picture.\n'\
+                 'finger should be perpindicular to the hand as shown in the picture.\n\n'\
                  'Click CONTINUE once the gripper has been opened.',
             images=['images/xarm_calibration/gripper_opened.png'],
             image_shape=(250,250),
@@ -125,9 +128,9 @@ def calibrate_xarm():
                 title='Calibration Warning',
                 text='We have detected an error in the gripper calibration.\n' \
                      'Please close this window and try again.',
-                text_color=ALARM,
+                text_color=Colors.ALARM,
                 button_names=['CLOSE'],
-                button_colors=[NEUTRAL]
+                button_colors=[Colors.NEUTRAL]
             )()
         else:
             break
@@ -145,7 +148,7 @@ def calibrate_xarm():
         text='xArm was calibrated successfully. All data has been logged\n' \
              'and it is now safe to use the arm.',
         button_names=['CLOSE'],
-        button_colors=[NEUTRAL]
+        button_colors=[Colors.NEUTRAL]
     )()
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 import numpy as np
 
 from nuro_arm.camera.camera import Camera
-from nuro_arm.camera.gui import GUI, ShowCheckerboard
+from nuro_arm.camera.gui import ShowCheckerboard
 from nuro_arm.gui_utils import Popup, VideoPopup, ImagePopup, Colors
 
 def calibrate_camera():

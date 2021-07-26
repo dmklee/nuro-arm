@@ -5,7 +5,7 @@ import time
 from threading import Thread
 import os
 
-from neu_ro_arm.robot.robot_arm import RobotArm
+from nuro_arm.robot.robot_arm import RobotArm
 
 class MovementDispatcher(Thread):
     def __init__(self, robot, table, idxs):
