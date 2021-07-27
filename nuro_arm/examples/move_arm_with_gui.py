@@ -1,7 +1,7 @@
 import numpy as np
 import sys
-from neu_ro_arm.robot.robot_arm import RobotArm
-from neu_ro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
+from nuro_arm.robot.robot_arm import RobotArm
+from nuro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
 import tkinter as tk
 
 class GUI(tk.Frame):
