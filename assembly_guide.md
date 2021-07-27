@@ -39,13 +39,15 @@ Safety is a priority when working with robots.  While the software is built to p
 <a name="camera"></a>
 ### Camera
 #### Assembly Instructions
-1. Collect the parts shown in the photo below, the 3D printed parts and camera will be in camera box; the rod and screws will be in Hiwonder box.
+0. Print the three, 3D printed parts. The stl files can be found here: <a href="https://github.com/dmklee/nuro-arm/blob/main/nuro_arm/assets/meshes/camera_holder.stl">camera-holder</a>, <a href="https://github.com/dmklee/nuro-arm/blob/main/nuro_arm/assets/meshes/top_rod_holder.stl">top-rod-holder</a>, <a href="https://github.com/dmklee/nuro-arm/blob/main/nuro_arm/assets/meshes/base_rod_holder.stl">base-rod-holder</a>. Order the 12" long, 3/8" diameter Aluminum rod ($2.16 at <a href="https://www.mcmaster.com/catalog/127/3983/">McMaster-Carr</a>).
+
+1. Collect the parts shown in the photo below; the rod and screws come with the robot arm as extras.
 
 <p align="center">
   <img src="https://github.com/dmklee/nuro-arm/blob/main/images/installation_guide/camera_parts.jpg"/>
 </p>
 
-2. Attach the base part to the base plate of the robot. The part should be installed as shown in the picture below.
+2. Attach the base-rod-holder part to the base plate of the robot. The part should be installed as shown in the picture below.
 
 <p align="center">
   <img src="https://github.com/dmklee/nuro-arm/blob/main/images/installation_guide/camera_base.jpg"/>
@@ -110,5 +112,7 @@ We recommend only using cubes that are less than 5cm wide (so it fits within gri
 No, the robot arm will work fine without the camera. However, without a camera, you will not be able to locate objects in the scene.
 
 ### Can I put Aruco tags on objects that are not cubes?
-Yes, but please stick to the guidelines on size and weight.  
-No, the robot arm will work fine without the camera. However, without a camera, you will not be able to locate objects in the scene.
+Yes, but the pose estimate must be corrected to reflect the depth of the novel object.
+
+### Can I use the robot without the camera?
+Yes, the robot arm will work fine without the camera, and there is plenty of fun projects to be done with only the robot. However, without a camera, you will not be able to locate objects in the scene.
