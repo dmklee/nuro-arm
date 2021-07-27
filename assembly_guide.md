@@ -90,10 +90,11 @@ When not using the camera, use the lens cover to keep it safe.  Ensure that the 
 
 ## Cubes
 #### Attaching Aruco Tags
-In order for an object to be identified by the camera, it must have a visual tag attached to it. You can generate tags to print out using a provided Python script.
+In order for an object to be identified by the camera, it must have a visual tag attached to it. You can generate tags to print out using a provided Python script. An example command which would generate twelve, 25mm wide tags, saving them in current directory, is shown here:
 ```
+python -m nuro_arm.camera.generate_aruco_tags --size 25 --number 12 --destination .
 ```
-Then, simply print out the resulting pdf, cut out the tags you want, and attach a single tag to each cube (see image below as example). Avoid placing tape directly over the pattern, as this can cause problems due to glare.
+Then, simply print out the resulting pdf, cut out the tags you want, and attach a single tag to each cube (see image below as example). It is best if the tags have some white border around them so leave some spacing while cutting. Avoid placing tape directly over the pattern, as this can cause problems due to glare.
 
 <p align="center">
   <img src="https://github.com/dmklee/nuro-arm/blob/main/images/installation_guide/cubes.jpg"/>

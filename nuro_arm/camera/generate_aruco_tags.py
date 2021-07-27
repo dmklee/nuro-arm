@@ -83,8 +83,8 @@ if __name__ == "__main__":
     parser.add_argument('--start-id', type=int,
                         default=0,
                         help="tag number to begin with")
-    parser.add_argument('--destination', '-d', type=str,
-                        default='nuro_arm/camera',
+    parser.add_argument('--destination', type=str,
+                        required=True,
                         help="folder in which to save the pdfs")
     parser.add_argument('--dict-name', type=str,
                         default="DICT_4X4_50",
