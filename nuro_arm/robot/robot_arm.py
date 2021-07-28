@@ -14,9 +14,11 @@ from nuro_arm.robot.xarm_controller import XArmController
 class RobotArm:
     def __init__(self,
                  controller_type='real',
-                 realtime=True,
                  headless=True,
+                 realtime=True,
                  workspace=None,
+                 pb_client=None,
+                 serial_number=None,
                 ):
         '''Real or simulated xArm robot interface for safe, high-level motion commands
 
@@ -37,10 +39,10 @@ class RobotArm:
         '''
         self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation', 'gripper')
 
-        self._sim = PybulletSimulator(headless)
+        self._sim = PybulletSimulator(headless, pb_client)
         self.mp = MotionPlanner(self._sim, workspace)
         if controller_type == 'real':
-            self.controller = XArmController()
+            self.controller = XArmController(serial_number)
         elif controller_type == 'sim':
             self.controller = SimulatorController(self._sim, realtime)
         else:
@@ -222,6 +224,9 @@ class RobotArm:
             the gripper is
         '''
         return self.controller.read_gripper_state()
+
+    def get_pb_client(self):
+        return self._sim._client
 
     def _mirror_planner(self):
         if self.controller_type == 'real':

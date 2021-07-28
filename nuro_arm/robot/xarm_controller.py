@@ -20,7 +20,7 @@ class CmdLib:
     OFFSET_WRITE = 24
 
 class Device:
-    def __init__(self):
+    def __init__(self, serial_number=None):
         '''Abstraction of HID device so that the interface is the same across
         platforms
 
@@ -42,11 +42,23 @@ class Device:
             import easyhid
             self.exception = easyhid.easyhid.HIDException
             en = easyhid.Enumeration()
-            devices = en.find(vid=1155, pid=22352)
-            assert len(devices) == 1
-            self.device = devices[0]
-            self.device.open()
-            self.type = 0
+            devices = en.find(vid=1155, pid=22352, serial=serial_number)
+            if len(devices) == 0:
+                print('[ERROR] No device found. Ensure that the xarm is connected via '
+                      'usb cable and the power is on.\n'
+                      'Turn the xarm off and back on again if needed.')
+                exit()
+            elif len(devices) > 1:
+                serial_numbers = ', '.join([f"\t{d.serial_number}" for d in devices])
+                print('[ERROR] More than 1 xarm device found with the following serial numbers: \n'
+                      f'    {serial_numbers}\n'
+                      '  You must specify the serial number in this case.')
+                exit()
+            else:
+                self.device = devices[0]
+                self.serial_number = self.device.serial_number
+                self.device.open()
+                self.type = 0
         elif platform.system() == 'Windows':
             import hid
             self.device = hid.Device(vid=1155, pid=22352)
@@ -110,7 +122,7 @@ class XArmController(BaseController):
 
     CONFIG_FILE = "nuro_arm/robot/configs.npy"
 
-    def __init__(self):
+    def __init__(self, serial_number=None):
         super().__init__()
         # speed in radians per second
         self.max_speed = 2.0
@@ -130,7 +142,7 @@ class XArmController(BaseController):
         self.servo_ids = self.arm_joint_ids + self.gripper_joint_ids
         self.n_servos = len(self.servo_ids)
         self._lock = threading.Lock()
-        self.device = self.connect()
+        self.device, self.serial_number = self.connect(serial_number)
 
         if self.load_configs():
             self.power_on_servos()
@@ -147,14 +159,15 @@ class XArmController(BaseController):
         if os.path.exists(self.CONFIG_FILE):
             data = np.load(self.CONFIG_FILE, allow_pickle=True).item()
             try:
-                self.arm_joint_directions = data.get('arm_joint_directions')
-                self.gripper_joint_limits = data.get('gripper_joint_limits')
-                self.servo_offsets = data.get('servo_offsets')
+                data = data[self.serial_number]
+                self.arm_joint_directions = data['arm_joint_directions']
+                self.gripper_joint_limits = data['gripper_joint_limits']
+                self.servo_offsets = data['servo_offsets']
                 return True
-            except IndexError:
+            except KeyError:
                 pass
 
-        print('[WARNING] xArm config file not found. '
+        print('[WARNING] Config file for this xarm could not be found. '
               ' Calibration should be performed.')
         self.arm_joint_directions = {i:1. for i in self.arm_joint_ids}
         self.gripper_joint_limits = np.array(((0.9,),(-1.,)))
@@ -164,10 +177,11 @@ class XArmController(BaseController):
     def timestep(self):
         time.sleep(1/self.measurement_frequency)
 
-    def connect(self):
-        device = Device()
-        print('Connected to xArm')
-        return device
+    def connect(self, serial_number=None):
+        device = Device(serial_number)
+        serial_number = device.serial_number
+        print(f'Connected to xArm (serial={serial_number})')
+        return device, serial_number
 
     def disconnect(self):
         '''Closes HID connection to xArm
@@ -373,6 +387,11 @@ class XArmController(BaseController):
 
     def __del__(self):
         '''Makes sure servos are off before disconnecting'''
-        self.power_off_servos()
-        self.disconnect()
+        try:
+            self.power_off_servos()
+            self.disconnect()
+        except AttributeError:
+            # this occurs when device attribute was not created due to 
+            # connection issue
+            pass
 

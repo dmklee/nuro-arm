@@ -81,9 +81,13 @@ def calibrate_xarm():
                                              * xarm.arm_joint_directions[j_id]
 
         if any([v==0 for v in arm_joint_directions.values()]):
+            joint_names = [xarm.get_joint_name(j_id)
+                           for j_id, v in arm_joint_directions.items() if v==0]
             popup = Popup(
                 title='Calibration Warning',
-                text='We have detected an error in the bent configuration.\n' \
+                text='We have detected an error in the bent configuration, it \n' \
+                     'appears that you did not bend the following joint(s):\n' \
+                     f'{joint_names}\n\n' \
                      'Please close this window and try again. ',
                 text_color=Colors.ALARM,
                 button_names=['CLOSE'],
@@ -135,10 +139,14 @@ def calibrate_xarm():
         else:
             break
 
-    # save config file
-    data = {
+    # update config file
+    try:
+        data = np.load(xarm.CONFIG_FILE, allow_pickle=True).item()
+    except FileNotFoundError:
+        data = dict()
+    data[xarm.serial_number] = {
         'arm_joint_directions' : arm_joint_directions,
-        'gripper_joint_limits' : np.array(((gripper_closed,),(gripper_opened,))),
+        'gripper_joint_limits' : np.array(((gripper_closed,), (gripper_opened,))),
         'servo_offsets' : arm_servo_offsets,
     }
     np.save(xarm.CONFIG_FILE, data)
