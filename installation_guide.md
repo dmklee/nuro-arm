@@ -1,12 +1,17 @@
 # Software Installation Guide
 ## Table of Contents
-1. [Mac](#mac)
+1. [General Installation](#general)
 2. [Windows](#windows)
 2. [Linux](#linux)
 3. [FAQ](#faq)
 
-<a name="software"></a>
-## Mac
+<a name="general"></a>
+## General
+1. Install pybullet with conda.
+```
+conda install -c conda-forge pybullet
+```
+2. Install the package
 
 ### Install API and Create Virtual Environment
 1. Open terminal application and enter the following command:

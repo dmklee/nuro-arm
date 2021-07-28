@@ -20,7 +20,6 @@ This package should work on Windows, Mac, or Linux.  See the [Installation Guide
 <a name="robot-kit"></a>
 ## Robot Kit
 ### Parts List
-This project is built on hardware that is more accessible.  The entire cost of the kit is about $250, and items can be ordered conveniently on Amazon.  Using the robot and camera together requires a computer with two USB type-A ports, or the necessary adapters.
 Description  | Price 
 ------------ | ----- 
 [Hiwonder xArm Robotic Arm](https://www.amazon.com/LewanSoul-Programmable-Feedback-Parameter-Programming/dp/B0793PFGCY/ref=sr_1_3?dchild=1&keywords=lewansoul+xarm&qid=1618417178&sr=8-3) | $200

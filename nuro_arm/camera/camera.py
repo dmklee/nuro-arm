@@ -193,11 +193,13 @@ class Camera:
                 self._tvec = data.get('tvec')
                 self._world2cam = data.get('world2cam')
                 self._cam2world = data.get('cam2world')
+                return True
             except IndexError:
                 pass
 
         print('[WARNING] Camera config file not found. '
               ' Calibration should be performed.')
+        return False
 
     @property
     def configs(self):
