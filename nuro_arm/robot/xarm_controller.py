@@ -61,12 +61,13 @@ class Device:
                 self.type = 0
         elif platform.system() == 'Windows':
             import hid
-            self.device = hid.Device(vid=1155, pid=22352)
+            self.device = hid.Device(vid=1155, pid=22352, serial_number)
             self.type = 1
         elif platform.system() == 'Darwin':
             import hid
             self.device = hid.device()
-            self.device.open(1155, 22352)
+            self.device.open(1155, 22352, serial_number)
+            self.serial_number = self.device.serial
             self.type = 0
         else:
             raise TypeError('unsupported operating system')
