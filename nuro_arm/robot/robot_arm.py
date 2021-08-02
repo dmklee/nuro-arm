@@ -1,10 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-import matplotlib
-matplotlib.use('TkAgg')
-import tkinter as tk
-
 from nuro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
 from nuro_arm.robot.motion_planner import MotionPlanner
 from nuro_arm.robot.pybullet_simulator import PybulletSimulator
@@ -27,26 +23,30 @@ class RobotArm:
         controller_type : str, {'real','sim'}, default to 'real'
             Indicate whether motor control be sent to a simulator or the real robot
 
-        Attrbutes
+        Attributes
         ---------
-        joint_names : :tuple: str
+        joint_names : tuple of str
             names of the joints in the arm
         controller : BaseController
             Controller used to execute motion commands
-        mp : MotionPlanner
+        _sim : PybulletSimulator
             Internal simulator of robot used to perform IK and collision
             detection
+        mp : MotionPlanner
+            Class to perform collision detection and ik calculations using the
+            _sim attribute
         '''
         self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation', 'gripper')
 
         self._sim = PybulletSimulator(headless, pb_client)
         self.mp = MotionPlanner(self._sim, workspace)
+
         if controller_type == 'real':
             self.controller = XArmController(serial_number)
         elif controller_type == 'sim':
             self.controller = SimulatorController(self._sim, realtime)
         else:
-            raise TypeError('invalid controller type')
+            raise TypeError('Invalid controller_type argument; must be real or sim.')
         self.controller_type = controller_type
 
         self._mirror_planner()
@@ -55,9 +55,6 @@ class RobotArm:
         '''Moves to home arm positions
         '''
         self.move_arm_jpos(self.controller.arm_jpos_home)
-
-    def passive_mode(self):
-        self.controller.power_off_servos()
 
     def passive_mode(self):
         self.controller.power_off_servos()
@@ -76,7 +73,7 @@ class RobotArm:
         arm_jpos = self.controller.read_arm_jpos()
         return arm_jpos
 
-    def move_arm_jpos(self, jpos, verbose=True):
+    def move_arm_jpos(self, jpos, speed=None):
         '''Moves arm joints to specific positions
 
         Parameters
@@ -84,8 +81,9 @@ class RobotArm:
         jpos : ndarray
             Desired joint angles in radians for each joint in the arm;
             shape=(5,); dtype=float
-        verbose : bool
-            Whether to print error messages in case of an issue
+        speed : float or array_like
+            speed of arm joints in radians per second. if float, then all joints
+            will move at the same speed
 
         Returns
         -------
@@ -94,12 +92,11 @@ class RobotArm:
         '''
         current_jpos = self.get_arm_jpos()
         if not self.mp.is_collision_free_trajectory(current_jpos, jpos):
-            if verbose:
-                print(f"[MOVE FAILED] Trajectory would result in collision"
-                      f" of robot:{e.robot_link} and {e.other_body}.")
+            print(f"[MOVE FAILED] Trajectory would result in collision"
+                  f" of robot:{e.robot_link} and {e.other_body}.")
             return False
 
-        duration = self.controller.write_arm_jpos(jpos)
+        duration = self.controller.write_arm_jpos(jpos, speed)
         success, achieved_jpos = self.controller.monitor(self.controller.arm_joint_ids,
                                                          jpos, duration)
         if not success:
@@ -111,12 +108,12 @@ class RobotArm:
 
     def get_hand_pose(self):
         self._mirror_planner()
-        return self.mp.get_hand_pose()
+        return self._sim.get_hand_pose()
 
     def move_hand_to(self,
                      pos,
                      pitch_roll=None,
-                     verbose=True,
+                     speed=None,
                      **ik_kwargs
                     ):
         '''Moves end effector to desired pose in world
@@ -127,8 +124,9 @@ class RobotArm:
             desired 3d position of end effector; shape=(3,); dtype=float
         pos : array_like
             desired 3d position of end effector; shape=(3,); dtype=float
-        verbose : bool
-            Whether to print error messages in case of an issue
+        speed : float or array_like
+            speed of arm joints in radians per second. if float, then all joints
+            will move at the same speed
 
         Raises
         ------
@@ -156,7 +154,7 @@ class RobotArm:
 
         jpos, ik_info = self.mp.calculate_ik(pos, rot, **ik_kwargs)
 
-        return self.move_arm_jpos(jpos)
+        return self.move_arm_jpos(jpos, speed)
 
     def open_gripper(self):
         '''Opens gripper completely
@@ -178,7 +176,7 @@ class RobotArm:
         '''
         return self.set_gripper_state(GRIPPER_CLOSED, backoff=-0.05)
 
-    def set_gripper_state(self, state, backoff=-0.05):
+    def set_gripper_state(self, state, backoff=-0.05, speed=None):
         '''Get state of gripper
 
         Parameters
@@ -191,13 +189,16 @@ class RobotArm:
             positive value of backoff means the gripper will be more open
             than the acheived position
 
+        backoff : speed
+            joint speed in radians per second
+
         Returns
         -------
         bool
             gripper state that is achieved
         '''
         state = np.clip(state, 0, 1)
-        duration = self.controller.write_gripper_state(state)
+        duration = self.controller.write_gripper_state(state, speed)
 
         gripper_jpos = self.controller._gripper_state_to_jpos(state)
         success, achieved_jpos = self.controller.monitor(self.controller.gripper_joint_ids,

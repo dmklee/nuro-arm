@@ -61,7 +61,7 @@ class Device:
                 self.type = 0
         elif platform.system() == 'Windows':
             import hid
-            self.device = hid.Device(vid=1155, pid=22352, serial_number)
+            self.device = hid.Device(vid=1155, pid=22352, serial=serial_number)
             self.type = 1
         elif platform.system() == 'Darwin':
             import hid
@@ -127,6 +127,7 @@ class XArmController(BaseController):
         super().__init__()
         # speed in radians per second
         self.max_speed = 2.0
+        self.min_speed = 0.1
         self.default_speed = 0.8
 
         self.arm_joint_ids = [6,5,4,3,2]
@@ -152,8 +153,8 @@ class XArmController(BaseController):
             for j_id in self.arm_joint_ids:
                 new_offset = self.servo_offsets[j_id]
                 old_offset = self._read_servo_offset(j_id)
-                pos = self._to_pos_units(j_id, self._read_jpos([j_id])[0])
-                self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
+                pos = self._to_pos_units(j_id, self.read_jpos([j_id])[0])
+                self.move_servos([j_id], [self._to_radians(j_id, pos-new_offset+old_offset)])
                 self._write_servo_offset(j_id, new_offset)
 
     def load_configs(self):
@@ -193,8 +194,8 @@ class XArmController(BaseController):
     def power_on_servos(self):
         '''Turn on all servos so all joints are rigid
         '''
-        current_jpos = self._read_jpos(self.servo_ids)
-        self._write_jpos(self.servo_ids, current_jpos)
+        current_jpos = self.read_jpos(self.servo_ids)
+        self.write_jpos(self.servo_ids, current_jpos)
 
     def power_off_servos(self):
         '''Turn off all servos so all joints are passive
@@ -204,8 +205,8 @@ class XArmController(BaseController):
     def power_on_servo(self, joint_id):
         '''Turn on single servo so the joint is rigid
         '''
-        current_jpos = self._read_jpos([joint_id])
-        self._write_jpos([joint_id], current_jpos)
+        current_jpos = self.read_jpos([joint_id])
+        self.write_jpos([joint_id], current_jpos)
 
     def power_off_servo(self, joint_id):
         '''Turn off single servo so the joint is passive
@@ -230,7 +231,7 @@ class XArmController(BaseController):
                 1 : 'gripper'
                }[joint_id]
 
-    def _write_jpos(self, joint_ids, jpos, speed=None):
+    def write_jpos(self, joint_ids, jpos, speed=None):
         '''Issue move command to specified joint indices
 
         Parameters
@@ -239,7 +240,7 @@ class XArmController(BaseController):
             joint indices to be moved
         jpos : array_like of float
             target joint positions corresponding to the joint indices
-        speed : float
+        speed : float or array_like of float, default=None
 
         Returns
         -------
@@ -248,20 +249,22 @@ class XArmController(BaseController):
         '''
         if speed is None:
             speed = self.default_speed
+        if np.isscalar(speed):
+            speed = np.full(len(joint_ids), speed)
 
-        # we need to ensure linear motion without violating max speed
-        current_jpos = self._read_jpos(joint_ids)
+        speed = np.clip(speed, self.min_speed, self.max_speed)
+
+        # convert speed to time
+        current_jpos = self.read_jpos(joint_ids)
         delta_jpos = np.abs(np.subtract(jpos, current_jpos))
+        duration_ms = (1000 * delta_jpos / speed).astype(int)
 
-        # milliseconds
-        duration = int(1000 * np.max(delta_jpos) / speed)
+        [self.move_servos([j_i], [j_p], dur)
+             for j_i, j_p, dur in zip(joint_ids, jpos, duration_ms)]
 
-        [self._move_servo(j_i, j_p, duration)
-             for j_i, j_p in zip(joint_ids, jpos)]
+        return np.max(duration_ms)/1000.
 
-        return duration/1000
-
-    def _read_jpos(self, j_idxs):
+    def read_jpos(self, j_idxs):
         '''Read some joint positions
 
         Parameters
@@ -285,19 +288,17 @@ class XArmController(BaseController):
         jpos = [self._to_radians(i, p) for i,p in zip(j_idxs, pos)]
         return jpos
 
-    def _move_servo(self, joint_id, jpos, duration=1000):
-        '''I have been unable to get multi-servo move command to work,
-        so each servo must be commanded separately
-        '''
-        #TODO: what is the maximum allowable duration
-
+    def move_servos(self, joint_ids, jpos, duration=1000):
         # convert to positional units
-        pos = self._to_pos_units(joint_id, jpos)
+        pos = [self._to_pos_units(j_id, jp) for j_id, jp in zip(joint_ids, jpos)]
 
         # ensure pos is within servo limits to prevent servo damage
         pos = np.clip(pos, self.SERVO_LOWER_LIMIT, self.SERVO_UPPER_LIMIT)
 
-        data = [1, *itos(duration), joint_id, *itos(pos)]
+        data = [len(joint_ids), *itos(duration)]
+        for j_id, p in zip(joint_ids, pos):
+            data.extend([j_id, *itos(p)])
+
         self._send(CmdLib.MOVE, data)
 
     def _read_servo_offset(self, servo_id):
@@ -375,12 +376,12 @@ class XArmController(BaseController):
         for j_id in self.arm_joint_ids:
             old_offset = self._read_servo_offset(j_id)
             true_home = self.SERVO_HOME - old_offset
-            pos = self._to_pos_units(j_id, self._read_jpos([j_id])[0])
+            pos = self._to_pos_units(j_id, self.read_jpos([j_id])[0])
             new_offset = pos - true_home
             if abs(new_offset) > 127:
                 success = False
             else:
-                self._move_servo(j_id, self._to_radians(j_id, pos-new_offset+old_offset))
+                self.move_servos([j_id], [self._to_radians(j_id, pos-new_offset+old_offset)])
                 self._write_servo_offset(j_id, new_offset)
 
             offsets[j_id] = new_offset
@@ -396,3 +397,5 @@ class XArmController(BaseController):
             # connection issue
             pass
 
+if __name__ == "__main__":
+    xarm = XArmController()

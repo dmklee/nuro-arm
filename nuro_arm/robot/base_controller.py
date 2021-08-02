@@ -22,22 +22,24 @@ class BaseController:
         self.measurement_precision = 1e-4
         self.measurement_frequency = 10
 
+        self.default_speed = 0.8
+
     def read_arm_jpos(self):
-        return self._read_jpos(self.arm_joint_ids)
+        return self.read_jpos(self.arm_joint_ids)
 
     def read_gripper_state(self):
-        gripper_jpos = self._read_jpos(self.gripper_joint_ids)
+        gripper_jpos = self.read_jpos(self.gripper_joint_ids)
         gripper_state = self._gripper_jpos_to_state(gripper_jpos)
         gripper_state = np.clip(gripper_state, 0, 1)
         return gripper_state
 
     def write_arm_jpos(self, jpos, speed=None):
-        return self._write_jpos(self.arm_joint_ids, jpos, speed)
+        return self.write_jpos(self.arm_joint_ids, jpos, speed)
 
     def write_gripper_state(self, state, speed=None):
         state = np.clip(state, 0, 1)
         gripper_jpos = self._gripper_state_to_jpos(state)
-        return self._write_jpos(self.gripper_joint_ids, gripper_jpos, speed)
+        return self.write_jpos(self.gripper_joint_ids, gripper_jpos, speed)
 
     @abstractmethod
     def timestep(self):
@@ -76,7 +78,13 @@ class BaseController:
         pass
 
     @abstractmethod
-    def _write_jpos(self, joint_ids, jpos, speed):
+    def read_jpos(self, joint_ids):
+        '''Issue move command to specified joint indices
+        '''
+        pass
+
+    @abstractmethod
+    def write_jpos(self, joint_ids, jpos, speed):
         '''Issue move command to specified joint indices
 
         Parameters
@@ -125,7 +133,7 @@ class BaseController:
         t_factor = 1.5
         start_time = time.time()
 
-        jpos = self._read_jpos(joint_ids)
+        jpos = self.read_jpos(joint_ids)
 
         # give some initial time for motion to start
         # otherwise, it may terminate prematurely because it detects no motion
@@ -134,7 +142,7 @@ class BaseController:
         while True:
             self.timestep()
 
-            new_jpos = self._read_jpos(joint_ids)
+            new_jpos = self.read_jpos(joint_ids)
             if np.allclose(new_jpos, target_jpos, atol=self.movement_precision):
                 # success
                 return True, np.array(new_jpos)

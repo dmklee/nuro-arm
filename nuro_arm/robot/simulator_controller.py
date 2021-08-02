@@ -18,7 +18,7 @@ class SimulatorController(BaseController):
         pb.setGravity(0,0,-10,self._client)
         self.realtime = realtime
 
-        self.p_gain = 0.1
+        self.position_gain = 0.2
 
     def timestep(self):
         [pb.stepSimulation() for _ in range(int(24/self.measurement_frequency))]
@@ -29,7 +29,7 @@ class SimulatorController(BaseController):
         '''Turn on all servos so all joints are rigid
         '''
         joint_ids = self.arm_joint_ids + self.gripper_joint_ids
-        current_jpos = self._read_jpos(joint_ids)
+        current_jpos = self.read_jpos(joint_ids)
         pb.setJointMotorControlArray(self.robot_id,
                                      joint_ids,
                                      pb.POSITION_CONTROL,
@@ -49,7 +49,7 @@ class SimulatorController(BaseController):
     def power_on_servo(self, joint_id):
         '''Turn on single servo so the joint is rigid
         '''
-        current_jpos = self._read_jpos([joint_id])[0]
+        current_jpos = self.read_jpos([joint_id])[0]
         pb.setJointMotorControl2(self.robot_id,
                                  joint_id,
                                  pb.POSITION_CONTROL,
@@ -72,7 +72,7 @@ class SimulatorController(BaseController):
                 'wristRotation' : 5,
                 'gripper' : (7,10)}[joint_name]
 
-    def _write_jpos(self, joint_ids, jpos, speed=None):
+    def write_jpos(self, joint_ids, jpos, speed=None):
         '''Issue move command to specified joint indices
 
         Parameters
@@ -88,21 +88,27 @@ class SimulatorController(BaseController):
             expected time (s) to complete movement, used for monitoring
         '''
         if speed is None:
-            speed = self.p_gain
-        if isinstance(speed, float):
-            speed = len(joint_ids) * [speed]
+            speed = self.default_speed
+        if np.isscalar(speed):
+            speed = np.full(len(joint_ids), speed)
 
-        pb.setJointMotorControlArray(self.robot_id,
-                                     joint_ids,
+        current_jpos = self.read_jpos(joint_ids)
+        duration = np.abs(current_jpos-jpos)/speed
+
+        # in pybullet==3.17, maxVelocity is not exposed in setJointMotorControlArray
+        # so we have to send commands individually
+        for j_id, jp in zip(joint_ids, jpos):
+            pb.setJointMotorControl2(self.robot_id,
+                                     j_id,
                                      pb.POSITION_CONTROL,
-                                     jpos,
-                                     positionGains=speed,
-                                     forces=len(joint_ids)*[10],
-                                     physicsClientId=self._client,
+                                     jp,
+                                     positionGain=self.position_gain,
+                                     maxVelocity=speed,
+                                     physicsClientId=self._client
                                     )
-        return 10
+        return np.max(duration)
 
-    def _read_jpos(self, joint_ids):
+    def read_jpos(self, joint_ids):
         '''Read current joint positions
 
         Parameters
