@@ -93,17 +93,17 @@ class SimulatorController(BaseController):
             speed = np.full(len(joint_ids), speed)
 
         current_jpos = self.read_jpos(joint_ids)
-        duration = np.abs(current_jpos-jpos)/speed
+        duration = np.abs(np.subtract(current_jpos, jpos))/speed
 
         # in pybullet==3.17, maxVelocity is not exposed in setJointMotorControlArray
         # so we have to send commands individually
-        for j_id, jp in zip(joint_ids, jpos):
+        for i in range(len(joint_ids)):
             pb.setJointMotorControl2(self.robot_id,
-                                     j_id,
+                                     joint_ids[i],
                                      pb.POSITION_CONTROL,
-                                     jp,
+                                     jpos[i],
                                      positionGain=self.position_gain,
-                                     maxVelocity=speed,
+                                     maxVelocity=speed[i],
                                      physicsClientId=self._client
                                     )
         return np.max(duration)

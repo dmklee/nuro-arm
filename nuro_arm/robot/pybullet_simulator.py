@@ -8,7 +8,10 @@ class PybulletSimulator:
     CAMERA_URDF_PATH = "nuro_arm/assets/urdf/camera.urdf"
     ROD_URDF_PATH = "nuro_arm/assets/urdf/camera_rod.urdf"
     CUBE_URDF_PATH = "nuro_arm/assets/urdf/cube.urdf"
-    def __init__(self, headless):
+    def __init__(self,
+                 headless=True,
+                 client=None,
+                ):
         '''Base class for pybullet simulator to handle initialization and attributes
         about robot joints
 
@@ -49,7 +52,15 @@ class PybulletSimulator:
         self.gripper_joint_limits = np.array(((0.05,0.05),(1.38, 1.38)))
 
         connection_mode = pb.DIRECT if headless else pb.GUI
-        self._initialize(connection_mode)
+        if client is None:
+            self._client = self._initialize_client(connection_mode)
+        else:
+            self._client = client
+
+        # suction cups are 12 mm tall when not pressed
+        robot_pos = (0, 0, 0.012)
+        robot_quat = (0, 0, 0, 1)
+        self.robot_id = self.initialize_robot(robot_pos, robot_quat)
         self.n_joints = pb.getNumJoints(self.robot_id,
                                           physicsClientId=self._client)
 
@@ -68,8 +79,8 @@ class PybulletSimulator:
 
         self.camera_exists = False
 
-    def _initialize(self, connection_mode):
-        '''Creates pybullet simulator and loads world plane and robot.
+    def _initialize_client(self, connection_mode):
+        '''Creates pybullet simulator and loads world plane.
 
         Parameters
         ----------
@@ -82,35 +93,39 @@ class PybulletSimulator:
             Identifier used to specify simulator client. This is needed when
             making calls because there might be multiple clients running
         '''
-        self._client = pb.connect(connection_mode)
+        client = pb.connect(connection_mode)
         pb.setPhysicsEngineParameter(numSubSteps=0,
                                      numSolverIterations=100,
                                      solverResidualThreshold=1e-7,
-                                     constraintSolverType=pb.CONSTRAINT_SOLVER_LCP_SI)
+                                     constraintSolverType=pb.CONSTRAINT_SOLVER_LCP_SI,
+                                     physicsClientId=client)
 
         # this path is where we find platform
         pb.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.plane_id = pb.loadURDF('plane.urdf', [0,0.5,0],
-                                    physicsClientId=self._client)
+                                    physicsClientId=client)
         pb.changeDynamics(self.plane_id, -1,
                           linearDamping=0.04,
                           angularDamping=0.04,
                           restitution=0,
                           contactStiffness=3000,
-                          contactDamping=100)
+                          contactDamping=100,
+                          physicsClientId=client)
 
-        suction_cup_height = 0.012
-        self.robot_id = pb.loadURDF(self.ROBOT_URDF_PATH,
-                                    [0,0,suction_cup_height],
-                                    [0,0,0,1],
-                                    flags=pb.URDF_USE_SELF_COLLISION,
-                                    physicsClientId=self._client)
+        return client
+
+    def initialize_robot(self, pos, quat):
+        robot_id = pb.loadURDF(self.ROBOT_URDF_PATH,
+                               pos,
+                               quat,
+                               flags=pb.URDF_USE_SELF_COLLISION,
+                               physicsClientId=self._client)
 
         # # set up constraints for linkage in gripper fingers
         for i in [0,1]:
-            constraint = pb.createConstraint(self.robot_id,
+            constraint = pb.createConstraint(robot_id,
                                              self.gripper_joint_ids[i],
-                                             self.robot_id,
+                                             robot_id,
                                              self.finger_joint_ids[i],
                                              pb.JOINT_POINT2POINT,
                                              (0,0,0),
@@ -120,21 +135,28 @@ class PybulletSimulator:
                                              )
             pb.changeConstraint(constraint, maxForce=1000000)
 
-        # # allow finger and linkages to move freely
-        pb.setJointMotorControlArray(self.robot_id,
+        # reset joints in hand so that constraints are satisfied
+        hand_joint_ids = self.gripper_joint_ids + self.dummy_joint_ids + self.finger_joint_ids
+        hand_rest_states = [0.05, 0.05, 0.055, 0.0155, 0.031]
+        [pb.resetJointState(robot_id, j_id, jpos, physicsClientId=self._client)
+                 for j_id,jpos in zip(hand_joint_ids, hand_rest_states)]
+
+        # allow finger and linkages to move freely
+        pb.setJointMotorControlArray(robot_id,
                                      self.dummy_joint_ids+self.finger_joint_ids,
                                      pb.POSITION_CONTROL,
-                                     forces=[0,0,0])
+                                     forces=[0,0,0],
+                                     physicsClientId= self._client)
 
         # # make arm joints rigid
-        pb.setJointMotorControlArray(self.robot_id,
+        pb.setJointMotorControlArray(robot_id,
                                      self.arm_joint_ids,
                                      pb.POSITION_CONTROL,
                                      5*[0],
-                                     positionGains=5*[0.1],
-                                    )
+                                     positionGains=5*[0.2],
+                                     physicsClientId= self._client)
 
-        pb.stepSimulation(self._client)
+        return robot_id
 
     def get_hand_pose(self):
         '''Get position and orientation of hand (i.e. where grippers would close)
@@ -178,6 +200,10 @@ class PybulletSimulator:
         pos = link_state[4]
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot
+
+    def reset_robot_base(self, pos, quat=(0,0,0,1)):
+        pb.resetBasePositionAndOrientation(self.robot_id, pos, quat,
+                                           physicsClientId=self._client)
 
     def add_camera(self, pose_mtx):
         '''Adds or moves collision object to simulator where camera is located.

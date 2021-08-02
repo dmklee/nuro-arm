@@ -225,6 +225,8 @@ class MotionPlanner:
                                j_state[1],
                                self._client)
 
+    def get_client(self):
+        return self._client
 
     def _unpack_simulator_params(self):
         self.robot_id = self.pb_sim.robot_id
