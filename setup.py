@@ -18,8 +18,7 @@ setup(
         "easyhid;platform_system=='Linux'",
         "hid;platform_system=='Windows'",
         "sklearn",
-        "pyyaml",
         "scipy",
-        # "pywin32 >= 1.0;platform_system=='Darwin'"
+        "gym",
     ],
 )

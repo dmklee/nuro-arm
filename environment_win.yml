@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - blas=1.0
-  - bullet-cpp=3.09
+  - bullet-cpp=3.17
   - ca-certificates=2020.12.5
   - certifi=2020.12.5
   - cycler=0.10.0
