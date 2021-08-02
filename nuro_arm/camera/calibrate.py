@@ -2,7 +2,7 @@ import numpy as np
 
 from nuro_arm.camera.camera import Camera
 from nuro_arm.camera.gui import ShowCheckerboard
-from nuro_arm.gui_utils import Popup, VideoPopup, ImagePopup, Colors
+from nuro_arm.tk_utils import Popup, VideoPopup, ImagePopup, Colors
 
 def calibrate_camera():
     '''Scans over available cameras, prompting user to select which camera is

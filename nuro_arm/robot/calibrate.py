@@ -1,6 +1,6 @@
 import numpy as np
 
-from nuro_arm.gui_utils import ImagePopup, Popup, Colors
+from nuro_arm.tk_utils import ImagePopup, Popup, Colors
 from nuro_arm.robot.xarm_controller import XArmController
 
 def calibrate_xarm():
