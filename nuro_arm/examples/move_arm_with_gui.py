@@ -58,7 +58,7 @@ class GUI(tk.Frame):
                              orient="horizontal",
                              length=scale_width,
                             )
-            scale_value = self.controller._read_jpos([joint_id])[0]
+            scale_value = self.controller.read_jpos([joint_id])[0]
             scale.set(scale_value)
             self.scales.append(scale)
             labels.append(label)

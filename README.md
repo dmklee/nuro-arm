@@ -35,22 +35,31 @@ The assembly process takes around 3 hours, including calibration.  Detailed inst
 ## Features
 ### Robot [or Simulator]
 - Calibration of robot servos
-- Enforcement of joint limits & maximum velocities
-- Forward and Inverse Kinematics
+- Enforcement of joint position and velocity limits
 - Collision detection
-- Control of gripper
+- Forward and Inverse Kinematics
+- Support for complex non-linear movements
 - GUI for simple joint motion
+- GUI for sequencing arm movements
 
 ### Camera
 - Estimation of intrinsic/extrinsic parameters
-- Camera pose estimation 
 - GUI for visualizing or debugging
 - Taking photos and videos
 - Pose estimation of cubes using Aruco Tags
 
 <a name="projects"></a>
-## Tutorials and Projects
-This repo was created to facilitate an outreach program for high school students in the Boston area (in partnership with Northeastern University's Center of STEM Education).  All curriculum materials, including project ideas and solutions, will be available upon request starting June 2021.
+## Projects
+Here are some project ideas that are feasible with this platform:
+- Face tracking with hand-held camera
+- Creating stacks of cubes
+- Throwing objects into a bin
+- Playing tic-tac-toe
+- *Tactile* sensing of objects
+- Typing on a keyboard
+- Investigating positional accuracy of servos
+- Picking up novel objects
+If you are an educator looking for more information on projects or want to chat about curriculum ideas, please contact me.
 
 <a name="acknowledgements"></a>
 ## Acknowledgements
@@ -59,4 +68,3 @@ The xarm controller code is an amalgam of the following repos:
 - https://github.com/maximkulkin/lewansoul-lx16a/
 - https://gist.github.com/maximecb/7fd42439e8a28b9a74a4f7db68281071
 - https://github.com/adeguet1/lewansoul-xarm
-
