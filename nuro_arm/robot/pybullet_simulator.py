@@ -7,10 +7,6 @@ import nuro_arm
 from nuro_arm import transformation_utils, constants
 
 class PybulletSimulator:
-    ROBOT_URDF_PATH = "nuro_arm/assets/urdf/xarm.urdf"
-    CAMERA_URDF_PATH = "nuro_arm/assets/urdf/camera.urdf"
-    ROD_URDF_PATH = "nuro_arm/assets/urdf/camera_rod.urdf"
-    CUBE_URDF_PATH = "nuro_arm/assets/urdf/cube.urdf"
     def __init__(self,
                  headless=True,
                  client=None,
@@ -43,7 +39,8 @@ class PybulletSimulator:
         camera_exists : bool
             True if camera collision object has been added to simulator
         '''
-        self.root_dir = os.path.dirname(nuro_arm.__file__)
+        self.urdf_dir = os.path.join(os.path.dirname(nuro_arm.__file__),
+                                     'assets/urdf')
 
         self.arm_joint_ids = [1,2,3,4,5]
         self.gripper_joint_ids = [6,7]
@@ -120,7 +117,7 @@ class PybulletSimulator:
         return client
 
     def initialize_robot(self, pos, quat):
-        robot_urdf_path = os.path.join(self.root_dir, 'xarm.urdf')
+        robot_urdf_path = os.path.join(self.urdf_dir, 'xarm.urdf')
         robot_id = pb.loadURDF(robot_urdf_path,
                                pos,
                                quat,
@@ -232,8 +229,8 @@ class PybulletSimulator:
             pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, rod_quat,
                                                physicsClientId=self._client)
         else:
-            camera_urdf_path = os.path.join(self.root_dir, 'camera.urdf')
-            rod_urdf_path = os.path.join(self.root_dir, 'camera_rod.urdf')
+            camera_urdf_path = os.path.join(self.urdf_dir, 'camera.urdf')
+            rod_urdf_path = os.path.join(self.urdf_dir, 'camera_rod.urdf')
             self.camera_id = pb.loadURDF(camera_urdf_path, cam_pos, cam_quat,
                                          physicsClientId=self._client)
             self.rod_id = pb.loadURDF(rod_urdf_path, rod_pos, rod_quat,
@@ -294,7 +291,7 @@ class PybulletSimulator:
         if size is None:
             size = constants.cube_size
 
-        cube_urdf_path = os.path.join(self.root_dir, 'cube.urdf')
+        cube_urdf_path = os.path.join(self.urdf_dir, 'cube.urdf')
         cube_id = pb.loadURDF(cube_urdf_path,
                               pos,
                               quat,
