@@ -1,6 +1,9 @@
 import pybullet_data
 import pybullet as pb
 import numpy as np
+import os
+
+import nuro_arm
 from nuro_arm import transformation_utils, constants
 
 class PybulletSimulator:
@@ -40,6 +43,8 @@ class PybulletSimulator:
         camera_exists : bool
             True if camera collision object has been added to simulator
         '''
+        self.root_dir = os.path.dirname(nuro_arm.__file__)
+
         self.arm_joint_ids = [1,2,3,4,5]
         self.gripper_joint_ids = [6,7]
         self.dummy_joint_ids = [8]
@@ -115,7 +120,8 @@ class PybulletSimulator:
         return client
 
     def initialize_robot(self, pos, quat):
-        robot_id = pb.loadURDF(self.ROBOT_URDF_PATH,
+        robot_urdf_path = os.path.join(self.root_dir, 'xarm.urdf')
+        robot_id = pb.loadURDF(robot_urdf_path,
                                pos,
                                quat,
                                flags=pb.URDF_USE_SELF_COLLISION,
@@ -169,13 +175,13 @@ class PybulletSimulator:
         ndarray
             position vector; shape=(3,); dtype=float
         ndarray
-            euler angle; shape=(3,); dtype=float
+            quaternion; shape=(3,); dtype=float
         '''
         link_state = pb.getLinkState(self.robot_id,
                                      self.end_effector_link_index,
                                      physicsClientId=self._client)
         pos = link_state[4]
-        rot = pb.getEulerFromQuaternion(link_state[5])
+        rot = link_state[5]
         return pos, rot
 
     def _get_link_pose(self, link_name):
@@ -226,9 +232,11 @@ class PybulletSimulator:
             pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, rod_quat,
                                                physicsClientId=self._client)
         else:
-            self.camera_id = pb.loadURDF(self.CAMERA_URDF_PATH, cam_pos, cam_quat,
+            camera_urdf_path = os.path.join(self.root_dir, 'camera.urdf')
+            rod_urdf_path = os.path.join(self.root_dir, 'camera_rod.urdf')
+            self.camera_id = pb.loadURDF(camera_urdf_path, cam_pos, cam_quat,
                                          physicsClientId=self._client)
-            self.rod_id = pb.loadURDF(self.ROD_URDF_PATH, rod_pos, rod_quat,
+            self.rod_id = pb.loadURDF(rod_urdf_path, rod_pos, rod_quat,
                                       physicsClientId=self._client)
 
     def _unpack_camera_pose(self, cam_pose_mtx):
@@ -286,7 +294,8 @@ class PybulletSimulator:
         if size is None:
             size = constants.cube_size
 
-        cube_id = pb.loadURDF(self.CUBE_URDF_PATH,
+        cube_urdf_path = os.path.join(self.root_dir, 'cube.urdf')
+        cube_id = pb.loadURDF(cube_urdf_path,
                               pos,
                               quat,
                               globalScaling=size,
