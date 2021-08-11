@@ -38,12 +38,45 @@ MM2IN = 1.0 / 25.4
 RESOLUTION = 200
 
 def generate_tag(aruco_dict, tag_id, tag_size):
+    '''Generate image of aruco tag as 2d array
+
+    Parameters
+    ----------
+    aruco_dict : str
+        name of aruco dictionary, from ARUCO_DICT
+    tag_id : int
+        integer identity of tag
+    tag_size : float
+        size of the tag when printed, proportional to size of output array;
+        does not include the border pixels
+
+    Returns
+    -------
+    ndarray
+        2D array of dtype=np.uint8
+    '''
     n_pixels = int(np.round(tag_size * MM2IN * RESOLUTION))
     tag = np.zeros((n_pixels, n_pixels), dtype=np.uint8)
     tag = cv2.aruco.drawMarker(aruco_dict, tag_id, n_pixels, tag, borderBits=1)
     return tag
 
-def generate_tags(aruco_dict, tag_ids, tag_size, destination):
+def generate_tags(aruco_dict,
+                  tag_ids,
+                  tag_size,
+                  destination):
+    '''Generate pdf's that contain aruco tags
+
+    Parameters
+    ----------
+    aruco_dict : str
+        name of aruco dictionary, from ARUCO_DICT
+    tag_ids : array_like of int
+        integer identities of tags to be generated
+    tag_size : float
+        size of aruco tags in millimeters (this size does not include the border)
+    destination : str
+        folder name where the pdfs will be saved
+    '''
     tags = []
     for tag_id in tag_ids:
         tag = generate_tag(aruco_dict, tag_id, tag_size)
@@ -99,4 +132,3 @@ if __name__ == "__main__":
 
     tag_ids = range(args.start_id, args.number)
     generate_tags(aruco_dict, tag_ids, args.size, args.destination)
-

@@ -130,7 +130,7 @@ class ShowCubes(ImageModifierFunction):
                                         self.cam_configs['dist_coeffs'],
                                        ).astype(int)
 
-            for a, b in constants.cube_edges:
+            for a, b in constants.CUBE_EDGES:
                 canvas = cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]),
                                   (255, 0, 0), thickness=2)
 
@@ -194,11 +194,11 @@ class ShowCheckerboard(ImageModifierFunction):
     def __call__(self, original, canvas):
         # highlight center of image
         ret, corners = cv2.findChessboardCorners(original,
-                                                 constants.calibration_gridshape,
+                                                 constants.CALIBRATION_GRIDSHAPE,
                                                  None)
         if ret:
             cv2.drawChessboardCorners(canvas,
-                                      constants.calibration_gridshape,
+                                      constants.CALIBRATION_GRIDSHAPE,
                                       corners,
                                       ret)
 

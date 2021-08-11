@@ -39,9 +39,6 @@ class PybulletSimulator:
         camera_exists : bool
             True if camera collision object has been added to simulator
         '''
-        self.urdf_dir = os.path.join(os.path.dirname(nuro_arm.__file__),
-                                     'assets/urdf')
-
         self.arm_joint_ids = [1,2,3,4,5]
         self.gripper_joint_ids = [6,7]
         self.dummy_joint_ids = [8]
@@ -51,7 +48,11 @@ class PybulletSimulator:
         self.arm_joint_limits = np.array(((-2, -1.58, -2, -1.8, -2),
                                           ( 2,  1.58,  2,  2.0,  2)))
 
-        self.gripper_joint_limits = np.array(((0.05,0.05),(1.38, 1.38)))
+        self.gripper_joint_limits = np.array(((0.05,0.05),
+                                              (1.38, 1.38)))
+        self.dummy_joint_limits = np.array(((0.025,),(0.055,)))
+        self.finger_joint_limits = np.array(((0.0145, 0.029,),
+                                             (0.0445, 0.089,)))
 
         connection_mode = pb.DIRECT if headless else pb.GUI
         if client is None:
@@ -116,8 +117,23 @@ class PybulletSimulator:
 
         return client
 
-    def initialize_robot(self, pos, quat):
-        robot_urdf_path = os.path.join(self.urdf_dir, 'xarm.urdf')
+    def initialize_robot(self, pos, quat=[0,0,0,1]):
+        '''Adds robot to simulator, setting up gripper constraints and initial
+        motor commands
+
+        Parameters
+        ----------
+        pos: array_like
+            xyz position, length 3
+        rot: array_like
+            quaternion, length 4
+
+        Returns
+        -------
+        int
+            id for robot body
+        '''
+        robot_urdf_path = os.path.join(constants.URDF_DIR, 'xarm.urdf')
         robot_id = pb.loadURDF(robot_urdf_path,
                                pos,
                                quat,
@@ -204,7 +220,16 @@ class PybulletSimulator:
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot
 
-    def reset_robot_base(self, pos, quat=(0,0,0,1)):
+    def reset_robot_base(self, pos, rot=(0,0,0,1)):
+        '''Resets position and orientation of robot base.
+
+        Parameters
+        ----------
+        pos: array_like
+            xyz position, length 3
+        rot: array_like
+            quaternion, length 4
+        '''
         pb.resetBasePositionAndOrientation(self.robot_id, pos, quat,
                                            physicsClientId=self._client)
 
@@ -229,8 +254,8 @@ class PybulletSimulator:
             pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, rod_quat,
                                                physicsClientId=self._client)
         else:
-            camera_urdf_path = os.path.join(self.urdf_dir, 'camera.urdf')
-            rod_urdf_path = os.path.join(self.urdf_dir, 'camera_rod.urdf')
+            camera_urdf_path = os.path.join(constants.URDF_DIR, 'camera.urdf')
+            rod_urdf_path = os.path.join(constants.URDF_DIR, 'camera_rod.urdf')
             self.camera_id = pb.loadURDF(camera_urdf_path, cam_pos, cam_quat,
                                          physicsClientId=self._client)
             self.rod_id = pb.loadURDF(rod_urdf_path, rod_pos, rod_quat,
@@ -266,44 +291,6 @@ class PybulletSimulator:
         rod_quat = (0,0,0,1)
 
         return cam_pos, cam_quat, rod_pos, rod_quat
-
-    def add_cube(self,
-                 pos,
-                 euler=[0,0,0],
-                 rgba=None,
-                 size=None,
-                ):
-        '''Add cube to simulator
-
-        Parameters
-        ----------
-        pos : array_like
-            3d position of center of cube
-        euler: array_like
-            euler angles of cube; shape=(3,)
-
-        Returns
-        -------
-        int
-            body id of cube in simulator
-        '''
-        quat = pb.getQuaternionFromEuler(euler)
-        if size is None:
-            size = constants.cube_size
-
-        cube_urdf_path = os.path.join(self.urdf_dir, 'cube.urdf')
-        cube_id = pb.loadURDF(cube_urdf_path,
-                              pos,
-                              quat,
-                              globalScaling=size,
-                              physicsClientId=self._client,
-                             )
-        if rgba is not None:
-            pb.changeVisualShape(cube_id, -1,
-                                 rgbaColor=rgba,
-                                 physicsClientId=self._client)
-
-        return cube_id
 
     def close(self):
         pb.disconnect(self._client)

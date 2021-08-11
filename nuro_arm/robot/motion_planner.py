@@ -23,14 +23,14 @@ class Collision:
     def __str__(self):
         robot_link_name = pb.getJointInfo(self.robot_body, self.robot_link,
                                           physicsClientId=self.pb_client)[12].decode('ascii')
-        if self.collision:
+        if self.self_collision:
             other_link_name = pb.getJointInfo(self.other_body, self.other_link,
                                               physicsClientId=self.pb_client)[12].decode('ascii')
             return f"Collision between xarm:{robot_link_name} and xarm:{other_link_name}"
         else:
             other_body_name = pb.getBodyInfo(self.other_body,
                                               physicsClientId=self.pb_client)[1].decode('ascii')
-            return f"Collision between xarm:{robot_link}_link and {other_body_name}"
+            return f"Collision between xarm:{robot_link_name} and {other_body_name}"
 
 class MotionPlanner:
     def __init__(self, pb_sim, workspace=None):
@@ -111,10 +111,6 @@ class MotionPlanner:
                      n_iters_inner=50,
                      jd=0.005,
                      ):
-        """
-        WARNING: this will reset joint states of arm
-        """
-        #https://github.com/bulletphysics/bullet3/issues/1380
         current_joint_states = self.get_joint_states()
 
         n_arm_joints = len(self.arm_joint_ids)
@@ -135,8 +131,11 @@ class MotionPlanner:
             'ik_pos' : solved_pos,
             'ik_rot' : solved_rot,
             'ik_pos_error' : np.linalg.norm(np.subtract(pos, solved_pos)),
-            #TODO: add rotation error
+            'ik_rot_error' : 0,
         }
+        if rot is not None:
+            qd = pb.getDifferenceQuaternion(rot, solved_rot)
+            info['ik_rot_error'] = 2 * np.arctan2(np.linalg.norm(qd[:3]), qd[3])
 
         # reset arm to previous joint states
         self.set_joint_states(current_joint_states)
@@ -157,45 +156,58 @@ class MotionPlanner:
         if gripper_state is not None:
             self._teleport_gripper(gripper_state)
 
-    def _teleport_arm(self, jpos):
+    def _teleport_arm(self, arm_jpos):
         '''Resets joint states of arm joints
+
+        Parameters
+        ----------
+        arm_jpos : array_like, optional
+            joint positions for all arm joints in radians; shape=(5,); dtype=float
         '''
         [pb.resetJointState(self.robot_id, i, jp, physicsClientId=self._client)
-            for i,jp in zip(self.arm_joint_ids, jpos)]
-        # pb.setJointMotorControlArray(self.robot_id,
-                                     # self.arm_joint_ids,
-                                     # pb.POSITION_CONTROL,
-                                     # jpos,
-                                     # positionGains=len(self.arm_joint_ids)*[0.05],
-                                     # physicsClientId=self._client)
+            for i,jp in zip(self.arm_joint_ids, arm_jpos)]
 
     def _teleport_gripper(self, state):
         '''Resets joint states of gripper joints
+
+        Parameters
+        ----------
+        state : float
+            gripper state; in range [0,1]
         '''
         jpos = (1-state)*self.gripper_joint_limits[0] + state*self.gripper_joint_limits[1]
-
         [pb.resetJointState(self.robot_id, i, jp, physicsClientId=self._client)
              for i,jp in zip(self.gripper_joint_ids, jpos)]
-        # pb.setJointMotorControlArray(self.robot_id,
-                                     # self.gripper_joint_ids,
-                                     # pb.POSITION_CONTROL,
-                                     # 2*[jpos],
-                                     # positionGains=2*[0.05],
-                                     # physicsClientId=self._client,
-                                    # )
 
-    def find_collisions(self, jpos, ignore_gripper=False):
+        # reset joints of fingers such that the constraints are perfectly satisfied
+        z_val = np.cos(jpos[0])*np.subtract(*self.dummy_joint_limits[::-1])[0] \
+                    + self.dummy_joint_limits[0,0]
+        pb.resetJointState(self.robot_id, self.dummy_joint_ids[0], z_val,
+                           physicsClientId=self._client)
+        y_val = np.sin(jpos[0])*np.subtract(*self.finger_joint_limits[::-1,0]) \
+                    + self.finger_joint_limits[0,0]
+        pb.resetJointState(self.robot_id, self.finger_joint_ids[0], y_val,
+                           physicsClientId=self._client)
+        sep_val = 2 * (y_val - self.finger_joint_limits[0,0]) \
+                     + self.finger_joint_limits[0,1]
+        pb.resetJointState(self.robot_id, self.finger_joint_ids[1], sep_val,
+                           physicsClientId=self._client)
+
+    def find_collisions(self, arm_jpos, ignore_gripper=False):
         '''Returns True if collisions present as arm joint position
 
         Parameters
         ----------
+        arm_jpos : array_like, optional
+            joint positions for all arm joints in radians; shape=(5,); dtype=float
         ignore_gripper : bool, default to False
+            if True, collisions that involve gripper links will not be returned
 
         Returns
         -------
         list of Collision objects
         '''
-        self._teleport_arm(jpos)
+        self._teleport_arm(arm_jpos)
 
         ignored_link_ids = set(self.gripper_link_ids) if ignore_gripper else set()
 
@@ -212,13 +224,16 @@ class MotionPlanner:
         return collisions
 
     def get_joint_states(self):
+        '''Get joint states for arm and gripper
+        '''
         return pb.getJointStates(self.robot_id,
-                                 self.arm_joint_ids +self.gripper_joint_ids,
+                                 self.all_joint_ids,
                                  self._client)
 
     def set_joint_states(self, joint_states):
-        joint_ids = self.arm_joint_ids+self.gripper_joint_ids
-        for j_state, j_id in zip(joint_states, joint_ids):
+        '''Sets joint states of arm and gripper
+        '''
+        for j_state, j_id in zip(joint_states, self.all_joint_ids):
             pb.resetJointState(self.robot_id,
                                j_id,
                                j_state[0],
@@ -226,6 +241,8 @@ class MotionPlanner:
                                self._client)
 
     def get_client(self):
+        '''Returns pybullet client id used by simulator
+        '''
         return self._client
 
     def _unpack_simulator_params(self):
@@ -234,8 +251,15 @@ class MotionPlanner:
         self.n_joints = self.pb_sim.n_joints
         self.arm_joint_ids = self.pb_sim.arm_joint_ids
         self.arm_joint_limits = self.pb_sim.arm_joint_limits
+
         self.gripper_joint_ids = self.pb_sim.gripper_joint_ids
+        self.dummy_joint_ids = self.pb_sim.dummy_joint_ids
+        self.finger_joint_ids = self.pb_sim.finger_joint_ids
+
         self.gripper_joint_limits = self.pb_sim.gripper_joint_limits
+        self.dummy_joint_limits = self.pb_sim.dummy_joint_limits
+        self.finger_joint_limits = self.pb_sim.finger_joint_limits
+
         self.link_names = self.pb_sim.link_names
         self.joint_ll = self.pb_sim.joint_ll
         self.joint_ul = self.pb_sim.joint_ul
@@ -244,4 +268,6 @@ class MotionPlanner:
         self.gripper_link_ids = list(self.pb_sim.gripper_joint_ids) \
                                  + list(self.pb_sim.dummy_joint_ids) \
                                  + list(self.pb_sim.finger_joint_ids)
+
+        self.all_joint_ids = list(self.arm_joint_ids) + list(self.gripper_link_ids)
 

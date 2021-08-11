@@ -5,6 +5,7 @@ import numpy as np
 import threading
 
 from nuro_arm.robot.base_controller import BaseController
+from nuro_arm.constants import XARM_CONFIG_FILE
 
 def itos(v):
     lsb = v & 0xFF
@@ -121,8 +122,6 @@ class XArmController(BaseController):
 
     POS2RADIANS = np.pi / 180. * ( 240. / 1000. )
 
-    CONFIG_FILE = "nuro_arm/robot/configs.npy"
-
     def __init__(self, serial_number=None):
         super().__init__()
         # speed in radians per second
@@ -158,8 +157,8 @@ class XArmController(BaseController):
                 self._write_servo_offset(j_id, new_offset)
 
     def load_configs(self):
-        if os.path.exists(self.CONFIG_FILE):
-            data = np.load(self.CONFIG_FILE, allow_pickle=True).item()
+        if os.path.exists(XARM_CONFIG_FILE):
+            data = np.load(XARM_CONFIG_FILE, allow_pickle=True).item()
             try:
                 data = data[self.serial_number]
                 self.arm_joint_directions = data['arm_joint_directions']
@@ -204,16 +203,37 @@ class XArmController(BaseController):
 
     def power_on_servo(self, joint_id):
         '''Turn on single servo so the joint is rigid
+
+        Parameters
+        ----------
+        joint_id : int
         '''
         current_jpos = self.read_jpos([joint_id])
         self.write_jpos([joint_id], current_jpos)
 
     def power_off_servo(self, joint_id):
         '''Turn off single servo so the joint is passive
+
+        Parameters
+        ----------
+        joint_id : int
         '''
         self._send(CmdLib.POWER_OFF, [1, joint_id])
 
     def get_joint_id(self, joint_name):
+        '''Get joint id associated with a given joint name, joint id may be used
+        for writing/reading specific joint positions
+
+        Parameters
+        ----------
+        joint_name : str, {'base', 'shoulder','elbow',
+                           'wrist','wristRotation','gripper'}
+
+        Returns
+        -------
+        int
+            joint id
+        '''
         return {'base' : 6,
                 'shoulder' : 5,
                 'elbow' : 4,
@@ -223,6 +243,17 @@ class XArmController(BaseController):
                }[joint_name]
 
     def get_joint_name(self, joint_id):
+        '''Get joint name associated with a given joint id
+
+        Parameters
+        ----------
+        joint_id : int
+
+        Returns
+        -------
+        str
+            joint name
+        '''
         return {6 : 'base',
                 5 : 'shoulder',
                 4 : 'elbow',
@@ -254,7 +285,6 @@ class XArmController(BaseController):
 
         speed = np.clip(speed, self.min_speed, self.max_speed)
 
-        # convert speed to time
         current_jpos = self.read_jpos(joint_ids)
         delta_jpos = np.abs(np.subtract(jpos, current_jpos))
         duration_ms = (1000 * delta_jpos / speed).astype(int)
@@ -281,10 +311,8 @@ class XArmController(BaseController):
                    [len(j_idxs), *j_idxs])
         pos = self._recv(CmdLib.POSITION_READ, ret_type='short')
 
-        # ensure no readings are outside range
         pos = np.clip(pos, self.SERVO_LOWER_LIMIT, self.SERVO_UPPER_LIMIT)
 
-        # convert to radians
         jpos = [self._to_radians(i, p) for i,p in zip(j_idxs, pos)]
         return jpos
 
@@ -357,6 +385,22 @@ class XArmController(BaseController):
         return recv_data
 
     def _to_radians(self, joint_id, pos):
+        '''Convert servo positional unit to angle in radians.  This will
+        incorporate arm_joint_directions to reflect canonical joint angles
+        (so it matches simulator)
+
+        Parameters
+        ----------
+        joint_id : int
+            joint id, must be in range [1,6]
+        pos : int
+            positional unit value, servos can report this in the range 0 to 1000
+
+        Returns
+        -------
+        float
+            joint position in radians
+        '''
         jpos = (pos - self.SERVO_HOME) * self.POS2RADIANS
         if joint_id in self.arm_joint_ids:
             jpos *= self.arm_joint_directions[joint_id]
@@ -364,13 +408,32 @@ class XArmController(BaseController):
         return jpos
 
     def _to_pos_units(self, joint_id, jpos):
+        '''Convert joint angle in radians to servo positional unit.  This will
+        incorporate arm_joint_directions to reflect canonical joint angles
+        (so it matches simulator)
+
+        Does not clip positional unit value.
+
+        Parameters
+        ----------
+        joint_id : int
+            joint id, must be in range [1,6]
+        jpos : float
+            joint angle in radians
+
+        Returns
+        -------
+        int
+            servo positional unit value
+        '''
         if joint_id in self.arm_joint_ids:
             jpos *= self.arm_joint_directions[joint_id]
 
         return int( jpos / self.POS2RADIANS + self.SERVO_HOME )
 
     def _reset_servo_offsets(self):
-        """Assumes robot is already in home position and servos are off"""
+        '''Assumes robot is already in home position and servos are off
+        '''
         success = True
         offsets = {}
         for j_id in self.arm_joint_ids:
@@ -388,13 +451,13 @@ class XArmController(BaseController):
         return success, offsets
 
     def __del__(self):
-        '''Makes sure servos are off before disconnecting'''
+        '''Makes sure servos are off before disconnecting
+        '''
         try:
             self.power_off_servos()
             self.disconnect()
         except AttributeError:
-            # this occurs when device attribute was not created due to 
-            # connection issue
+            # device was never created so no need to disconnect
             pass
 
 if __name__ == "__main__":

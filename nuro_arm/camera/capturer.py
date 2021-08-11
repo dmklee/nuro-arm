@@ -4,7 +4,7 @@ import threading
 import time
 import pybullet as pb
 
-import nuro_arm.constants as constants
+from nuro_arm.constants import FRAME_RATE
 
 class Capturer:
     def __init__(self):
@@ -12,7 +12,7 @@ class Capturer:
         '''
         self._lock = threading.Lock()
         self._started = False
-        self._frame_rate = constants.frame_rate
+        self._frame_rate = FRAME_RATE
         self._cap = None
 
     def set_camera_id(self, camera_id, run_async=True):

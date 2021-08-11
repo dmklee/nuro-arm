@@ -10,7 +10,6 @@ from nuro_arm.camera.capturer import Capturer
 import nuro_arm.constants as constants
 
 class Camera:
-    CONFIG_FILE = "nuro_arm/camera/configs.npy"
     def __init__(self, camera_id=None):
         '''Changes video capture to a different camera id number
 
@@ -54,6 +53,19 @@ class Camera:
         return is_connected
 
     def change_camera_id(self, cam_id):
+        '''Change connection to another camera id.  If already connected to
+        specified camera id, then nothing happens
+
+        Parameters
+        ----------
+        cam_id : int
+            camera id
+
+        Returns
+        -------
+        bool
+            True if connection was made, False if connection failed
+        '''
         if cam_id == self._camera_id:
             return True
         self._camera_id = cam_id
@@ -91,8 +103,8 @@ class Camera:
                 4x4 transformation matrix that transforms homogeneous vector from
                 camera coordinate frame to world coordinate frame
         '''
-        gh, gw = constants.calibration_gridshape
-        gsize = constants.calibration_gridsize
+        gh, gw = constants.CALIBRATION_GRIDSHAPE
+        gsize = constants.CALIBRATION_GRIDSIZE
 
         img = self.get_image()
         gray = camera_utils.convert_gray(img)
@@ -105,7 +117,7 @@ class Camera:
             # coordinates of grid corners in world coordinates
             objp = np.zeros((gh*gw,3), np.float32)
             objp[:,:2] = gsize * np.dstack(np.mgrid[1:-gw+1:-1,gh:0:-1]).reshape(-1,2)
-            objp += constants.tvec_world2rightfoot
+            objp += constants.TVEC_WORLD2RIGHTFOOT
 
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
             corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
@@ -160,33 +172,26 @@ class Camera:
         ndarray
             sequence of 2D pixel indices; shape=(*,2); dtype=float
         '''
-        return cam_utils.project_to_pixels(pts_wframe,
-                                           self._rvec,
-                                           self._tvec,
-                                           self._mtx,
-                                           self._dist_coeffs
-                                          )
+        return camera_utils.project_to_pixels(pts_wframe,
+                                              self._rvec,
+                                              self._tvec,
+                                              self._mtx,
+                                              self._dist_coeffs)
 
     def load_configs(self):
         '''Reads config file writing to private attributes
 
-        Raises
-        ------
-        KeyError
-            If one of the private attributes does not exist in the config
-            file.
-
         Returns
         -------
-        dict
-            configs that were found in config file
+        bool
+            True if configs were loaded succesfully, False otherwise
         '''
-        self._mtx = constants.cam_mtx
-        self._dist_coeffs = constants.cam_dist_coeffs
+        self._mtx = constants.CAM_MTX
+        self._dist_coeffs = constants.CAM_DIST_COEFFS
         self._camera_id = 0
 
-        if os.path.exists(self.CONFIG_FILE):
-            data = np.load(self.CONFIG_FILE, allow_pickle=True).item()
+        if os.path.exists(constants.CAMERA_CONFIG_FILE):
+            data = np.load(constants.CAMERA_CONFIG_FILE, allow_pickle=True).item()
             try:
                 self._camera_id = data.get('camera_id')
                 self._rvec = data.get('rvec')
@@ -222,37 +227,5 @@ class Camera:
         img = self.cap.read()
         return img
 
-    # def get_cubes(self, n_frames=10, min_frames=5):
-        # '''Calculate position of cubes using aruco tags, position is refined
-        # over multiple frames to improve accuracy
-        # '''
-        # positions = dict()
-        # rotmats = dict()
-        # for i in range(n_frames):
-            # img = self.cap.read()
-            # cubes = camera_utils.find_cubes(img)
-            # for cube in cubes:
-                # existing_positions = positions.get(cube.tag_id, [])
-                # existing_rotmats = rotmats.get(cube.tag_id, [])
-                # positions[cube.tag_id] = existing_positions + [cubes.pos]
-                # rotmats[cube.tag_id] = existing_rotmats + [cubes.rotmat]
-
-        # # process images
-        # refined_cubes = {}
-        # for tag_id in positions.keys():
-            # these_rotmats = rotmats[tag_id]
-            # if len(these_rotmats) < min_frames:
-                # continue
-            # median_id, _ = camera_utils.rotmat_median(these_rotmats)
-            # refined_cubes[tag_id] = {'pos' : positions[tag_id][median_id],
-                                     # 'rotmat' : rotmats[tag_id][median_id]
-                                    # }
-        # return refined_cubes
-
     def __call__(self):
         return self.get_image()
-
-if __name__ == "__main__":
-    from nuro_arm.camera.gui import ShowCubes
-    cam = Camera()
-    cam.gui.show(modifier_fns=[ShowCubes(cam.configs)])

@@ -49,7 +49,7 @@ class RobotArm:
             raise TypeError('Invalid controller_type argument; must be real or sim.')
         self.controller_type = controller_type
 
-        self._mirror_planner()
+        self.mirror_planner()
 
     def home(self):
         '''Moves to home arm positions
@@ -103,11 +103,11 @@ class RobotArm:
             # to avoid leaving motors under load, move to achieved jpos
             self.controller.write_arm_jpos(achieved_jpos)
 
-        self._mirror_planner()
+        self.mirror_planner()
         return success
 
     def get_hand_pose(self):
-        self._mirror_planner()
+        self.mirror_planner()
         return self._sim.get_hand_pose()
 
     def move_hand_to(self,
@@ -212,7 +212,7 @@ class RobotArm:
             self.controller.timestep()
 
         achieved_gripper_state = self.get_gripper_state()
-        self._mirror_planner()
+        self.mirror_planner()
         return achieved_gripper_state
 
     def get_gripper_state(self):
@@ -229,7 +229,7 @@ class RobotArm:
     def get_pb_client(self):
         return self._sim._client
 
-    def _mirror_planner(self):
+    def mirror_planner(self):
         if self.controller_type == 'real':
             self.mp.mirror(arm_jpos=self.get_arm_jpos(),
                            gripper_state=self.get_gripper_state())

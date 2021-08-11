@@ -25,31 +25,100 @@ class BaseController:
         self.default_speed = 0.8
 
     def read_arm_jpos(self):
+        '''Get current joint positions of arm servos
+
+        Returns
+        -------
+        array_like
+            joint positions in radians, ordered from base to wristRotation
+        '''
         return self.read_jpos(self.arm_joint_ids)
 
     def read_gripper_state(self):
+        '''Get current gripper state
+
+        Returns
+        -------
+        float
+            gripper state from 0 (fully closed) to 1 (fully opened)
+        '''
         gripper_jpos = self.read_jpos(self.gripper_joint_ids)
         gripper_state = self._gripper_jpos_to_state(gripper_jpos)
         gripper_state = np.clip(gripper_state, 0, 1)
         return gripper_state
 
     def write_arm_jpos(self, jpos, speed=None):
+        '''Send movement command to arm servos
+
+        Parameters
+        ----------
+        jpos : array_like
+            target arm joint positions in radians, ordered from base to
+            wristRotation
+        speed : float, array_like of float, default to None
+            movement speed in radians per second.  by providing array_like,
+            speed for each servo can be specified
+
+        Returns
+        -------
+        float
+            expected time (s) to complete movement, used for monitoring
+        '''
         return self.write_jpos(self.arm_joint_ids, jpos, speed)
 
     def write_gripper_state(self, state, speed=None):
+        '''Send movement command to achieve specified gripper state
+
+        Parameters
+        ----------
+        jpos : float
+            target gripper state in range 0 to 1
+        speed : float
+            movement speed in radians per second
+
+        Returns
+        -------
+        float
+            expected time (s) to complete movement, used for monitoring
+        '''
         state = np.clip(state, 0, 1)
         gripper_jpos = self._gripper_state_to_jpos(state)
         return self.write_jpos(self.gripper_joint_ids, gripper_jpos, speed)
 
     @abstractmethod
     def timestep(self):
-        '''
+        '''Used for monitoring movements, either waits some time or steps simulator
+        if applicable
         '''
         pass
 
     @abstractmethod
     def get_joint_id(self, joint_name):
+        '''Get joint id associated with a given joint name
+
+        Parameters
+        ----------
+        joint_name : str, {'base', 'shoulder','elbow','wrist','wristRotation','gripper'}
+
+        Returns
+        -------
+        int
+            joint id
         '''
+        pass
+
+    @abstractmethod
+    def get_joint_name(self, joint_id):
+        '''Get joint name associated with a given joint id
+
+        Parameters
+        ----------
+        joint_id : int
+
+        Returns
+        -------
+        str
+            joint name
         '''
         pass
 
@@ -68,24 +137,36 @@ class BaseController:
     @abstractmethod
     def power_on_servo(self, joint_id):
         '''Turn on single servo so the joint is rigid
+
+        Parameters
+        ----------
+        joint_id : int
         '''
         pass
 
     @abstractmethod
     def power_off_servo(self, joint_id):
         '''Turn off single servo so the joint is passive
+
+        Parameters
+        ----------
+        joint_id : int
         '''
         pass
 
     @abstractmethod
     def read_jpos(self, joint_ids):
-        '''Issue move command to specified joint indices
+        '''Read joint positions
+
+        Parameters
+        ----------
+        joint_ids : array_like of int
         '''
         pass
 
     @abstractmethod
     def write_jpos(self, joint_ids, jpos, speed):
-        '''Issue move command to specified joint indices
+        '''Issue move command
 
         Parameters
         ----------
@@ -156,7 +237,6 @@ class BaseController:
                 return False, np.array(new_jpos)
 
             jpos = new_jpos
-
 
     def _gripper_jpos_to_state(self, jpos):
         '''Convert gripper joint position to state
