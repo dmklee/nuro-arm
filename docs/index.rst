@@ -34,6 +34,17 @@ We provide several scripts to highlight possible projects that can be done with 
 API Documentation
 -----------------
 
+* :doc:`/nuro_arm.robot`
+* :doc:`/nuro_arm.camera`
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+    :caption: API Documentation
+    
+    /nuro_arm.robot
+    /nuro_arm.camera
+
 Improving Accessibility
 -----------------------
 
