@@ -2,6 +2,7 @@ import numpy as np
 
 from nuro_arm.tk_utils import ImagePopup, Popup, Colors
 from nuro_arm.robot.xarm_controller import XArmController
+from nuro_arm.constants import XARM_CONFIG_FILE
 
 def calibrate_xarm():
     '''Calibrates servos in xArm so that the internal motion planner is accurate
@@ -110,7 +111,7 @@ def calibrate_xarm():
         )
         if popup.response() != 'CONTINUE':
             exit()
-        gripper_closed = xarm._read_jpos(xarm.gripper_joint_ids)[0]
+        gripper_closed = xarm.read_jpos(xarm.gripper_joint_ids)[0]
 
         popup = ImagePopup(
             title='xArm Calibration: step 4 of 4',
@@ -124,7 +125,7 @@ def calibrate_xarm():
         )
         if popup.response() != 'CONTINUE':
             exit()
-        gripper_opened = xarm._read_jpos(xarm.gripper_joint_ids)[0]
+        gripper_opened = xarm.read_jpos(xarm.gripper_joint_ids)[0]
 
         # check if gripper values seem reasonable
         if (gripper_closed - gripper_opened) < 1.5:
@@ -141,7 +142,7 @@ def calibrate_xarm():
 
     # update config file
     try:
-        data = np.load(xarm.CONFIG_FILE, allow_pickle=True).item()
+        data = np.load(XARM_CONFIG_FILE, allow_pickle=True).item()
     except FileNotFoundError:
         data = dict()
     data[xarm.serial_number] = {
@@ -149,7 +150,7 @@ def calibrate_xarm():
         'gripper_joint_limits' : np.array(((gripper_closed,), (gripper_opened,))),
         'servo_offsets' : arm_servo_offsets,
     }
-    np.save(xarm.CONFIG_FILE, data)
+    np.save(XARM_CONFIG_FILE, data)
 
     popup = Popup(
         title='Success',
