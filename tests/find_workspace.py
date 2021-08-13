@@ -5,7 +5,7 @@ import numpy as np
 import time
 from scipy.spatial.transform import Rotation as R
 
-from neu_ro_arm.robot.robot_arm import RobotArm
+from nuro_arm.robot.robot_arm import RobotArm
 
 N_GRIPPER_THETAS = 5
 gripper_thetas = np.linspace(-np.pi/2, np.pi/2, num=N_GRIPPER_THETAS)
@@ -21,13 +21,14 @@ N_BASE_HEIGHTS = 5
 BASE_HEIGHT_SPACING = 0.02
 base_heights = BASE_HEIGHT_SPACING*(np.arange(N_BASE_HEIGHTS)-N_BASE_HEIGHTS//2)
 xyz_points = np.stack(np.meshgrid(x_points, y_points, base_heights)).T.reshape(-1,3)
+print(xyz_points.shape)
 
-feasiblility = np.zeros(len(xyz_points), dtype=int)
+feasiblility = np.zeros(xyz_points.shape[:-1], dtype=int)
 print(feasiblility.shape)
 
-mp = RobotArm('sim', headless=False, realtime=False)
-mp.close_gripper()
-pb.removeBody(mp._sim.plane_id, physicsClientId=mp._sim._client)
+robot = RobotArm('sim', headless=False, realtime=False)
+robot.close_gripper()
+pb.removeBody(robot._sim.plane_id)
 
 id_ = pb.createVisualShape(pb.GEOM_BOX,
                            halfExtents=[0.005, 0.005, 0.01],
@@ -42,12 +43,12 @@ for pos in xyz_points:
         rot = R.from_euler('z', yaw) * R.from_euler('YZ', (np.pi, roll+np.pi))
         rot = rot.as_quat()
 
-        jpos, info = mp.mp.calculate_ik(pos, rot)
-        collisions = mp.mp.find_collisions(jpos, ignore_gripper=1)
+        jpos, info = robot.mp.calculate_ik(pos, rot)
+        collisions = robot.mp.find_collisions(jpos, ignore_gripper=1)
         if len(collisions) > 0:
             break
 
-        achieved_pos, achieved_rot = mp._sim.get_hand_pose()
+        achieved_pos, achieved_rot = robot._sim.get_hand_pose()
         time.sleep(0.01)
 
 # while 1:
