@@ -125,7 +125,7 @@ class XArmController(BaseController):
     def __init__(self, serial_number=None):
         super().__init__()
         # speed in radians per second
-        self.max_speed = 2.0
+        self.max_speed = 4.0
         self.min_speed = 0.1
         self.default_speed = 0.8
 

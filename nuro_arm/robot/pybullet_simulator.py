@@ -62,8 +62,8 @@ class PybulletSimulator:
 
         # suction cups are 12 mm tall when not pressed
         robot_pos = (0, 0, 0.012)
-        robot_quat = (0, 0, 0, 1)
-        self.robot_id = self.initialize_robot(robot_pos, robot_quat)
+        robot_rot = (0, 0, 0, 1)
+        self.robot_id = self.initialize_robot(robot_pos, robot_rot)
         self.n_joints = pb.getNumJoints(self.robot_id,
                                           physicsClientId=self._client)
 
@@ -117,7 +117,7 @@ class PybulletSimulator:
 
         return client
 
-    def initialize_robot(self, pos, quat=[0,0,0,1]):
+    def initialize_robot(self, pos, rot=[0,0,0,1]):
         '''Adds robot to simulator, setting up gripper constraints and initial
         motor commands
 
@@ -136,9 +136,11 @@ class PybulletSimulator:
         robot_urdf_path = os.path.join(constants.URDF_DIR, 'xarm.urdf')
         robot_id = pb.loadURDF(robot_urdf_path,
                                pos,
-                               quat,
+                               rot,
                                flags=pb.URDF_USE_SELF_COLLISION,
                                physicsClientId=self._client)
+        self.base_pos = pos
+        self.base_rot = rot
 
         # # set up constraints for linkage in gripper fingers
         for i in [0,1]:
@@ -220,7 +222,7 @@ class PybulletSimulator:
         rot = pb.getEulerFromQuaternion(link_state[5])
         return pos, rot
 
-    def reset_robot_base(self, pos, rot=(0,0,0,1)):
+    def reset_base_pose(self, pos, rot=(0,0,0,1)):
         '''Resets position and orientation of robot base.
 
         Parameters
@@ -230,8 +232,10 @@ class PybulletSimulator:
         rot: array_like
             quaternion, length 4
         '''
-        pb.resetBasePositionAndOrientation(self.robot_id, pos, quat,
+        pb.resetBasePositionAndOrientation(self.robot_id, pos, rot,
                                            physicsClientId=self._client)
+        self.base_pos = pos
+        self.base_rot = rot
 
     def add_camera(self, pose_mtx):
         '''Adds or moves collision object to simulator where camera is located.
