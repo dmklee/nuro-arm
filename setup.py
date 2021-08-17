@@ -8,6 +8,7 @@ setup(
     author_email='klee.d@northeastern.edu',
     url='https://github.com/dmklee/nuro-arm',
     packages=find_packages(),
+    include_package_data=True,
     python_requires='>3.6.0',
     setup_requires="wheel",
     install_requires=[
