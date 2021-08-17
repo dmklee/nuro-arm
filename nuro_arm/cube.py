@@ -99,13 +99,14 @@ class Cube:
         texture_img[-tag_size:, -tag_size:,:] = tag[...,np.newaxis]
 
         img = Image.fromarray(texture_img, mode="RGB")
-        img.save('tmp_cube_tex.png')
-        texture_id = pb.loadTexture('tmp_cube_tex.png')
+        tmp_fname = f'tmp_cube_tex{tag_id}.png'
+        img.save(tmp_fname)
+        texture_id = pb.loadTexture(tmp_fname)
         pb.changeVisualShape(self.id, -1,
                              rgbaColor=(1,1,1,rgba[-1]),
                              textureUniqueId=texture_id,
                              physicsClientId=self.client)
-        os.remove('tmp_cube_tex.png')
+        os.remove(tmp_fname)
 
     def delete(self):
         pb.removeBody(self.id, physicsClientId=self.client)
