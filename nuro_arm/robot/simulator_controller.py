@@ -21,7 +21,7 @@ class SimulatorController(BaseController):
         self.position_gain = 0.2
 
     def timestep(self):
-        [pb.stepSimulation() for _ in range(int(24/self.measurement_frequency))]
+        [pb.stepSimulation() for _ in range(int(240/self.measurement_frequency))]
         if self.realtime:
             time.sleep(1./self.measurement_frequency)
 

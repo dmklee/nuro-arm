@@ -22,6 +22,20 @@ class RobotArm:
         ----------
         controller_type : str, {'real','sim'}, default to 'real'
             Indicate whether motor control be sent to a simulator or the real robot
+        headless : bool, default to True
+            True if pybullet simulator runs in DIRECT mode, False if
+            pybullet simulator runs in GUI mode.
+        realtime : bool, default to True
+            True if simulator runs in realtime so all motions look normal, False
+            if simulator runs as fast as possible.
+        pb_client : int, default to None
+            Physics client id in which the robot arm should be placed.  This is
+            used to put robot in an existing simulator.  If None, then a new
+            simulator instance will be created
+        serial_number : str, default to None
+            Serial number of xArm robot to connect.  If specified serial number
+            is not available, then connection with fail.  If no serial number
+            is provided, then whatever xArm is available will be used.
 
         Attributes
         ---------
@@ -149,7 +163,7 @@ class RobotArm:
         else:
             yaw = np.arctan2(pos[1], pos[0])
             pitch, roll = pitch_roll
-            rot = R.from_euler('z', yaw) * R.from_euler('YZ', (pitch, roll + np.pi/2) )
+            rot = R.from_euler('z', yaw) * R.from_euler('YZ', (pitch, roll) )
             rot = rot.as_quat()
 
         jpos, ik_info = self.mp.calculate_ik(pos, rot, **ik_kwargs)
@@ -225,6 +239,17 @@ class RobotArm:
             the gripper is
         '''
         return self.controller.read_gripper_state()
+
+    def hand_rot_as_quat(self, pos, pitch, roll):
+        # calculate relative hand_pos
+        yaw = np.arctan2(pos[1], pos[0])
+        pitch, roll = pitch_roll
+        rot = R.from_euler('z', yaw) * R.from_euler('YZ', (pitch, roll + np.pi/2) )
+        rot = rot.as_quat()
+        pass
+
+    def hand_rot_from_quat(self, quat):
+        pass
 
     def get_pb_client(self):
         return self._sim._client

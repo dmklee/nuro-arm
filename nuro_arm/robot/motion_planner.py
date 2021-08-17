@@ -3,7 +3,23 @@ import numpy as np
 
 class Collision:
     def __init__(self, contact_pt, pb_client):
-        # assumes bodyA is the robot
+        '''Performs collision detection and inverse kinematics in
+        pybullet simulator.
+
+        Parameters
+        ----------
+        contact_pt : list
+            Data about collision involving robot body.  See
+            pybullet.getContactPoints for details
+
+        pb_client : int
+            Physics client id for the pybullet simulator
+
+        Note
+        ----
+        This class assumes that the contact points were generated with
+        bodyA as the robot body
+        '''
         self.pb_client = pb_client
         self.robot_body = contact_pt[1]
         self.other_body = contact_pt[2]
@@ -34,8 +50,25 @@ class Collision:
 
 class MotionPlanner:
     def __init__(self, pb_sim, workspace=None):
-        '''Class that performs collision detection, inverse kinematics using
-        pybullet simulator
+        '''Performs collision detection and inverse kinematics in
+        pybullet simulator.
+
+        Note
+        ----
+        This class does not create a pybullet simulater instance, but works on
+        an existing one.  This way, the virtual robot can be controlled without
+        needing an additional simulator running in the background.
+
+        Parameters
+        ----------
+        pb_sim : PybulletSimulator
+            Simulator object in which the motion planning features
+            will be applied
+        workspace : array_like, optional
+            Array describing the workspace limits for each dimension, must be
+            of the form ((min_x, max_x),(min_y, max_y),(min_z, max_z)). If not
+            provided, default value is used.  The workspace is used to limit
+            where the position of the hand.
         '''
         # unpack info needed to probe the pybullet simulator
         self.pb_sim = pb_sim
@@ -54,18 +87,61 @@ class MotionPlanner:
 
     def is_safe_hand_position(self, pos):
         '''Checks if hand position is within workspace
+
+        Parameters
+        ----------
+        pos : array_like
+            Cartesian (xyz) position of the hand.  Here, the hand means the
+            virtual palm link, e.g. the location where the grippers touch when
+            the gripper is closed.
+
+        Returns
+        -------
+        bool
+            True if hand is safe, False otherwise.  Safe means it is located
+            within the workspace (see mp.__init__ funtion).
         '''
         return np.bitwise_and(pos > self.workspace[:,0],
                               pos < self.workspace[:,1]).all()
 
     def is_safe_arm_jpos(self, jpos):
         '''Checks if joint positions are within limits
+
+        Parameters
+        ----------
+        jpos : array_like
+            Joint angles for arm servos in order from base to wristRotation
+
+        Returns
+        -------
+        bool
+            True if arm joint configuration is safe, False otherwise.  Safe
+            means all joint angles are within specified limits.
         '''
         return np.bitwise_and(jpos > self.arm_joint_limits[:,0],
                               jpos < self.arm_joint_limits[:,1]).all()
 
     def is_collision_free(self, jpos, ignore_gripper=True):
-        '''Checks if configuration is collision free
+        '''Checks if robot configuration is free of collisions with other bodies
+        in the simulator.
+
+        Parameters
+        ----------
+        jpos : array_like
+            Joint angles of arm servos. Collision checking takes place after
+            teleporting robot to these joint angles (prior robot configuration
+            is restored at the end)
+        ignore_gripper : bool
+            True if gripper links are not included in the collision checking.
+            Gripper links include left and right finger, hand assebly and
+            gripper servo.
+
+        Returns
+        -------
+        bool
+            True if there are no collisions present, False otherwise
+        list(obj)
+            List of Collision objects describing what collisions are present
         '''
         current_joint_states = self.get_joint_states()
 
@@ -224,15 +300,13 @@ class MotionPlanner:
         return collisions
 
     def get_joint_states(self):
-        '''Get joint states for arm and gripper
-        '''
+        '''Get joint states for arm and gripper'''
         return pb.getJointStates(self.robot_id,
                                  self.all_joint_ids,
                                  self._client)
 
     def set_joint_states(self, joint_states):
-        '''Sets joint states of arm and gripper
-        '''
+        '''Sets joint states of arm and gripper'''
         for j_state, j_id in zip(joint_states, self.all_joint_ids):
             pb.resetJointState(self.robot_id,
                                j_id,
@@ -241,8 +315,7 @@ class MotionPlanner:
                                self._client)
 
     def get_client(self):
-        '''Returns pybullet client id used by simulator
-        '''
+        '''Returns pybullet client id used by simulator'''
         return self._client
 
     def _unpack_simulator_params(self):
