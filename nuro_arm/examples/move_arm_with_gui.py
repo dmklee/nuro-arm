@@ -1,8 +1,9 @@
 import numpy as np
-import sys
+import tkinter as tk
+import argparse
+
 from nuro_arm.robot.robot_arm import RobotArm
 from nuro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
-import tkinter as tk
 
 class GUI(tk.Frame):
     def __init__(self, parent, robot):
@@ -141,13 +142,13 @@ class GUI(tk.Frame):
         self.after(self.cycle_time, self.update)
 
 
-def move_with_gui():
+def move_with_gui(mode):
     '''Use GUI to control robot joints
 
     Currently, the gui issues direct commands without performing collision
     detection so the user should be careful about what is in the workplace
     '''
-    robot = RobotArm()
+    robot = RobotArm(mode)
 
     root = tk.Tk()
     root.title('Simple Control of Robot Joints')
@@ -156,5 +157,11 @@ def move_with_gui():
     root.mainloop()
 
 if __name__ == "__main__":
-    move_with_gui()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sim', action="store_true")
+    args = parser.parse_args()
+
+    mode = 'sim' if args.sim else 'real'
+
+    move_with_gui(mode)
 
