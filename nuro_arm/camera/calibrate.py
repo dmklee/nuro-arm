@@ -1,6 +1,7 @@
 import numpy as np
 
-from nuro_arm.camera.camera import Camera
+from nuro_arm import Camera
+from nuro_arm.constants import CAMERA_CONFIG_FILE
 from nuro_arm.camera.gui import ShowCheckerboard
 from nuro_arm.tk_utils import Popup, VideoPopup, ImagePopup, Colors
 
@@ -98,7 +99,7 @@ def calibrate_camera():
             'world2cam' : world2cam,
             'cam2world' : cam2world,
            }
-    np.save(camera.CONFIG_FILE, data)
+    np.save(CAMERA_CONFIG_FILE, data)
 
     popup = Popup(
         title='Success',

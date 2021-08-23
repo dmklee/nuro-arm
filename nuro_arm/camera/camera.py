@@ -6,11 +6,11 @@ import os
 import nuro_arm.transformation_utils as tfm
 from nuro_arm.camera import camera_utils
 from nuro_arm.camera.gui import GUI
-from nuro_arm.camera.capturer import Capturer
+from nuro_arm.camera.capturer import Capturer, SimCapturer
 import nuro_arm.constants as constants
 
 class Camera:
-    def __init__(self, camera_id=None):
+    def __init__(self, camera_type='real', camera_id=None):
         '''Changes video capture to a different camera id number
 
         Parameters
@@ -27,7 +27,10 @@ class Camera:
         gui : obj
             GUI instance used for plotting frames
         '''
-        self.cap = Capturer()
+        self.camera_type = camera_type
+        assert camera_type in ('real', 'sim'), \
+                'Invalid argument for camera_type'
+        self.cap = Capturer() if camera_type == 'real' else SimCapturer()
         self.gui = GUI(self.cap)
 
         self.load_configs()
@@ -103,20 +106,23 @@ class Camera:
                 4x4 transformation matrix that transforms homogeneous vector from
                 camera coordinate frame to world coordinate frame
         '''
+        if self.camera_type == 'sim':
+            print('WARNING: Calibration is not supported for simulated camera. '
+                  'Simulated cameras location must be set by user.')
+            return False, None
+
         gh, gw = constants.CALIBRATION_GRIDSHAPE
         gsize = constants.CALIBRATION_GRIDSIZE
 
         img = self.get_image()
         gray = camera_utils.convert_gray(img)
 
-        ret, corners = cv2.findChessboardCorners(gray,
-                                                (gh,gw),
-                                                None)
+        ret, corners = cv2.findChessboardCorners(gray, (gh, gw), None)
 
         if ret:
             # coordinates of grid corners in world coordinates
-            objp = np.zeros((gh*gw,3), np.float32)
-            objp[:,:2] = gsize * np.dstack(np.mgrid[1:-gw+1:-1,gh:0:-1]).reshape(-1,2)
+            objp = np.zeros((gh*gw, 3), np.float32)
+            objp[:, :2] = gsize * np.dstack(np.mgrid[1:gw+1, -1:gh-1]).reshape(-1, 2)
             objp += constants.TVEC_WORLD2RIGHTFOOT
 
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -130,6 +136,21 @@ class Camera:
             return True, (rvec, tvec, world2cam, cam2world)
 
         return False, None
+
+    def set_location(self, pose_mtx):
+        '''Set camera pose in world frame, only valid for simulated camera
+
+        Parameters
+        ----------
+        pose_mtx : array_like
+            4x4 pose matrix of camera in world frame
+        '''
+        if self.camera_type == 'real':
+            print("WARNING: Real camera's pose cannot be set by user.")
+            return
+
+        self._cap.view_mtx = np.array(pose_mtx).reshape(-1)
+        #TODO: reassign self._rvec, self._tvec
 
     def start_recording(self, duration):
         '''Starts recording on camera
@@ -208,14 +229,14 @@ class Camera:
 
     @property
     def configs(self):
-        return {'camera_id' : self._camera_id,
-                'rvec' : self._rvec,
-                'tvec' : self._tvec,
-                'world2cam' : self._world2cam,
-                'cam2world' : self._cam2world,
-                'mtx' : self._mtx,
+        return {'camera_id': self._camera_id,
+                'rvec': self._rvec,
+                'tvec': self._tvec,
+                'world2cam': self._world2cam,
+                'cam2world': self._cam2world,
+                'mtx': self._mtx,
                 'dist_coeffs': self._dist_coeffs,
-               }
+                }
 
     def get_image(self):
         '''Get frame from capturer

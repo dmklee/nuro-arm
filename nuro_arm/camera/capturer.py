@@ -4,7 +4,7 @@ import threading
 import time
 import pybullet as pb
 
-from nuro_arm.constants import FRAME_RATE
+from nuro_arm.constants import FRAME_RATE, DEFAULT_CAM_POSE_MTX
 
 class Capturer:
     def __init__(self):
@@ -59,7 +59,7 @@ class Capturer:
             self.stop_async()
 
         self._started = True
-        self._ret, self._frame = self._cap.read()
+        self._ret, self._frame = self._get_feed()
         self._img_shape = self._frame.shape
         self._recording = False
         self._record_buffer = None
@@ -74,7 +74,7 @@ class Capturer:
         '''Asynchronous reading of frames from camera, handles recording to buffer
         '''
         while self._started:
-            ret, frame = self._cap.read()
+            ret, frame = self._get_feed()
             with self._lock:
                 self._ret = ret
                 self._frame = frame
@@ -104,7 +104,6 @@ class Capturer:
                                        dtype=np.uint8)
         self._record_id = 0
 
-        time.sleep(5)# time.sleep(delay) delay wasn't defined
         with self._lock:
             self._recording = True
 
@@ -155,9 +154,12 @@ class Capturer:
                 ret = self._ret
                 frame = self._frame.copy()
         else:
-            ret, frame = self._cap.read()
+            ret, frame = self._get_feed()
 
         return frame if ret else None
+
+    def _get_feed(self):
+        return self._cap.read()
 
     def set_frame_rate(self, frame_rate):
         '''Changes frame rate used by asynchronous thread
@@ -192,20 +194,39 @@ class Capturer:
         self.release()
 
 class SimCapturer(Capturer):
-    #TODO: find a good abstraction to unite the interface of simulated and real camera
-    # i think we just need to create a simulator camera "cap" class that has method
-    # "read"
-    def __init__(self, pb_client):
+    def __init__(self, pb_client=0, run_async=True):
+        super().__init__()
         self._pb_client = pb_client
-        self.view_mtx = None
-        self.projection_mtx = None
+        self._img_width = 320
+        self._img_height = 240
 
-    def read(self):
-        img_width = 640
-        img_height = 480
-        return pb.getCameraImage(width=img_width,
-                                  height=img_height,
-                                  viewMatrix = self.view_mtx,
-                                  projectionMatrix=self.projection_mtx,
-                                  physicsClientId=self._pb_client
-                                 )[2]
+        self._view_mtx = pb.computeViewMatrixFromYawPitchRoll([0, 0, 0],
+                                                              1,
+                                                              30,
+                                                              -50,
+                                                              0,
+                                                              2)
+        self._proj_mtx = pb.computeProjectionMatrixFOV(40, 1, 0.1, 2)
+
+    def _get_feed(self):
+        ret = True
+        img = pb.getCameraImage(width=self._img_width,
+                                height=self._img_height,
+                                viewMatrix=self._view_mtx,
+                                projectionMatrix=self._proj_mtx,
+                                renderer=pb.ER_TINY_RENDERER,
+                                physicsClientId=self._pb_client
+                                )[2]
+        return ret, img
+
+    def set_camera_id(self, camera_id=0, run_async=True):
+        self.release()
+
+        if run_async:
+            self.start_async()
+        return True
+
+    def release(self):
+        '''Closes connection to current camera if it is open
+        '''
+        self.stop_async()
