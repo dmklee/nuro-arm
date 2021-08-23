@@ -146,6 +146,12 @@
           <cylinder radius="0.025" length="0.00451872"/>
         </geometry>
       </collision>
+      <collision name="hand-servo">
+        <origin xyz="-0.030 0.0 0.024" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.03 0.04 0.02"/>
+        </geometry>
+      </collision>
     </link>
 
     <link name="left_finger_base_link">

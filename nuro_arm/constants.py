@@ -4,15 +4,16 @@ import os
 import nuro_arm
 
 # all positional units are in meters, since this is the unit in the urdf
-TVEC_WORLD2RIGHTFOOT = np.array((0.0635, 0.091, 0.0))
+TVEC_WORLD2RIGHTFOOT = np.array((0.091, -0.0635, 0.0))
 
 CALIBRATION_GRIDSIZE = 0.020
-CALIBRATION_GRIDSHAPE = (7,9)
+CALIBRATION_GRIDSHAPE = (9,7)
 
 ARUCO_DICT = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
 ARUCO_PARAMS = cv2.aruco.DetectorParameters_create()
 
-URDF_DIR = os.path.join(os.path.dirname(nuro_arm.__file__), 'assets/urdf')
+URDF_DIR = os.path.join(os.path.dirname(nuro_arm.__file__),
+                        'assets/urdf')
 XARM_CONFIG_FILE = os.path.join(os.path.dirname(nuro_arm.__file__),
                                 'robot/configs.npy')
 CAMERA_CONFIG_FILE = os.path.join(os.path.dirname(nuro_arm.__file__),
@@ -37,10 +38,10 @@ CUBE_EDGES = ((0,1),(0,2),(0,4),(1,3),(1,5),(2,3),
 
 # used to place camera in simulator if not using real camera
 DEFAULT_CAM_POSE_MTX = np.array([
-    [ 8.71709181e-01, -3.97821192e-01,  2.86114320e-01, -9.75743393e-02],
-    [-4.90013665e-01, -7.03961344e-01,  5.14125504e-01, -3.05716144e-02],
-    [-3.1169991e-03, -5.88367848e-01, -8.08587387e-01, 2.56509223e-01],
-    [0., 0., 0., 1.0]
+    [-0.49600867, -0.68981786,  0.5273772 ,  0.00390031],
+    [-0.8682925 ,  0.39864808, -0.29520813,  0.08927076],
+    [-0.00659807, -0.60434346, -0.79669658,  0.25612385],
+    [0., 0., 0., 1.0],
 ])
 
 CAM_MTX = np.array([[652.31611616,   0.        , 313.14329843],
