@@ -2,7 +2,6 @@ import numpy as np
 import pybullet as pb
 import cv2
 import gym
-import time
 
 from nuro_arm import RobotArm, Camera, Cube
 
