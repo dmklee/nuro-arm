@@ -7,13 +7,13 @@ from nuro_arm import RobotArm, Camera, Cube
 
 
 class ImageBasedPickingEnv(gym.Env):
-    """OpenAI gym environment where the xArm must grasp the block which is located randomly in the workspace.
-    
-    Observation Space: An 80x80 grayscale image (each pixel is an unsigned int between 0 and 255)
-    Action Space: (x, y) position to grasp (x and y are both between 0 and 1)
-    Reward: 1 if the robot successfully grasps the block. Otherwise, 0
-    """
     def __init__(self, mode='sim', seed=None):
+        """OpenAI gym environment where the xArm must grasp the block which is located randomly in the workspace.
+
+        Observation Space: An 80x80 grayscale image (each pixel is an unsigned int between 0 and 255)
+        Action Space: (x, y) position to grasp (x and y are both between 0 and 1)
+        Reward: 1 if the robot successfully grasps the block. Otherwise, 0
+        """
         self.seed(seed)
 
         self.img_size = 80
@@ -73,7 +73,8 @@ class ImageBasedPickingEnv(gym.Env):
             done = True
         else:
             # end epsiode if cube is outside picking area
-            done = not self.action_space.contains(cube_position[:2])
+            done = np.bitwise_and(cube_position[:2] < self.workspace[0,:2],
+                                  cube_position[:2] > self.workspace[1,:2]).any()
         info = {}
 
         return obs, reward, done, info
