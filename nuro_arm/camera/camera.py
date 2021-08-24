@@ -16,6 +16,7 @@ class Camera:
                  camera_id=None,
                  pose_mtx=None,
                  free_floating=False,
+                 run_async=True,
                  pb_client=0):
         '''Camera class that controls real or simulated camera feed, and is
         calibrated to allow for conversion from pixel to cartesian space
@@ -78,11 +79,11 @@ class Camera:
         self._dist_coeffs = self.cap.dist_coeffs
         self.gui = GUI(self.cap)
 
-        if not self.connect():
+        if not self.connect(run_async):
             print(f'[ERROR] Failed to connect to camera{camera_id}.')
 
 
-    def connect(self):
+    def connect(self, run_async):
         '''Sets up connection to camera
 
         Returns
@@ -90,7 +91,7 @@ class Camera:
         bool
             True if connection was successful, False otherwise
         '''
-        is_connected = self.cap.set_camera_id(self._camera_id)
+        is_connected = self.cap.set_camera_id(self._camera_id, run_async)
         return is_connected
 
     def change_camera_id(self, cam_id):
