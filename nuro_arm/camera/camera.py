@@ -344,6 +344,28 @@ class Camera:
 
         return cam_pos, cam_quat, rod_pos, rod_quat
 
+    def find_cubes(self, cube_size=None, tag_size=None):
+        '''Identify cubes in image, given that an Aruco tag is located in the
+        center of one of its visible faces.
+
+        Parameters
+        ----------
+        tag_size: float, optional
+            Size of aruco tag in meters.  If not provided, the default value
+            from `nuro_arm.constants` will be used.
+        cube_size: float, optional
+            Side length of cube in meters.  If not provided, the default value
+            from `nuro_arm.constants` will be used.
+
+        Returns
+        -------
+        list
+            List of ArucoCube namedtuples, see `nuro_arm/camera/camera_utils.py`
+        '''
+        img = self.get_image()
+        return camera_utils.find_cubes(img, self._mtx, self._dist_coeffs,
+                                       self._cam2world, cube_size, tag_size)
+
     def get_pb_client(self):
         return self._pb_client
 

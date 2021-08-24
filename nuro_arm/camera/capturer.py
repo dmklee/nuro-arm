@@ -7,6 +7,7 @@ import pybullet as pb
 from nuro_arm.constants import FRAME_RATE, DEFAULT_CAM_POSE_MTX, CAM_MTX, CAM_DIST_COEFFS
 from nuro_arm.transformation_utils import invert_transformation, coord_transform
 
+
 class Capturer:
     def __init__(self, img_width=640, img_height=480):
         '''Class to allow asynchronous video capture from camera
@@ -213,7 +214,7 @@ class Capturer:
 
 class SimCapturer(Capturer):
     def __init__(self, img_width=320, img_height=240, fov=50,
-                 pose_mtx=None, pb_client=0):
+                 view_mtx=None, pb_client=0):
         '''Class to allow asynchronous video capture within pybullet simulator
 
         Parameters
@@ -225,10 +226,10 @@ class SimCapturer(Capturer):
         fov : float, default to 50
             Field of view in degrees in horizontal direction, fov in vertical
             direction is calculated based on img_width & img_height
-        pose_mtx : array_like, optional
-            4x4 pose matrix that describes location of camera in world frame.
-            If not provided, the default camera pose (from nuro_arm.constants
-            will be used)
+        view_mtx : array_like, optional
+            4x4 view matrix that describes location of camera in world frame.
+            If not provided, the default camera pose (from nuro_arm.constants)
+            will be used
         pb_client : int, default to 0
             Physics Client ID describing which simulator the camera exists
             within.  If you are only using one simulator, you can leave as
@@ -244,20 +245,20 @@ class SimCapturer(Capturer):
         Parameters
         ----------
         pose_mtx : array_like, optional
-            4x4 pose matrix that describes location of camera in world frame.
-            If not provided, the default camera pose (from nuro_arm.constants
-            will be used)
+            4x4 pose matrix that describes location of
+            camera in world frame.  If not provided, the default camera pose
+            (from nuro_arm.constants) will be used
         '''
         if pose_mtx is None:
             print('[WARNING:] no pose matrix specified for simulated camera. '
                   'Camera will be placed in default location.')
             pose_mtx = DEFAULT_CAM_POSE_MTX
 
-        vecs = np.array(((0,0,0),(0,0,1), (0,-1,0)))
+        vecs = np.array(((0,0,0), (0,0,1), (0,-1,0)))
         eye_pos, target_pos, up_vec = coord_transform(pose_mtx, vecs)
-        self._view_mtx = pb.computeViewMatrix(eye_pos,
-                                              target_pos,
-                                              up_vec)
+        view_mtx = pb.computeViewMatrix(eye_pos, target_pos, up_vec)
+
+        self._view_mtx = view_mtx
 
     def set_fov(self, fov):
         '''Change camera's field of view

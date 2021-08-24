@@ -10,6 +10,7 @@ ArucoCube = namedtuple('ArucoCube', ['id_', 'pos', 'euler', 'vertices'])
 
 # face_detector = cv2.CascadeClassifier('nuro_arm/camera/haarcascade_frontalface_default.xml')
 
+
 def find_face(img):
     '''Detects location of face in image
 

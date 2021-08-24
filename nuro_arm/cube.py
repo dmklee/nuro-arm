@@ -10,12 +10,12 @@ class Cube:
     def __init__(self,
                  pos,
                  rot=[0,0,0,1],
-                 size_mm=25,
+                 size=0.025,
                  pb_client=0,
                  tag_id=None,
                  rgba=(0,1,0,1)
                 ):
-        self.size = size_mm/1000.
+        self.size = size
         self.client = pb_client
 
         cube_urdf_path = os.path.join(URDF_DIR, 'cube.urdf')
