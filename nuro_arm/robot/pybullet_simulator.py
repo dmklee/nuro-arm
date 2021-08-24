@@ -36,8 +36,6 @@ class PybulletSimulator:
         gripper_opened : ndarray
             joint positions of gripper joints that result in opened gripper in
             the simulator; shape = (2,); dtype=float
-        camera_exists : bool
-            True if camera collision object has been added to simulator
         '''
         self.arm_joint_ids = [1,2,3,4,5]
         self.gripper_joint_ids = [6,7]
@@ -80,8 +78,6 @@ class PybulletSimulator:
         self.joint_ll = np.array(self.joint_ll)
         self.joint_ul = np.array(self.joint_ul)
 
-        self.camera_exists = False
-
     def _initialize_client(self, connection_mode):
         '''Creates pybullet simulator and loads world plane.
 
@@ -105,7 +101,7 @@ class PybulletSimulator:
 
         # this path is where we find platform
         pb.setAdditionalSearchPath(pybullet_data.getDataPath())
-        self.plane_id = pb.loadURDF('plane.urdf', [0,0.5,0],
+        self.plane_id = pb.loadURDF('plane.urdf', [0,-0.5,0],
                                     physicsClientId=client)
         pb.changeDynamics(self.plane_id, -1,
                           linearDamping=0.04,
@@ -236,65 +232,6 @@ class PybulletSimulator:
                                            physicsClientId=self._client)
         self.base_pos = pos
         self.base_rot = rot
-
-    def add_camera(self, pose_mtx):
-        '''Adds or moves collision object to simulator where camera is located.
-
-        Currently, this assumes the camera is located to the left of the robot
-        (from the pov of the robot). Future version could correct for this by
-        checking the translation vector component of pose matrix
-
-        Parameters
-        ----------
-        pose_mtx: ndarray
-            Transformation matrix from world frame to camera frame; shape=(4,4);
-            dtype=float
-        '''
-        cam_pos, cam_quat, rod_pos, rod_quat = self._unpack_camera_pose(pose_mtx)
-        if self.camera_exists:
-            print('Camera already detected. Existing camera will be re-positioned.')
-            pb.resetBasePositionAndOrientation(self.camera_id, cam_pos, cam_quat,
-                                               physicsClientId=self._client)
-            pb.resetBasePositionAndOrientation(self.rod_id, rod_pos, rod_quat,
-                                               physicsClientId=self._client)
-        else:
-            camera_urdf_path = os.path.join(constants.URDF_DIR, 'camera.urdf')
-            rod_urdf_path = os.path.join(constants.URDF_DIR, 'camera_rod.urdf')
-            self.camera_id = pb.loadURDF(camera_urdf_path, cam_pos, cam_quat,
-                                         physicsClientId=self._client)
-            self.rod_id = pb.loadURDF(rod_urdf_path, rod_pos, rod_quat,
-                                      physicsClientId=self._client)
-
-    def _unpack_camera_pose(self, cam_pose_mtx):
-        '''Get params for positioning camera and rod based on pose of camera
-
-        Parameters
-        ----------
-        cam_pose_mtx: ndarray
-            Transformation matrix from world frame to camera frame; shape=(4,4);
-            dtype=float
-
-        Returns
-        -------
-        cam_pos : array_like
-            3d postion vector of camera body
-        cam_quat : array_like
-            quaternion of camera body
-        rod_pos : array_like
-            3d postion vector of rod body
-        rod_quat : array_like
-            quaternion of rod body
-        '''
-        cam_pos = cam_pose_mtx[:3,3]
-        cam_rotmat = cam_pose_mtx[:3,:3]
-        cam_quat = pb.getQuaternionFromEuler(transformation_utils.rotmat2euler(cam_rotmat))
-
-        rod_offset_vec = np.array((0.026, -0.012, -0.013))
-        rod_pos = cam_pos + np.dot(cam_rotmat, rod_offset_vec)
-        rod_pos[2] = 0
-        rod_quat = (0,0,0,1)
-
-        return cam_pos, cam_quat, rod_pos, rod_quat
 
     def close(self):
         pb.disconnect(self._client)

@@ -1,4 +1,5 @@
 import numpy as np
+import pybullet as pb
 import cv2
 import time
 import os
@@ -7,18 +8,42 @@ import nuro_arm.transformation_utils as tfm
 from nuro_arm.camera import camera_utils
 from nuro_arm.camera.gui import GUI
 from nuro_arm.camera.capturer import Capturer, SimCapturer
-import nuro_arm.constants as constants
+from nuro_arm import constants
 
 class Camera:
-    def __init__(self, camera_type='real', camera_id=None):
-        '''Changes video capture to a different camera id number
+    def __init__(self,
+                 camera_type='real',
+                 camera_id=None,
+                 pose_mtx=None,
+                 free_floating=False,
+                 pb_client=0):
+        '''Camera class that controls real or simulated camera feed, and is
+        calibrated to allow for conversion from pixel to cartesian space
 
         Parameters
         ----------
-        camera_id: int, optional
+        camera_type : str, default to 'real'
+            Whether to connect to a image feed from a real or simulated camera.
+            Must be either 'real' or 'sim'
+        camera_id : int, optional
             Camera number to read frames from.  The default value is None,
             meaning that the camera number will be taken from the config file.
-            Use this parameter to override the config file
+            Use this parameter to override the config file.  This is **not**
+            used for simulated camera
+        pose_mtx : array_like, optional
+            4x4 Transformation matrix describing pose of camera in base frame.
+            Only used for simulated camera; for real camera, pose is calculated
+            during calibration.  If not provided, then the default camera
+            pose from `nuro_arm.constants` is used.
+        free_floating : bool, default to False
+            If True, then the collision objects of the camera and camera stand
+            are not added to simulator.  This can be used for a real or simulated
+            camera, and will impact collision detection by the robot.  Only set to
+            False if the camera is well out of range of arm.
+        pb_client : int, optional
+            Physics client id number in which the camera will be placed.  This is
+            used even for real camera, where it controls which simulator the
+            collision objects are added to.
 
         Attributes
         ----------
@@ -27,22 +52,35 @@ class Camera:
         gui : obj
             GUI instance used for plotting frames
         '''
+        self._camera_id = 0
+        self._pb_client = pb_client
+
+        self.free_floating = free_floating
+        self.camera_collision_obj = None
+        self.rod_collision_obj = None
+
         self.camera_type = camera_type
-        assert camera_type in ('real', 'sim'), \
-                'Invalid argument for camera_type'
-        self.cap = Capturer() if camera_type == 'real' else SimCapturer()
+        assert camera_type in ('real', 'sim'), 'Invalid argument for camera_type'
+        if camera_type == 'real':
+            self.cap = Capturer()
+            self.load_configs()
+            # override camera_id config
+            if camera_id is not None:
+                self._camera_id = camera_id
+            self.add_collision_objects()
+        else:
+            self.cap = SimCapturer()
+            if pose_mtx is None:
+                pose_mtx = constants.DEFAULT_CAM_POSE_MTX
+            self.set_location(pose_mtx)
+
+        self._mtx = self.cap.camera_mtx
+        self._dist_coeffs = self.cap.dist_coeffs
         self.gui = GUI(self.cap)
 
-        self.load_configs()
-
-        # override camera_id config
-        if camera_id is not None:
-            self._camera_id = camera_id
-
-        is_connected = self.connect()
-        if not is_connected:
+        if not self.connect():
             print(f'[ERROR] Failed to connect to camera{camera_id}.')
-            return
+
 
     def connect(self):
         '''Sets up connection to camera
@@ -107,7 +145,7 @@ class Camera:
                 camera coordinate frame to world coordinate frame
         '''
         if self.camera_type == 'sim':
-            print('WARNING: Calibration is not supported for simulated camera. '
+            print('[WARNING:] Calibration is not supported for simulated camera. '
                   'Simulated cameras location must be set by user.')
             return False, None
 
@@ -146,11 +184,42 @@ class Camera:
             4x4 pose matrix of camera in world frame
         '''
         if self.camera_type == 'real':
-            print("WARNING: Real camera's pose cannot be set by user.")
+            print("[WARNING:] Real camera's pose cannot be set by user.")
             return
 
-        self._cap.view_mtx = np.array(pose_mtx).reshape(-1)
-        #TODO: reassign self._rvec, self._tvec
+        self.cap.set_pose_mtx(pose_mtx)
+        self._cam2world = pose_mtx
+        self._world2cam = tfm.invert_transformation(pose_mtx)
+        self._rvec = tfm.rotmat2rodrigues(self._world2cam[:3,:3])
+        self._tvec = self._world2cam[:3,3].reshape(3,1)
+
+        # update collision object location
+        self.add_collision_objects()
+
+    def add_collision_objects(self):
+        if self.free_floating:
+            return
+
+        self.remove_collision_objects()
+
+        cam_pos, cam_quat, rod_pos, rod_quat = self._unpack_camera_pose(self._cam2world)
+
+        camera_urdf_path = os.path.join(constants.URDF_DIR, 'camera.urdf')
+        rod_urdf_path = os.path.join(constants.URDF_DIR, 'camera_rod.urdf')
+        self.camera_collision_obj = pb.loadURDF(camera_urdf_path, cam_pos, cam_quat,
+                                                physicsClientId=self._pb_client)
+        self.rod_collision_obj = pb.loadURDF(rod_urdf_path, rod_pos, rod_quat,
+                                             physicsClientId=self._pb_client)
+
+    def remove_collision_objects(self):
+        if self.camera_collision_obj is not None:
+            pb.removeBody(self.camera_collision_obj,
+                          physicsClientId=self._pb_client)
+            self.camera_collision_obj = None
+        if self.rod_collision_obj is not None:
+            pb.removeBody(self.rod_collision_obj,
+                          physicsClientId=self._pb_client)
+            self.rod_collision_obj = None
 
     def start_recording(self, duration):
         '''Starts recording on camera
@@ -207,10 +276,6 @@ class Camera:
         bool
             True if configs were loaded succesfully, False otherwise
         '''
-        self._mtx = constants.CAM_MTX
-        self._dist_coeffs = constants.CAM_DIST_COEFFS
-        self._camera_id = 0
-
         if os.path.exists(constants.CAMERA_CONFIG_FILE):
             data = np.load(constants.CAMERA_CONFIG_FILE, allow_pickle=True).item()
             try:
@@ -227,6 +292,16 @@ class Camera:
               ' Calibration should be performed.')
         return False
 
+    def get_image(self):
+        '''Get frame from capturer
+
+        Returns
+        -------
+        img : ndarray
+        '''
+        img = self.cap.read()
+        return img
+
     @property
     def configs(self):
         return {'camera_id': self._camera_id,
@@ -238,15 +313,39 @@ class Camera:
                 'dist_coeffs': self._dist_coeffs,
                 }
 
-    def get_image(self):
-        '''Get frame from capturer
+    def _unpack_camera_pose(self, pose_mtx):
+        '''Get params for positioning camera and rod based on pose of camera
+
+        Parameters
+        ----------
+        pose_mtx: ndarray
+            Transformation matrix from world frame to camera frame; shape=(4,4);
+            dtype=float
 
         Returns
         -------
-        img : ndarray
+        cam_pos : array_like
+            3d postion vector of camera body
+        cam_quat : array_like
+            quaternion of camera body
+        rod_pos : array_like
+            3d postion vector of rod body
+        rod_quat : array_like
+            quaternion of rod body
         '''
-        img = self.cap.read()
-        return img
+        cam_pos = pose_mtx[:3,3]
+        cam_rotmat = pose_mtx[:3,:3]
+        cam_quat = pb.getQuaternionFromEuler(tfm.rotmat2euler(cam_rotmat))
+
+        rod_offset_vec = np.array((0.026, -0.012, -0.013))
+        rod_pos = cam_pos + np.dot(cam_rotmat, rod_offset_vec)
+        rod_pos[2] = 0
+        rod_quat = (0,0,0,1)
+
+        return cam_pos, cam_quat, rod_pos, rod_quat
+
+    def get_pb_client(self):
+        return self._pb_client
 
     def __call__(self):
         return self.get_image()

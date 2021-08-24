@@ -4,16 +4,26 @@ import threading
 import time
 import pybullet as pb
 
-from nuro_arm.constants import FRAME_RATE, DEFAULT_CAM_POSE_MTX
+from nuro_arm.constants import FRAME_RATE, DEFAULT_CAM_POSE_MTX, CAM_MTX, CAM_DIST_COEFFS
+from nuro_arm.transformation_utils import invert_transformation, coord_transform
 
 class Capturer:
-    def __init__(self):
+    def __init__(self, img_width=640, img_height=480):
         '''Class to allow asynchronous video capture from camera
+
+        Parameters
+        ----------
+        img_width : int, default to 640
+            Width of image to be captured in number of pixels
+        img_height : int, default to 480
+            Height of image to be captured in number of pixels
         '''
         self._lock = threading.Lock()
         self._started = False
         self._frame_rate = FRAME_RATE
         self._cap = None
+        self._img_width = img_width
+        self._img_height = img_height
 
     def set_camera_id(self, camera_id, run_async=True):
         '''Changes video capture to a different camera id number
@@ -42,8 +52,8 @@ class Capturer:
 
         self._camera_id = camera_id
         self._cap = cv2.VideoCapture(camera_id)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self._img_width)
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self._img_height)
         connected = self._cap.isOpened()
         if connected and run_async:
             self.start_async()
@@ -180,6 +190,14 @@ class Capturer:
             self._recording = False
             self.thread.join()
 
+    @property
+    def camera_mtx(self):
+        return CAM_MTX
+
+    @property
+    def dist_coeffs(self):
+        return CAM_DIST_COEFFS
+
     def __call__(self):
         return self.read()
 
@@ -194,19 +212,64 @@ class Capturer:
         self.release()
 
 class SimCapturer(Capturer):
-    def __init__(self, pb_client=0, run_async=True):
-        super().__init__()
-        self._pb_client = pb_client
-        self._img_width = 320
-        self._img_height = 240
+    def __init__(self, img_width=320, img_height=240, fov=50,
+                 pose_mtx=None, pb_client=0):
+        '''Class to allow asynchronous video capture within pybullet simulator
 
-        self._view_mtx = pb.computeViewMatrixFromYawPitchRoll([0, 0, 0],
-                                                              1,
-                                                              30,
-                                                              -50,
-                                                              0,
-                                                              2)
-        self._proj_mtx = pb.computeProjectionMatrixFOV(40, 1, 0.1, 2)
+        Parameters
+        ----------
+        img_width : int, default to 640
+            Width of image to be captured in number of pixels
+        img_height : int, default to 480
+            Height of image to be captured in number of pixels
+        fov : float, default to 50
+            Field of view in degrees in horizontal direction, fov in vertical
+            direction is calculated based on img_width & img_height
+        pose_mtx : array_like, optional
+            4x4 pose matrix that describes location of camera in world frame.
+            If not provided, the default camera pose (from nuro_arm.constants
+            will be used)
+        pb_client : int, default to 0
+            Physics Client ID describing which simulator the camera exists
+            within.  If you are only using one simulator, you can leave as
+            default.
+        '''
+        super().__init__(img_width, img_height)
+        self.set_fov(fov)
+        self._pb_client = pb_client
+
+    def set_pose_mtx(self, pose_mtx=None):
+        '''Re-position camera in simulator
+
+        Parameters
+        ----------
+        pose_mtx : array_like, optional
+            4x4 pose matrix that describes location of camera in world frame.
+            If not provided, the default camera pose (from nuro_arm.constants
+            will be used)
+        '''
+        if pose_mtx is None:
+            print('[WARNING:] no pose matrix specified for simulated camera. '
+                  'Camera will be placed in default location.')
+            pose_mtx = DEFAULT_CAM_POSE_MTX
+
+        vecs = np.array(((0,0,0),(0,0,1), (0,-1,0)))
+        eye_pos, target_pos, up_vec = coord_transform(pose_mtx, vecs)
+        self._view_mtx = pb.computeViewMatrix(eye_pos,
+                                              target_pos,
+                                              up_vec)
+
+    def set_fov(self, fov):
+        '''Change camera's field of view
+
+        Parameters
+        ----------
+        fov : float, default to 50
+            Field of view in degrees
+        '''
+        self._fov = fov
+        aspect = self._img_width/self._img_height
+        self._proj_mtx = pb.computeProjectionMatrixFOV(fov, aspect, 0.05, 2)
 
     def _get_feed(self):
         ret = True
@@ -216,7 +279,8 @@ class SimCapturer(Capturer):
                                 projectionMatrix=self._proj_mtx,
                                 renderer=pb.ER_TINY_RENDERER,
                                 physicsClientId=self._pb_client
-                                )[2]
+                                )[2][...,:3]
+
         return ret, img
 
     def set_camera_id(self, camera_id=0, run_async=True):
@@ -225,6 +289,23 @@ class SimCapturer(Capturer):
         if run_async:
             self.start_async()
         return True
+
+    @property
+    def camera_mtx(self):
+        fov_radians = np.radians(self._fov)
+        aspect = self._img_width/self._img_height
+
+        mtx = np.zeros((3,3))
+        mtx[0,0] = 0.5 * self._img_height / np.tan(fov_radians/2)
+        mtx[1,1] = 0.5 * self._img_width / np.tan(aspect * fov_radians/2)
+        mtx[0,2] = self._img_width / 2
+        mtx[1,2] = self._img_height / 2
+        mtx[2,2] = 1
+        return mtx
+
+    @property
+    def dist_coeffs(self):
+        return np.zeros((1,5))
 
     def release(self):
         '''Closes connection to current camera if it is open

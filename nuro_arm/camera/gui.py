@@ -107,28 +107,35 @@ class ImageModifierFunction:
         '''
         return canvas
 
+
 class ShowCubes(ImageModifierFunction):
-    def __init__(self, cam_configs, include_id=False):
+    def __init__(self, cam_configs, cube_size=None,
+                 tag_size=None, include_id=False):
         super().__init__(cam_configs)
         self.include_id = include_id
+        self.cube_size = cube_size
+        self.tag_size = tag_size
 
-    def __call__(self, canvas, original):
+    def __call__(self, original, canvas=None):
         '''Draws wireframe models for all cubes detected in the image via
         aruco tag detection
         '''
+        if canvas is None:
+            canvas = np.array(original)
+
         cubes = camera_utils.find_cubes(original,
-                                     self.cam_configs['mtx'],
-                                     self.cam_configs['dist_coeffs'],
-                                     self.cam_configs['cam2world'],
-                                     )
+                                        self.cam_configs['mtx'],
+                                        self.cam_configs['dist_coeffs'],
+                                        self.cam_configs['cam2world'],
+                                        )
 
         for cube in cubes:
             vert_px = camera_utils.project_to_pixels(cube.vertices,
-                                        self.cam_configs['rvec'],
-                                        self.cam_configs['tvec'],
-                                        self.cam_configs['mtx'],
-                                        self.cam_configs['dist_coeffs'],
-                                       ).astype(int)
+                                                     self.cam_configs['rvec'],
+                                                     self.cam_configs['tvec'],
+                                                     self.cam_configs['mtx'],
+                                                     self.cam_configs['dist_coeffs'],
+                                                    ).astype(int)
 
             for a, b in constants.CUBE_EDGES:
                 canvas = cv2.line(canvas, tuple(vert_px[a]), tuple(vert_px[b]),
@@ -137,29 +144,36 @@ class ShowCubes(ImageModifierFunction):
             if self.include_id:
                 text_org = tuple(np.mean(vert_px, axis=0).astype(int))
                 canvas = cv2.putText(canvas, str(cube.id_),
-                                    org=text_org,
-                                    fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                                    fontScale=0.8,
-                                    thickness=2,
-                                    color=(0, 0, 255)
-                                    )
+                                     org=text_org,
+                                     fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                                     fontScale=0.8,
+                                     thickness=2,
+                                     color=(0, 0, 255))
 
         return canvas
 
 class ShowArucoTags(ImageModifierFunction):
-    def __call__(self, original, canvas):
+    def __init__(self, cam_configs, tag_size=None):
+        super().__init__(cam_configs)
+        self.tag_size = tag_size
+
+    def __call__(self, original, canvas=None):
         '''Draws tag outlines and ids for all aruco tags detected in the image
         '''
+        if canvas is None:
+            canvas = np.array(original)
         tags = camera_utils.find_arucotags(original,
-                                        self.cam_configs['mtx'],
-                                        self.cam_configs['dist_coeffs'],
-                                       )
+                                           self.cam_configs['mtx'],
+                                           self.cam_configs['dist_coeffs'],
+                                           tag_size=self.tag_size
+                                          )
         for tag in tags:
             for c_id in range(4):
                 canvas = cv2.line(canvas,
                                   tuple(tag.corners[c_id-1].astype(int)),
                                   tuple(tag.corners[c_id].astype(int)),
-                                  (0, 255, 0)
+                                  (0, 0, 255),
+                                  thickness=2,
                                  )
 
             text_org = tuple(np.mean(tag.corners, axis=0).astype(int))
@@ -167,13 +181,15 @@ class ShowArucoTags(ImageModifierFunction):
                                 org=text_org,
                                 fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                                 fontScale=0.5,
-                                thickness=1,
-                                color=(0, 0, 255)
+                                thickness=2,
+                                color=(255, 0, 255)
                                 )
         return canvas
 
 class ShowFace(ImageModifierFunction):
-    def __call__(self, original, canvas):
+    def __call__(self, original, canvas=None):
+        if canvas is None:
+            canvas = np.array(original)
         # highlight center of image
         cx = int(original.shape[1]/2)
         cy = int(original.shape[0]/2)

@@ -6,9 +6,9 @@ import nuro_arm.constants as constants
 import nuro_arm.transformation_utils as tfm
 
 ArucoTag = namedtuple('ArucoTag', ['id_', 'corners', 'tag2cam'])
-Cube = namedtuple('Cube', ['id_', 'pos', 'euler', 'vertices'])
+ArucoCube = namedtuple('ArucoCube', ['id_', 'pos', 'euler', 'vertices'])
 
-face_detector = cv2.CascadeClassifier('nuro_arm/camera/haarcascade_frontalface_default.xml')
+# face_detector = cv2.CascadeClassifier('nuro_arm/camera/haarcascade_frontalface_default.xml')
 
 def find_face(img):
     '''Detects location of face in image
@@ -44,7 +44,7 @@ def find_face(img):
     x,y,w,h = faces[max_id]
     return int(x+w/2), int(y+h/2), w, h
 
-def find_arucotags(img, cam_mtx, dist_coeffs):
+def find_arucotags(img, cam_mtx, dist_coeffs, tag_size=None):
     '''Locates aruco tags in image, recording info on ID, corner pixels, and tag pose
 
     Parameters
@@ -65,15 +65,15 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
     #TODO: alert if multiple of the same tag ids are detected as this may mess
     # up further processing
     gray = convert_gray(img)
-    corners, ids, rejected = cv2.aruco.detectMarkers(
-                                gray,
-                                constants.aruco_dict,
-                                parameters=constants.aruco_params,
-                            )
+    corners, ids, rejected = cv2.aruco.detectMarkers(gray,
+                                                     constants.ARUCO_DICT,
+                                                     parameters=constants.ARUCO_PARAMS,
+                                                    )
     if ids is None:
         return []
 
-    tag_size = constants.tag_size
+    if tag_size is None:
+        tag_size = constants.TAG_SIZE
     rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, tag_size,
                                                           cam_mtx, dist_coeffs)
     tags = []
@@ -86,7 +86,7 @@ def find_arucotags(img, cam_mtx, dist_coeffs):
 
     return tags
 
-def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
+def find_cubes(img, cam_mtx, dist_coeffs, cam2world, cube_size=None, tag_size=None):
     '''Locates cubes in image by detecting aruco tags
 
     Because the tag consists of 4 coplanar points, the P2P calculation to determine
@@ -114,20 +114,20 @@ def find_cubes(img, cam_mtx, dist_coeffs, cam2world):
     Returns
     -------
     namedtuple
-        Cubes with fields: id_ (int), pos (ndarray;shape=(3,);dtype=float),
+        ArucoCubes with fields: id_ (int), pos (ndarray;shape=(3,);dtype=float),
         euler (ndarray; shape=(3,);dtype=float), vertices (ndarray; shape=(8,3);
         dtype=float.
     '''
-    tags = find_arucotags(img, cam_mtx, dist_coeffs)
+    tags = find_arucotags(img, cam_mtx, dist_coeffs, tag_size)
 
     cubes = []
 
     for tag in tags:
-        cubes.append(convert_tag_to_cube(tag, cam2world))
+        cubes.append(convert_tag_to_cube(tag, cam2world, cube_size))
 
     return cubes
 
-def convert_tag_to_cube(tag, cam2world):
+def convert_tag_to_cube(tag, cam2world, cube_size=None):
     '''Uses coordinate transform to calculate cube properties from detected tag
 
     Parameters
@@ -141,19 +141,23 @@ def convert_tag_to_cube(tag, cam2world):
     Returns
     -------
     namedtuple
-        Cube
+        ArucoCube
     '''
     shift_center_mat = np.array(((1,0,0,0),
                                  (0,1,0,0),
-                                 (0,0,1,-0.5*constants.cube_size),
+                                 (0,0,1,-0.5*constants.CUBE_SIZE),
                                  (0,0,0,1)))
     cube2cam = np.dot(tag.tag2cam, shift_center_mat)
     cube2world = np.dot(cam2world, cube2cam)
 
-    cube = Cube(id_=tag.id_,
+    if cube_size is None:
+        cube_size = constants.CUBE_SIZE
+    cube_vertices = tfm.coord_transform(cube2world,
+                                        cube_size * constants.NORM_CUBE_VERTICES)
+    cube = ArucoCube(id_=tag.id_,
                 pos=cube2world[:3,3],
                 euler=tfm.rotmat2euler(cube2world[:3,:3]),
-                vertices=tfm.coord_transform(cube2world, constants.cube_vertices)
+                vertices=cube_vertices,
                )
 
     return cube
@@ -239,7 +243,7 @@ def convert_gray(img):
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
 def calc_distortion_matrix(imgs=None, verbose=True):
-    GW, GH = constants.calibration_gridshape
+    GW, GH = constants.CALIBRATION_GRIDSHAPE
     grid_size = constants.calibration_gridsize
     objp = np.zeros((GW*GH,3), np.float32)
     objp[:,:2] = grid_size * np.mgrid[0:GW,0:GH].T.reshape(-1,2)

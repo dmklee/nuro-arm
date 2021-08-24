@@ -1,5 +1,8 @@
 import numpy as np
 import cv2
+from scipy.spatial.transform import Rotation
+
+#TODO: substitute functionality from scipy where available
 
 def rvec2euler(rvec):
     '''Converts rotation vector (Rodrigues) to euler angles
@@ -70,6 +73,10 @@ def transformation_matrix(rvec, tvec):
     mat[:3,:3] = cv2.Rodrigues(rvec)[0]
     mat[3,3] = 1
     return mat
+
+def rotmat2rodrigues(rotmat):
+    r = Rotation.from_matrix(rotmat)
+    return r.as_rotvec().reshape(3,1)
 
 def inverse_transformation_matrix(rvec, tvec):
     mat = np.zeros((4,4))

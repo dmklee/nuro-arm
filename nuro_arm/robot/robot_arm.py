@@ -248,12 +248,6 @@ class RobotArm:
         rot = rot.as_quat()
         pass
 
-    def hand_rot_from_quat(self, quat):
-        pass
-
-    def get_pb_client(self):
-        return self._sim._client
-
     def mirror_planner(self):
         if self.controller_type == 'real':
             self.mp.mirror(arm_jpos=self.get_arm_jpos(),

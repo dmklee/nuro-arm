@@ -96,7 +96,9 @@ class Cube:
         tag_size = tag.shape[0]
         texture_img = np.zeros((4*tag_size, 4*tag_size,3),dtype=np.uint8)
         texture_img[...,:] = [255*c for c in rgba[:3]]
-        texture_img[-tag_size:, -tag_size:,:] = tag[...,np.newaxis]
+
+        # flip image so aruco tag appears properly
+        texture_img[-tag_size:, -tag_size:,:] = tag[::-1,:,np.newaxis]
 
         img = Image.fromarray(texture_img, mode="RGB")
         tmp_fname = f'tmp_cube_tex{tag_id}.png'
