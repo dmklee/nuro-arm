@@ -11,7 +11,7 @@ class RobotArm:
     def __init__(self,
                  controller_type='real',
                  headless=True,
-                 realtime=True,
+                 realtime=False,
                  workspace=None,
                  pb_client=None,
                  serial_number=None,
