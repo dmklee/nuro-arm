@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Platform | NURO Arm</title>
+	<link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script>
+	  $(function(){
+		$("#header").load("header.html");
+		$("#footer").load("footer.html");
+	  });
+	</script>
+  </head>
+  <body>
+	  <div id="header"></div>
+
+	  <div class="row black-bg">
+		<div class="container">
+		  <p class="big-title center-aligned white-text">Capable and Low-Cost Platform</p>
+		  <p class="body center-aligned white-text">
+			  At about $250 per kit, exploring topics in robotic manipulation has never been more accessible.  Despite the low price point, the robot kit is highly capable, offering accurate positional control, five degrees of freedom, and visual feedback.  The arm is modeled in a virtual  simulator, providing more advanced features like inverse kinematics and obstacle avoidance.
+		  </p>
+	    </div>
+	  </div>
+
+	  <div class="row white-bg">
+		<div class="columned" style="max-width:1200px">
+		  <div class="vsplit">
+			<div id="robot-kit" class="container">
+			  <p class="big-title red-text center-aligned">Robot Kit</p> 
+			  <p class="body center-aligned">
+			  The robot kit is built around the <a class="black-text" href="https://www.hiwonder.hk/products/xarm-hiwonder-intelligent-bus-servo-robotic-arm-for-programming">Hiwonder xArm</a>, which provides 5-DoF grasping capabilities.  Coupled with a camera to locate nearby objects, the learning opportunities are endless. With our Python library that exposes high level motion primitives, complex manipulation tasks can be performed with only a few lines.
+			  </p> 
+			  <div style="display:flex;justify-content:center;padding-top:20px">
+			    <a class="button red-to-white-button" href="https://github.com/dmklee/nuro-arm/blob/main/assembly_guide.md">View Parts List</a>
+			  </div>
+			</div>
+		  </div>
+		  <div class="vsplit">
+			<div style="display:flex;align-items:center;justify-content:center">
+			  <img class="shadowed" src="images/kit-parts.jpg"
+				style="object-fit:contain;width:260px;height:auto;margin:30px;border-radius:24px;overflow:hidden">
+			</div>
+		  </div>
+		</div>
+	  </div>
+
+	  <div class="row black-bg white-text">
+		<div class="columned" style="max-width:1200px; flex-wrap : wrap-reverse;">
+		  <div class="vsplit">
+			<div style="display:flex;align-items:center;justify-content:center">
+			  <img class="shadowed" src="images/simulator.png"
+				style="object-fit:contain;width:260px;height:auto;margin:30px;border-radius:24px;overflow:hidden">
+			</div>
+		  </div>
+		  <div class="vsplit">
+			<div id="simulator" class="container">
+			  <p class="big-title center-aligned">Simulator</p> 
+			  <p class="body center-aligned">
+			  The simulator is built using <a class="white-text" href="https://pybullet.org/wordpress/">Pybullet</a> to accurately represent the appearance and kinematics of the real robot. Using the simulator is a great way to test out the platform before purchasing and could serve the basis for a virtual educational program.
+			  </p> 
+			  <div style="display:flex;justify-content:center;padding-top:20px">
+			    <a class="button white-to-black-button" href="https://github.com/dmklee/nuro-arm/blob/main/installation_guide.md">View on Github</a>
+			  </div>
+			</div>
+		  </div>
+		</div>
+	  </div>
+
+	  <div id="footer"></div>
+	  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+	  <script>
+		AOS.init();
+	  </script>
+  </body>
+</html> 

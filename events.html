@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Events | NURO Arm</title>
+	<link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script>
+	  $(function(){
+		$("#header").load("header.html");
+		$("#footer").load("footer.html");
+	  });
+	</script>
+  </head>
+  <body class="black-bg">
+	  <div id="header"></div>
+	  <div class="row center-aligned white-text">
+		<div class="container">
+		  <p class="big-title">Events</p>
+	    </div>
+	  </div>
+	  <div class="row left-aligned white-text">
+		<div class="container" data-aos="zoom-in-up">
+		  <p id="ijcai-talk" class="small-title">Presentation at IJCAI</p>
+		  <p class="sub-title">August 24, 2021 from 20:30-21:30<span style="font-size : .8em; letter-spacing: 0"> EST</span></p>
+		  Slides will be posted after the talk.  You can find the Collab notebook <a class="white-text" href="https://github.com/dmklee/nuro-arm/blob/main/nuro-arm-intro.ipynb">here</a>.
+
+	    </div>
+		<div class="container" data-aos="zoom-in-up">
+		  <p class="small-title">High School Pilot Program</p>
+		  <p class="sub-title">Spring 2021</p>
+		  <p class="body">
+		  We partnered with the <a class="white-text" href="https://stem.northeastern.edu/">Center for STEM Education</a> at Northeastern University to run a six-week outreach program for local high school students.  Due to constraints from COVID, we operated virtually; each student received their own robotic arm and we provided weekly lectures and office hours over video call. Projects included: sequencing arm movements, face tracking with visual servoing, and stacking cubes.  If you are interested in running a similar program, please <a class="white-text" href="https://stem.northeastern.edu/">reach out to me</a> and I would be happy to talk about it or share curriculum plans.
+		  </p>
+	    </div>
+	  </div>
+	  <div id="footer"></div>
+	  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+	  <script>
+		AOS.init();
+	  </script>
+  </body>
+</html> 

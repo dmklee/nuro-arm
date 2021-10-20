@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Education | NURO Arm</title>
+	<link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script>
+	  $(function(){
+		$("#header").load("header.html");
+		$("#footer").load("footer.html");
+	  });
+	</script>
+  </head>
+  <body class="black-bg">
+	  <div id="header"></div>
+	  <div class="row black-bg">
+		<div class="container">
+		  <p class="big-title center-aligned white-text">Educational Projects</p>
+		  <p class="body center-aligned white-text">
+		  We aimed to create a platform that is exciting enough to attract new students to STEM yet sophisticated enough to engage more advanced users or hobbyists.  We provide a number of high level graphical interfaces for controlling the arm, and have built in safety measures to prevent damage. For more complex projects, we offer fine-grained control of motor commands and inverse kinematics motion planning.  The physical kit and virtual simulator use a similar interface, which allows you to seamlessly switch from an in-person experience to a virtual setting.  We provide several example projects as inspiration, and are happy to discuss what else is possible.
+		  </p>
+		  <div style="display:flex;justify-content:center;padding-top:20px">
+		    <a class="button white-to-black-button" href="https://github.com/dmklee/nuro-arm/tree/main/nuro_arm/examples">View Examples</a>
+		  </div>
+		</div>
+	  </div>
+
+	  <div class="row black-bg black-text">
+	    <div class="capsule white-bg">
+		  <div class="row">
+			<div class="columned">
+			  <div class="vsplit">
+				  <img src="images/motion-planning.png">
+			  </div>
+			  <div class="vsplit">
+				<div class="container" style="width:80%" data-aos="fade-up">
+				  <p class="small-title">Motion Planning</p>
+				  <p class="body">
+				  The robot arm can perform accurate movements.  The simulator can be used to plan collision-free motions in joint-space or cartesian space of the end-effector. Such motions can be used in applications ranging from tossing an object to drawing shapes with a marker. 
+				  </p>
+				</div>
+			  </div>
+			</div>
+		  </div>
+		</div>
+	    <div class="capsule white-bg">
+		  <div class="row">
+			<div class="columned" style="flex-wrap : wrap-reverse;">
+			  <div class="vsplit">
+				<div class="container" style="width:80%" data-aos="fade-up">
+				  <p class="small-title">Computer Vision</p>
+				  <p class="body">
+				  The kit uses an RGB camera affixed to the robot base, which allows for conversion between camera and robot coordinate frames.  We provide support for camera calibration, pose estimation of Aruco tags, and video recording.  The functionality is built on OpenCV, so extending the capabilities would be straightforward.
+				  </p>
+				</div>
+			  </div>
+			  <div class="vsplit">
+				  <img src="images/cube-pose-estimation.png">
+			  </div>
+			</div>
+		  </div>
+		</div>
+	    <div class="capsule white-bg">
+		  <div class="row">
+			<div class="columned">
+			  <div class="vsplit">
+				  <img src="images/rl.png">
+			  </div>
+			  <div class="vsplit">
+				<div class="container" style="width:80%" data-aos="fade-up">
+				  <p class="small-title">Reinforcement Learning</p>
+				  <p class="body">
+				  The simulator can be used to generate thousands of experiences in minutes.  We provide several Gym-style environments to train agents on, and transfering to the real robot is made simple.
+				  </p>
+				</div>
+			  </div>
+			</div>
+		  </div>
+		</div>
+	    </div>
+	  </div>
+
+	  <div id="footer"></div>
+	  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+	  <script>
+		AOS.init();
+	  </script>
+  </body>
+</html> 
