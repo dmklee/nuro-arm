@@ -34,7 +34,7 @@ class SimulatorController(BaseController):
                                      joint_ids,
                                      pb.POSITION_CONTROL,
                                      current_jpos,
-                                     positionGains=len(joint_ids)*[self.p_gain]
+                                     positionGains=len(joint_ids)*[self.position_gain]
                                     )
 
     def power_off_servos(self):
@@ -54,7 +54,7 @@ class SimulatorController(BaseController):
                                  joint_id,
                                  pb.POSITION_CONTROL,
                                  current_jpos,
-                                 positionGain=self.p_gain)
+                                 positionGain=self.position_gain)
 
     def power_off_servo(self, joint_id):
         '''Turn off single servo so the joint is passive
