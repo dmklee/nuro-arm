@@ -32,7 +32,7 @@ def calibrate_xarm():
              'the images below. You do not need to adjust the gripper fingers yet, \n' \
              'although the hand itself should be properly aligned as shown. \n\n' \
              'Click CONTINUE once the arm is in the home configuration.',
-        images=[f'{IMAGES_DIR}/xarm_calibration/home.png'],
+        images=[f'{IMAGES_DIR}/home.png'],
         image_shape=(250,250),
         button_names=['CONTINUE', 'QUIT']
     )
@@ -64,7 +64,7 @@ def calibrate_xarm():
                  'like the pictures below. You do not need to be exact, but ensure that the\n'\
                  'arm is bent. You do not need to adjust the gripper fingers.\n\n'\
                  'Click CONTINUE once the arm is in the bent configuration.',
-            images=[f'{IMAGES_DIR}/xarm_calibration/bent_arm.png'],
+            images=[f'{IMAGES_DIR}/bent_arm.png'],
             image_shape=(200,400),
             button_names=['CONTINUE', 'QUIT']
         )
@@ -105,7 +105,7 @@ def calibrate_xarm():
                  'Using two hands, gently close the gripper fingers until they\n'\
                  'are touching like shown in the picture.\n\n'\
                  'Click CONTINUE once the gripper has been closed.',
-            images=[f'{IMAGES_DIR}/xarm_calibration/gripper_closed.png'],
+            images=[f'{IMAGES_DIR}/gripper_closed.png'],
             image_shape=(250,250),
             button_names=['CONTINUE', 'QUIT']
         )
@@ -119,7 +119,7 @@ def calibrate_xarm():
                  'down works better than pulling apart).  The lower parts of the\n'\
                  'finger should be perpindicular to the hand as shown in the picture.\n\n'\
                  'Click CONTINUE once the gripper has been opened.',
-            images=[f'{IMAGES_DIR}/xarm_calibration/gripper_opened.png'],
+            images=[f'{IMAGES_DIR}/gripper_opened.png'],
             image_shape=(250,250),
             button_names=['CONTINUE', 'QUIT']
         )
