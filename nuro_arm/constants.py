@@ -14,6 +14,8 @@ ARUCO_PARAMS = cv2.aruco.DetectorParameters_create()
 
 URDF_DIR = os.path.join(os.path.dirname(nuro_arm.__file__),
                         'assets/urdf')
+IMAGES_DIR = os.path.join(os.path.dirname(nuro_arm.__file__),
+                        'images')
 XARM_CONFIG_FILE = os.path.join(os.path.dirname(nuro_arm.__file__),
                                 'robot/configs.npy')
 CAMERA_CONFIG_FILE = os.path.join(os.path.dirname(nuro_arm.__file__),
