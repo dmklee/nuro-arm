@@ -1,2 +1,3 @@
 recursive-include nuro_arm/assets/urdf *
+recursive-include nuro_arm/assets/meshes *
 recursive-include nuro_arm/images *
