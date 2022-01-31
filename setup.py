@@ -18,6 +18,7 @@ setup(
         "matplotlib",
         "easyhid;platform_system=='Linux'",
         "hid;platform_system=='Windows'",
+        "hidapi;platform_system=='Darwin'",
         "sklearn",
         "scipy",
         "gym",
