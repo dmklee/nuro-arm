@@ -38,6 +38,8 @@ class Device:
                 indicates how to interact with hid device. if 1, send message as
                 bytes and provide size argument to read; if 0, send message as
                 bytearray without leading 0
+            serial_number : str
+                serial number of device
         '''
         if platform.system() == 'Linux':
             import easyhid
@@ -62,13 +64,36 @@ class Device:
                 self.type = 0
         elif platform.system() == 'Windows':
             import hid
-            self.device = hid.Device(vid=1155, pid=22352, serial=serial_number)
+            if serial_number is not None:
+                # serial number should be unicode
+                serial_number = str(serial_number)
+
+            try:
+                self.device = hid.Device(vid=1155, pid=22352, serial=serial_number)
+            except hid.HIDException:
+                print('[ERROR] No device found. Ensure that the xarm is connected via '
+                      'usb cable and the power is on.\n'
+                      'Turn the xarm off and back on again if needed.')
+                exit()
+
+            self.serial_number = self.device.serial
             self.type = 1
         elif platform.system() == 'Darwin':
             import hid
             self.device = hid.device()
-            self.device.open(1155, 22352, serial_number)
-            self.serial_number = self.device.serial
+            try:
+                if serial_number is not None:
+                    # serial number should be unicode
+                    serial_number = str(serial_number)
+
+                self.device.open(1155, 22352, serial_number)
+            except OSError:
+                print('[ERROR] No device found. Ensure that the xarm is connected via '
+                      'usb cable and the power is on.\n'
+                      'Turn the xarm off and back on again if needed.')
+                exit()
+
+            self.serial_number = self.device.get_serial_number_string()
             self.type = 0
         else:
             raise TypeError('unsupported operating system')
@@ -87,6 +112,7 @@ class Device:
             elif self.type == 1:
                 self.device.write(bytes(msg))
         except self.exception:
+            #ToDo: why is this here, and when does this exception occur
             pass
 
     def read(self, timeout):
