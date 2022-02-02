@@ -87,7 +87,7 @@ class Device:
                     serial_number = str(serial_number)
 
                 self.device.open(1155, 22352, serial_number)
-            except IOError:
+            except OSError:
                 print('[ERROR] No device found. Ensure that the xarm is connected via '
                       'usb cable and the power is on.\n'
                       'Turn the xarm off and back on again if needed.')
