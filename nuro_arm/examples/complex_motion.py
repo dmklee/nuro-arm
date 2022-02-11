@@ -1,6 +1,5 @@
 import time
 import numpy as np
-import matplotlib.pyplot as plt
 import pybullet as pb
 import argparse
 
@@ -11,9 +10,9 @@ def generate_waypts():
     '''
     R = 0.06
     num_waypts = 100
-    center = np.array((0.19, 0, 0.008))
+    center = np.array((0.19, 0, 0.025))
     angles = np.linspace(0, 2*np.pi, num=num_waypts)
-    waypts = np.zeros((N, 3)) + center
+    waypts = np.zeros((num_waypts, 3)) + center
     waypts[:,0] += R * np.cos(angles)
     waypts[:,1] += R * np.sin(angles)
     return waypts
@@ -23,16 +22,17 @@ def follow_waypts_sim(waypts):
     '''
     robot = RobotArm('sim',
                      headless=False,
-                     realtime=True)
+                     realtime=False)
 
     # move GUI camera to get better view
     yaw, pitch, _, target = pb.getDebugVisualizerCamera()[-4:]
-    pb.resetDebugVisualizerCamera(0.75, yaw, pitch, target)
+    pb.resetDebugVisualizerCamera(0.5, yaw, pitch, target)
+    pb.configureDebugVisualizer(pb.COV_ENABLE_GUI, 0)
 
     robot.move_hand_to(waypts[0])
     for i in range(1, len(waypts)):
         pb.addUserDebugLine(waypts[i-1], waypts[i],
-                            [0.8,0.3,0.2])
+                            [0.8,0.3,0.2], 2)
         robot.move_hand_to(waypts[i])
 
     time.sleep(1)

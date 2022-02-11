@@ -1,41 +1,48 @@
+import numpy as np
 import pybullet as pb
 import time
 
-from neu_ro_arm.robot.robot_arm import RobotArm
-from neu_ro_arm.constants import cube_size
+from nuro_arm.robot.robot_arm import RobotArm
+from nuro_arm.constants import CUBE_SIZE
 
-PI = 3.141592653589793
+robot = RobotArm('sim', headless=False)
 
-robot = RobotArm('sim')
+# make GUI view better
+pb.resetDebugVisualizerCamera(cameraDistance=1.5,
+                              cameraYaw=50,
+                              cameraPitch=-40,
+                              cameraTargetPosition=(-0.45, 0.35, -0.4))
+
 robot.set_gripper_state(0.5)
 client = robot.controller._client
 pb.setGravity(0,0,0,client)
 
 # create
 id_ = pb.createVisualShape(pb.GEOM_BOX,
-                           halfExtents=3*[cube_size/2],
+                           halfExtents=3*[CUBE_SIZE/2],
                            rgbaColor=[0.1,0.1,0.8,0.5])
 pos_body = [0, 0, 0]
 body = pb.createMultiBody(1, -1, id_, pos_body)
 
-d_toggle = pb.addUserDebugParameter('toggle orientation specification',
-                                    1, 0, 0,
-                                    physicsClientId=client)
 dbg_params = {
-    'pitch': pb.addUserDebugParameter('gripper_pitch', rangeMin=0, rangeMax=PI,
-                                    startValue= 2*PI, physicsClientId=client),
-    'roll' : pb.addUserDebugParameter('gripper_roll', rangeMin=-PI/2, rangeMax= PI/2,
-                                    startValue= 0.0, physicsClientId=client),
     'x' : pb.addUserDebugParameter('cube_x', rangeMin=0., rangeMax= 0.25,
                                 startValue= 0.15, physicsClientId=client),
     'y' : pb.addUserDebugParameter('cube_y', rangeMin=-0.15, rangeMax= 0.15,
                                 startValue= 0.0, physicsClientId=client),
-    'z' : pb.addUserDebugParameter('cube_z', rangeMin=cube_size/2, rangeMax= 0.45,
+    'z' : pb.addUserDebugParameter('cube_z', rangeMin=CUBE_SIZE/2, rangeMax= 0.45,
                                 startValue= 0.2, physicsClientId=client),
 }
+d_toggle = pb.addUserDebugParameter('toggle orientation specification',
+                                    1, 0, 0,
+                                    physicsClientId=client)
+dbg_params.update({
+    'pitch': pb.addUserDebugParameter('gripper_pitch', rangeMin=0, rangeMax=np.pi,
+                                    startValue= 2*np.pi, physicsClientId=client),
+    'roll' : pb.addUserDebugParameter('gripper_roll', rangeMin=-np.pi/2, rangeMax= np.pi/2,
+                                    startValue= 0.0, physicsClientId=client),
+})
 
-dbg_values = {d:pb.readUserDebugParameter(i, physicsClientId=client)
-              for d,i in dbg_params.items()}
+dbg_values = {d:0 for d,i in dbg_params.items()}
 while True:
     button_val = pb.readUserDebugParameter(d_toggle, physicsClientId=client)
     reset_cube = False
@@ -55,10 +62,11 @@ while True:
         pb.resetBasePositionAndOrientation(body, pos, (0,0,0,1),physicsClientId=client)
 
     if move_arm:
+        # first teleport to good initial arm jpos, this should be good for most
+        # positions in the workspace
         if button_val % 2 == 0:
             robot.move_hand_to(pos)
         else:
             robot.move_hand_to(pos, (dbg_values['pitch'],dbg_values['roll']))
-        time.sleep(1)
         print('done')
     time.sleep(0.1)

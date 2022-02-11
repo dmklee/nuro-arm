@@ -22,7 +22,7 @@ def calibrate_camera():
 
     # Determine the ID of the camera
     cam_id = 0
-    camera = Camera(cam_id)
+    camera = Camera(camera_id=cam_id)
     while True:
         if cam_id > 10:
             popup = Popup(

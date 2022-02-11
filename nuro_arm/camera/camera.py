@@ -15,7 +15,7 @@ class Camera:
                  camera_type='real',
                  camera_id=None,
                  pose_mtx=None,
-                 free_floating=False,
+                 free_floating=True,
                  run_async=True,
                  pb_client=0):
         '''Camera class that controls real or simulated camera feed, and is
@@ -75,8 +75,6 @@ class Camera:
                 pose_mtx = constants.DEFAULT_CAM_POSE_MTX
             self.set_location(pose_mtx)
 
-        self._mtx = self.cap.camera_mtx
-        self._dist_coeffs = self.cap.dist_coeffs
         self.gui = GUI(self.cap)
 
         if not self.connect(run_async):
@@ -167,10 +165,12 @@ class Camera:
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
             corners2 = cv2.cornerSubPix(gray, corners, (11,11),(-1,-1), criteria)
 
-            ret, rvec, tvec = cv2.solvePnP(objp, corners2, self._mtx, self._dist_coeffs)
+            ret, rvec, tvec = cv2.solvePnP(objp, corners2,
+                                           constants.NEW_CAM_MTX,
+                                           np.zeros(5))
 
             world2cam = tfm.transformation_matrix(rvec, tvec)
-            cam2world = tfm.inverse_transformation_matrix(rvec, tvec)
+            cam2world = tfm.invert_transformation_matrix(world2cam)
 
             return True, (rvec, tvec, world2cam, cam2world)
 
@@ -190,9 +190,8 @@ class Camera:
 
         self.cap.set_pose_mtx(pose_mtx)
         self._cam2world = pose_mtx
-        self._world2cam = tfm.invert_transformation(pose_mtx)
-        self._rvec = tfm.rotmat2rodrigues(self._world2cam[:3,:3])
-        self._tvec = self._world2cam[:3,3].reshape(3,1)
+        self._world2cam = tfm.invert_transformation_matrix(pose_mtx)
+        self._rvec, self._tvec = tfm.unpack_rvec_tvec(self._world2cam)
 
         # update collision object location
         self.add_collision_objects()
@@ -263,11 +262,7 @@ class Camera:
         ndarray
             sequence of 2D pixel indices; shape=(*,2); dtype=float
         '''
-        return camera_utils.project_to_pixels(pts_wframe,
-                                              self._rvec,
-                                              self._tvec,
-                                              self._mtx,
-                                              self._dist_coeffs)
+        return camera_utils.project_to_pixels(pts_wframe, self._cam2world)
 
     def load_configs(self):
         '''Reads config file writing to private attributes
@@ -310,8 +305,6 @@ class Camera:
                 'tvec': self._tvec,
                 'world2cam': self._world2cam,
                 'cam2world': self._cam2world,
-                'mtx': self._mtx,
-                'dist_coeffs': self._dist_coeffs,
                 }
 
     def _unpack_camera_pose(self, pose_mtx):
@@ -336,7 +329,7 @@ class Camera:
         '''
         cam_pos = pose_mtx[:3,3]
         cam_rotmat = pose_mtx[:3,:3]
-        cam_quat = pb.getQuaternionFromEuler(tfm.rotmat2euler(cam_rotmat))
+        cam_quat = tfm.rotmat_to_quaternion(cam_rotmat)
 
         rod_offset_vec = np.array((0.026, -0.012, -0.013))
         rod_pos = cam_pos + np.dot(cam_rotmat, rod_offset_vec)
@@ -364,8 +357,7 @@ class Camera:
             List of ArucoCube namedtuples, see `nuro_arm/camera/camera_utils.py`
         '''
         img = self.get_image()
-        return camera_utils.find_cubes(img, self._mtx, self._dist_coeffs,
-                                       self._cam2world, cube_size, tag_size)
+        return camera_utils.find_cubes(img, self._cam2world, cube_size, tag_size)
 
     def get_pb_client(self):
         return self._pb_client

@@ -8,8 +8,8 @@
 #
 ##############################################################################
 import time
-from neu_ro_arm.robot.robot_arm import RobotArm
-from neu_ro_arm.constants import GRIPPER_CLOSED
+from nuro_arm.robot.robot_arm import RobotArm
+from nuro_arm.constants import GRIPPER_CLOSED
 
 # Connect to the robot
 robot_mode = 'real'
@@ -40,7 +40,7 @@ while True:
         break
 
     # add some delay so the while loop doesnt run too fast
-    delay = 1 # seconds
+    delay = 0.1 # seconds
     time.sleep(delay)
 
 print('Program is ending')

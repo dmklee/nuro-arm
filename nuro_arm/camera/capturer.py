@@ -4,27 +4,18 @@ import threading
 import time
 import pybullet as pb
 
-from nuro_arm.constants import FRAME_RATE, DEFAULT_CAM_POSE_MTX, CAM_MTX, CAM_DIST_COEFFS
-from nuro_arm.transformation_utils import invert_transformation, coord_transform
+from nuro_arm import constants
+import nuro_arm.transformation_utils as tfm
 
 
 class Capturer:
-    def __init__(self, img_width=640, img_height=480):
+    def __init__(self):
         '''Class to allow asynchronous video capture from camera
-
-        Parameters
-        ----------
-        img_width : int, default to 640
-            Width of image to be captured in number of pixels
-        img_height : int, default to 480
-            Height of image to be captured in number of pixels
         '''
         self._lock = threading.Lock()
         self._started = False
-        self._frame_rate = FRAME_RATE
+        self._frame_rate = constants.FRAME_RATE
         self._cap = None
-        self._img_width = img_width
-        self._img_height = img_height
 
     def set_camera_id(self, camera_id, run_async=True):
         '''Changes video capture to a different camera id number
@@ -53,8 +44,8 @@ class Capturer:
 
         self._camera_id = camera_id
         self._cap = cv2.VideoCapture(camera_id)
-        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self._img_width)
-        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self._img_height)
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, constants.CAM_RESOLUTION_WIDTH)
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, constants.CAM_RESOLUTION_HEIGHT)
         connected = self._cap.isOpened()
         if connected and run_async:
             self.start_async()
@@ -167,7 +158,10 @@ class Capturer:
         else:
             ret, frame = self._get_feed()
 
-        return frame if ret else None
+        if ret:
+            return self.undistort_frame(frame)
+
+        return None
 
     def _get_feed(self):
         return self._cap.read()
@@ -191,14 +185,6 @@ class Capturer:
             self._recording = False
             self.thread.join()
 
-    @property
-    def camera_mtx(self):
-        return CAM_MTX
-
-    @property
-    def dist_coeffs(self):
-        return CAM_DIST_COEFFS
-
     def __call__(self):
         return self.read()
 
@@ -212,20 +198,25 @@ class Capturer:
     def __del__(self):
         self.release()
 
+    @staticmethod
+    def undistort_frame(frame):
+        rx, ry, rw, rh = constants.NEW_CAM_ROI
+        new_frame = cv2.undistort(frame,
+                                  constants.CAM_MTX,
+                                  constants.CAM_DIST_COEFFS,
+                                  None,
+                                  constants.NEW_CAM_MTX,
+                                 )[ry:ry+rh, rx:rx+rw]
+
+        return new_frame
+
+
 class SimCapturer(Capturer):
-    def __init__(self, img_width=320, img_height=240, fov=50,
-                 view_mtx=None, pb_client=0):
+    def __init__(self, pose_mtx=None, pb_client=0):
         '''Class to allow asynchronous video capture within pybullet simulator
 
         Parameters
         ----------
-        img_width : int, default to 640
-            Width of image to be captured in number of pixels
-        img_height : int, default to 480
-            Height of image to be captured in number of pixels
-        fov : float, default to 50
-            Field of view in degrees in horizontal direction, fov in vertical
-            direction is calculated based on img_width & img_height
         view_mtx : array_like, optional
             4x4 view matrix that describes location of camera in world frame.
             If not provided, the default camera pose (from nuro_arm.constants)
@@ -235,12 +226,24 @@ class SimCapturer(Capturer):
             within.  If you are only using one simulator, you can leave as
             default.
         '''
-        super().__init__(img_width, img_height)
-        self.set_fov(fov)
+        super().__init__()
+
+        # create projection matrix
+        self._img_width, self._img_height = constants.NEW_CAM_ROI[2:]
+        fov = np.degrees(2 * np.arctan2(self._img_height, 2 * constants.NEW_CAM_MTX[1,1]))
+        aspect = self._img_width / self._img_height
+        self._proj_mtx = pb.computeProjectionMatrixFOV(fov, aspect, 0.001, 10)
+
+        # create view matrix
+        self._view_mtx = self.get_view_matrix_from_pose(pose_mtx)
+
         self._pb_client = pb_client
 
-    def set_pose_mtx(self, pose_mtx=None):
-        '''Re-position camera in simulator
+    def set_pose_mtx(self, pose_mtx):
+        self._view_mtx = self.get_view_matrix_from_pose(pose_mtx)
+
+    def get_view_matrix_from_pose(self, pose_mtx=None):
+        '''Convert from pose matrix to view matrix suitable for pybullet render
 
         Parameters
         ----------
@@ -252,25 +255,13 @@ class SimCapturer(Capturer):
         if pose_mtx is None:
             print('[WARNING:] no pose matrix specified for simulated camera. '
                   'Camera will be placed in default location.')
-            pose_mtx = DEFAULT_CAM_POSE_MTX
+            pose_mtx = constants.DEFAULT_CAM_POSE_MTX
 
         vecs = np.array(((0,0,0), (0,0,1), (0,-1,0)))
-        eye_pos, target_pos, up_vec = coord_transform(pose_mtx, vecs)
+        eye_pos, target_pos, up_vec = tfm.apply_transformation(pose_mtx, vecs)
         view_mtx = pb.computeViewMatrix(eye_pos, target_pos, up_vec)
 
-        self._view_mtx = view_mtx
-
-    def set_fov(self, fov):
-        '''Change camera's field of view
-
-        Parameters
-        ----------
-        fov : float, default to 50
-            Field of view in degrees
-        '''
-        self._fov = fov
-        aspect = self._img_width/self._img_height
-        self._proj_mtx = pb.computeProjectionMatrixFOV(fov, aspect, 0.05, 2)
+        return view_mtx
 
     def _get_feed(self):
         ret = True
@@ -291,24 +282,12 @@ class SimCapturer(Capturer):
             self.start_async()
         return True
 
-    @property
-    def camera_mtx(self):
-        fov_radians = np.radians(self._fov)
-        aspect = self._img_width/self._img_height
-
-        mtx = np.zeros((3,3))
-        mtx[0,0] = 0.5 * self._img_height / np.tan(fov_radians/2)
-        mtx[1,1] = 0.5 * self._img_width / np.tan(aspect * fov_radians/2)
-        mtx[0,2] = self._img_width / 2
-        mtx[1,2] = self._img_height / 2
-        mtx[2,2] = 1
-        return mtx
-
-    @property
-    def dist_coeffs(self):
-        return np.zeros((1,5))
-
     def release(self):
         '''Closes connection to current camera if it is open
         '''
         self.stop_async()
+
+    @staticmethod
+    def undistort_frame(frame):
+        '''simulator already provides undistorted images'''
+        return frame

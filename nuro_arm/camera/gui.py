@@ -74,7 +74,7 @@ class GUI:
         return k
 
 class ImageModifierFunction:
-    def __init__(self, cam_configs):
+    def __init__(self, cam2world):
         '''Function that performs some image operations and adds modifications
         for debugging/visualization purposed
 
@@ -82,11 +82,9 @@ class ImageModifierFunction:
 
         Parameters
         ----------
-        cam_configs : dict
-            all configs used by camera, these are needed for some image processing
-            especially coordinate transforms
+        cam2world : np.ndarray
         '''
-        self.cam_configs = cam_configs
+        self.cam2world = cam2world
 
     @abstractmethod
     def __call__(self, canvas, original):
@@ -109,9 +107,9 @@ class ImageModifierFunction:
 
 
 class ShowCubes(ImageModifierFunction):
-    def __init__(self, cam_configs, cube_size=None,
+    def __init__(self, cam2world, cube_size=None,
                  tag_size=None, include_id=False):
-        super().__init__(cam_configs)
+        super().__init__(cam2world)
         self.include_id = include_id
         self.cube_size = cube_size
         self.tag_size = tag_size
@@ -123,18 +121,11 @@ class ShowCubes(ImageModifierFunction):
         if canvas is None:
             canvas = np.array(original)
 
-        cubes = camera_utils.find_cubes(original,
-                                        self.cam_configs['mtx'],
-                                        self.cam_configs['dist_coeffs'],
-                                        self.cam_configs['cam2world'],
-                                        )
+        cubes = camera_utils.find_cubes(original, self.cam2world)
 
         for cube in cubes:
             vert_px = camera_utils.project_to_pixels(cube.vertices,
-                                                     self.cam_configs['rvec'],
-                                                     self.cam_configs['tvec'],
-                                                     self.cam_configs['mtx'],
-                                                     self.cam_configs['dist_coeffs'],
+                                                     self.cam2world
                                                     ).astype(int)
 
             for a, b in constants.CUBE_EDGES:
@@ -153,8 +144,8 @@ class ShowCubes(ImageModifierFunction):
         return canvas
 
 class ShowArucoTags(ImageModifierFunction):
-    def __init__(self, cam_configs, tag_size=None):
-        super().__init__(cam_configs)
+    def __init__(self, cam2world, tag_size=None):
+        super().__init__(cam2world)
         self.tag_size = tag_size
 
     def __call__(self, original, canvas=None):
@@ -162,11 +153,7 @@ class ShowArucoTags(ImageModifierFunction):
         '''
         if canvas is None:
             canvas = np.array(original)
-        tags = camera_utils.find_arucotags(original,
-                                           self.cam_configs['mtx'],
-                                           self.cam_configs['dist_coeffs'],
-                                           tag_size=self.tag_size
-                                          )
+        tags = camera_utils.find_arucotags(original, tag_size=self.tag_size)
         for tag in tags:
             for c_id in range(4):
                 canvas = cv2.line(canvas,
