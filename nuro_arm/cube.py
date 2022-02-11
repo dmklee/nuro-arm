@@ -4,13 +4,13 @@ from PIL import Image
 import cv2
 import numpy as np
 
-from nuro_arm.constants import URDF_DIR
+from nuro_arm.constants import URDF_DIR, CUBE_SIZE
 
 class Cube:
     def __init__(self,
                  pos,
                  rot=[0,0,0,1],
-                 size=0.025,
+                 size=CUBE_SIZE,
                  pb_client=0,
                  tag_id=None,
                  rgba=(0,1,0,1)

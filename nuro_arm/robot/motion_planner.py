@@ -186,11 +186,13 @@ class MotionPlanner:
                      n_iters_outer=3,
                      n_iters_inner=50,
                      jd=0.005,
+                     init_arm_jpos=(0,-0.1,0.1,0,0)
                      ):
         current_joint_states = self.get_joint_states()
 
         n_arm_joints = len(self.arm_joint_ids)
 
+        self._teleport_arm(init_arm_jpos)
         for _ in range(n_iters_outer):
             jpos = pb.calculateInverseKinematics(self.robot_id,
                                                  self.end_effector_link_index,
@@ -203,6 +205,7 @@ class MotionPlanner:
             self._teleport_arm(jpos[:n_arm_joints])
 
         solved_pos, solved_rot = self.pb_sim.get_hand_pose()
+
         info = {
             'ik_pos' : solved_pos,
             'ik_rot' : solved_rot,

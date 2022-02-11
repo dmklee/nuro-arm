@@ -148,7 +148,7 @@ def move_with_gui(mode):
     Currently, the gui issues direct commands without performing collision
     detection so the user should be careful about what is in the workplace
     '''
-    robot = RobotArm(mode)
+    robot = RobotArm(mode, headless= mode!='sim')
 
     root = tk.Tk()
     root.title('Simple Control of Robot Joints')
@@ -157,6 +157,8 @@ def move_with_gui(mode):
     root.mainloop()
 
 if __name__ == "__main__":
+    #ToDo: rewrite async so it is less laggy on real robot
+    #      there are known issues on Mac
     parser = argparse.ArgumentParser()
     parser.add_argument('--sim', action="store_true")
     args = parser.parse_args()

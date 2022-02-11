@@ -40,10 +40,11 @@ class SimulatorController(BaseController):
     def power_off_servos(self):
         '''Turn off all servos so all joints are passive
         '''
+        joint_ids = self.arm_joint_ids+self.gripper_joint_ids
         pb.setJointMotorControlArray(self.robot_id,
-                                     self.arm_joint_ids+self.gripper_joint_ids,
+                                     joint_ids,
                                      pb.POSITION_CONTROL,
-                                     forces=[0,0,0,0]
+                                     forces=len(joint_ids)*[0],
                                     )
 
     def power_on_servo(self, joint_id):
