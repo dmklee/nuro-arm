@@ -29,6 +29,10 @@ p a:hover {
 .center-aligned {
 	text-align : center;
 }
+.justified-text {
+	text-align : justify;
+	text-justify : inter-word;
+}
 .header-content {
 	display: flex;
 	height: 80px;
