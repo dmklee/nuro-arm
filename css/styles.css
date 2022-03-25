@@ -225,6 +225,15 @@ p a:hover {
 	color : #1c1c1c;
 	background-color : #f0f0f0;
 }
+.black-to-white-button {
+	border-color : #1c1c1c;
+	color : #1c1c1c;
+}
+.black-to-white-button:hover {
+	border-color : #f0f0f0;
+	color : #f0f0f0;
+	background-color : #1c1c1c;
+}
 .bg-media {
 	position : relative;
 	padding : 0;
