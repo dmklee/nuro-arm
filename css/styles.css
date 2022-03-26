@@ -243,6 +243,11 @@ p a:hover {
 	border-width: 2px;
 	border-color: #1c1c1c;
 }
+.top-border {
+	border-top-style: solid;
+	border-top-width: 2px;
+	border-top-color: #1c1c1c;
+}
 
 .parallax {
   background-image: url("../images/robot.jpg");
