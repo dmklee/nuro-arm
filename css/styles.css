@@ -238,34 +238,6 @@ p a:hover {
 	position : relative;
 	padding : 0;
 }
-.vertical-borders {
-	border-style: none solid;
-	border-width: 2px;
-	border-color: #1c1c1c;
-}
-.top-border {
-	border-top-style: solid;
-	border-top-width: 2px;
-	border-top-color: #1c1c1c;
-}
-
-.parallax {
-  background-image: url("../images/robot.jpg");
-
-  width: 90%;
-  max-width : 850px;
-  margin: 0 auto;
-  min-height: 300px;
-  background-attachment: fixed;
-  background-position: center calc(100% + 30px);
-  background-repeat: no-repeat;
-  background-size: 70%;
-}
-@media only screen and (max-device-width: 1366px) {
-  .parallax {
-    background-attachment: scroll;
-  }
-}
 
 .bg-media video {
 	height : 100%;
