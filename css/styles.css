@@ -48,7 +48,7 @@ p a:hover {
 	border : 0;
 	position : relative;
 	display : flex;
-	width : calc(100% - 200px);
+	width : calc(100% - 300px);
 	justify-content : flex-end;
 }
 .header-link a {
@@ -61,7 +61,7 @@ p a:hover {
     padding-bottom: 2px;
 }
 .header-logo {
-	width : 200px;
+	width : 300px;
 }
 .small-img img { 
 	object-fit : contain;
