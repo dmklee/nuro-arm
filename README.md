@@ -15,7 +15,29 @@ This repository is built to help students learn more about programming and robot
 
 <a name="installation"></a>
 ## Software Installation
-This package should work on Windows, Mac, or Linux.  See the [Installation Guide](https://github.com/dmklee/nuro-arm/blob/main/installation_guide.md) for details.
+This software works on Mac, Windows and Linux.  We recommend installing this package within a conda environment using python>=3.6, although it is not necessary.
+### Install Pybullet:
+```
+conda install -c conda-forge pybullet
+```
+Or, alternatively, use pip (this only works for Mac and Linux).
+```
+pip install "pybullet>=3.1.7"
+```
+### Install this repo:
+```
+pip install git+https://github.com/dmklee/nuro-arm.git
+```
+### [Windows Only] Add libraries for handling usb-hid commands:
+1. Download this [zip file])https://github.com/libusb/hidapi/releases/download/hidapi-0.10.1/hidapi-win.zip)
+2. In File Explorer, navigate into downloaded folder [your downloads location]\hidapi-win\x64
+3. Copy the three files ("hidapi.dll","hidapi.lib","hidapi.pdb")
+4. Paste them in "C:\Users\[username]\Anaconda3\envs\[your-env-name]\"
+### [Linux Only] Install libraries for usb-hid:
+```
+sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
+sudo service fwupd stop
+```
 
 <a name="robot-kit"></a>
 ## Robot Kit
