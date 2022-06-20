@@ -1,16 +1,12 @@
 import numpy as np
-import cv2
 import os
 import nuro_arm
 
 # all positional units are in meters, since this is the unit in the urdf
 TVEC_WORLD2RIGHTFOOT = np.array((0.091, -0.0635, 0.0))
 
-CALIBRATION_GRIDSIZE = 0.020
-CALIBRATION_GRIDSHAPE = (9,7)
-
-ARUCO_DICT = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
-ARUCO_PARAMS = cv2.aruco.DetectorParameters_create()
+CALIBRATION_GRIDSIZE = 0.020 # 2 cm
+CALIBRATION_GRIDSHAPE = (9, 7)
 
 URDF_DIR = os.path.join(os.path.dirname(nuro_arm.__file__),
                         'assets/urdf')
@@ -59,12 +55,6 @@ NEW_CAM_MTX = np.array([[560.95526123,   0.        , 321.88958533],
 NEW_CAM_ROI = np.array((18, 25, 602, 429))
 
 FRAME_RATE = 20
-
-##############################################
-# common gripper states
-##############################################
-GRIPPER_CLOSED = 0
-GRIPPER_OPENED = 1
 
 ##############################################
 # useful pitch-roll tuples for RobotArm.move_hand_to

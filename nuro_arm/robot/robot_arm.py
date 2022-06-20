@@ -1,20 +1,22 @@
+from typing import Optional
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
-from nuro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
 from nuro_arm.robot.motion_planner import MotionPlanner
 from nuro_arm.robot.pybullet_simulator import PybulletSimulator
 from nuro_arm.robot.simulator_controller import SimulatorController
 from nuro_arm.robot.xarm_controller import XArmController
 
 class RobotArm:
+    GRIPPER_CLOSED = 0
+    GRIPPER_OPENED = 1
     def __init__(self,
-                 controller_type='real',
-                 headless=True,
-                 realtime=False,
-                 workspace=None,
-                 pb_client=None,
-                 serial_number=None,
+                 controller_type: str='real',
+                 headless: Optional[bool]=None,
+                 realtime: Optional[bool]=False,
+                 workspace: Optional[np.ndarray]=None,
+                 pb_client: Optional[int]=None,
+                 serial_number: Optional[str]=None,
                 ):
         '''Real or simulated xArm robot interface for safe, high-level motion commands
 
@@ -50,17 +52,24 @@ class RobotArm:
             Class to perform collision detection and ik calculations using the
             _sim attribute
         '''
-        self.joint_names = ('base', 'shoulder','elbow', 'wrist','wristRotation', 'gripper')
+        self.joint_names = ('base', 'shoulder','elbow', 'wrist',
+                            'wristRotation', 'gripper')
+
+        if headless is None:
+            headless = True if controller_type == 'real' else False
 
         self._sim = PybulletSimulator(headless, pb_client)
         self.mp = MotionPlanner(self._sim, workspace)
 
         if controller_type == 'real':
             self.controller = XArmController(serial_number)
+
         elif controller_type == 'sim':
             self.controller = SimulatorController(self._sim, realtime)
+
         else:
             raise TypeError('Invalid controller_type argument; must be real or sim.')
+
         self.controller_type = controller_type
 
         self.mirror_planner()
@@ -178,7 +187,7 @@ class RobotArm:
         bool
             True if desired gripper state was achieved
         '''
-        return self.set_gripper_state(GRIPPER_OPENED)
+        return self.set_gripper_state(self.GRIPPER_OPENED)
 
     def close_gripper(self):
         '''Closes gripper completely
@@ -188,7 +197,7 @@ class RobotArm:
         bool
             True if desired gripper state was achieved
         '''
-        return self.set_gripper_state(GRIPPER_CLOSED, backoff=-0.05)
+        return self.set_gripper_state(self.GRIPPER_CLOSED, backoff=-0.05)
 
     def set_gripper_state(self, state, backoff=-0.05, speed=None):
         '''Get state of gripper

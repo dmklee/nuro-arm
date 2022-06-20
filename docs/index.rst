@@ -1,19 +1,10 @@
 :github_url: https://github.com/dmklee/nuro-arm
 
-nuro_arm: Robotics Educational Platform
-=======================================
+NURO Arm
+========
 
-*nuro_arm* is a Python library to allow beginner programmers to learn about robotics.
+*nuro_arm* is a great introduction to programming robots for high school and early-college students.  The API provides intuitive, high-level commands to control a low-cost robotic arm.  For those unable to purchase the robot, we offer a simulator that works on any operating system.  We believe *nuro_arm* is a valuable educational tool for hands-on learning of concepts ranging from writing for-loops to designing reinforcement learning algorithms.  
 
-Affordable Robotic Kit
-----------------------
-
-have table of how to order parts
-
-Mention that a simulator is available to try out first
-
-Package Reference
------------------
 
 .. toctree::
     :maxdepth: 2
@@ -23,6 +14,7 @@ Package Reference
     /robot
     /camera
     /examples
+    /projects
     /contributions
 
 * :ref:`genindex`

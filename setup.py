@@ -13,7 +13,6 @@ setup(
     setup_requires="wheel",
     install_requires=[
         "numpy",
-        "opencv-contrib-python",
         "pybullet>=3.1.7",
         "matplotlib",
         "easyhid;platform_system=='Linux'",
