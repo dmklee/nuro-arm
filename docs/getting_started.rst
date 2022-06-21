@@ -18,7 +18,21 @@ Install the repository using pip.
 Windows
 +++++++
 
-Coming soon...
+We recommend installing pybullet with conda first, then install the repository with pip.
+
+.. code-block:: bash
+
+    conda install -c conda-forge pybullet
+
+    pip install nuro-arm
+
+Now, you have to download the HID library (needed for communicating with robot over USB):
+
+    #. Download `zip file <https://github.com/libusb/hidapi/releases/download/hidapi-0.10.1/hidapi-win.zip>`_
+    #. In File Explorer, navigate to `[downloads directory]\\hidapi-win\\x64`
+    #. Copy the files: "hidapi.dll", "hidapi.lib", "hidapi.pdb"
+    #. Paste them in `C:\\Users\\[username]\\Anaconda3\\envs\\[your-env-name]`
+
 
 Linux
 +++++++
