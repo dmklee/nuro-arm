@@ -47,15 +47,15 @@ class Device:
             en = easyhid.Enumeration()
             devices = en.find(vid=1155, pid=22352, serial=serial_number)
             if len(devices) == 0:
-                print('[ERROR] No device found. Ensure that the xarm is connected via '
+                print('\n[ERROR] No device found. Ensure that the xarm is connected via '
                       'usb cable and the power is on.\n'
-                      'Turn the xarm off and back on again if needed.')
+                      'Turn the xarm off and back on again if needed.\n')
                 exit()
             elif len(devices) > 1:
                 serial_numbers = ', '.join([f"\t{d.serial_number}" for d in devices])
-                print('[ERROR] More than 1 xarm device found with the following serial numbers: \n'
+                print('\n[ERROR] More than 1 xarm device found with the following serial numbers: \n'
                       f'    {serial_numbers}\n'
-                      '  You must specify the serial number in this case.')
+                      '  You must specify the serial number in this case.\n')
                 exit()
             else:
                 self.device = devices[0]
@@ -71,9 +71,9 @@ class Device:
             try:
                 self.device = hid.Device(vid=1155, pid=22352, serial=serial_number)
             except hid.HIDException:
-                print('[ERROR] No device found. Ensure that the xarm is connected via '
+                print('\n[ERROR] No device found. Ensure that the xarm is connected via '
                       'usb cable and the power is on.\n'
-                      'Turn the xarm off and back on again if needed.')
+                      'Turn the xarm off and back on again if needed.\n')
                 exit()
 
             self.serial_number = self.device.serial
@@ -88,9 +88,9 @@ class Device:
 
                 self.device.open(1155, 22352, serial_number)
             except OSError:
-                print('[ERROR] No device found. Ensure that the xarm is connected via '
+                print('\n[ERROR] No device found. Ensure that the xarm is connected via '
                       'usb cable and the power is on.\n'
-                      'Turn the xarm off and back on again if needed.')
+                      'Turn the xarm off and back on again if needed.\n')
                 exit()
 
             self.serial_number = self.device.get_serial_number_string()
@@ -194,8 +194,8 @@ class XArmController(BaseController):
             except KeyError:
                 pass
 
-        print('[WARNING] Config file for this xarm could not be found. '
-              ' Calibration should be performed.')
+        print('\n[WARNING] Config file for this xarm could not be found. '
+              ' Calibration should be performed.\n')
         self.arm_joint_directions = {i:1. for i in self.arm_joint_ids}
         self.gripper_joint_limits = np.array(((0.9,),(-1.,)))
         self.servo_offsets = {i:0 for i in self.servo_ids}
@@ -336,6 +336,12 @@ class XArmController(BaseController):
         self._send(CmdLib.POSITION_READ,
                    [len(j_idxs), *j_idxs])
         pos = self._recv(CmdLib.POSITION_READ, ret_type='short')
+
+        if len(pos) != len(j_idxs):
+            print('\n[ERROR]: Unable to connect to all motors.'
+                  ' Check that all wires between motors are connected properly.\n')
+            del self
+            exit()
 
         pos = np.clip(pos, self.SERVO_LOWER_LIMIT, self.SERVO_UPPER_LIMIT)
 
