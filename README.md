@@ -1,4 +1,4 @@
-# NURO Arm: Accessible Robotics Educational Platform
+NURO Arm: Accessible Robotics Educational Platform
 --------------------------------------------------------------------------------
 **[Documentation](https://nuro-arm.readthedocs.io/en/latest/?)** | **[Website](https://dmklee.github.io/nuro-arm/)**
 
