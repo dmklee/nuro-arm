@@ -2,12 +2,11 @@ import pybullet as pb
 import time
 import numpy as np
 
-from nuro_arm.robot.robot_arm import RobotArm
-from nuro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
+from nuro_arm import RobotArm
 
-PICK = np.array([-0.029,0.385,-1.051,1.931,0])
-START = np.array([-0.029,0.038,-0.892,0.628,0])
-GOAL = np.array([-0.029,-0.671,-0.237,0.303,0])
+PICK = np.array([-0.029, 0.385, -1.051, 1.931, 0])
+START = np.array([-0.029, 0.038, -0.892, 0.628, 0])
+GOAL = np.array([-0.029, -0.671, -0.237, 0.303, 0])
 
 robot = RobotArm('real')
 robot.home()

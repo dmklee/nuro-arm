@@ -1,7 +1,6 @@
 import numpy as np
 import cv2
 from collections import namedtuple
-from scipy.spatial.transform import Rotation as R
 
 from nuro_arm import constants
 import nuro_arm.transformation_utils as tfm
@@ -10,7 +9,6 @@ ArucoTag = namedtuple('ArucoTag', ['id_', 'corners', 'tag2cam'])
 ArucoCube = namedtuple('ArucoCube', ['id_', 'pos', 'quat', 'vertices'])
 
 # face_detector = cv2.CascadeClassifier('nuro_arm/camera/haarcascade_frontalface_default.xml')
-
 
 def find_face(img):
     '''Detects location of face in image
@@ -60,12 +58,15 @@ def find_arucotags(img, tag_size=None):
         ArucoTags with fields: id_ (int), corners (ndarray; shape=(4,2);
         dtype=float), tag2cam (ndarray; shape=(4,4); dtype=float
     '''
+    aruco_dict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
+    aruco_params = cv2.aruco.DetectorParameters_create()
+
     #TODO: alert if multiple of the same tag ids are detected as this may mess
     # up further processing
     gray = convert_gray(img)
     corners, ids, rejected = cv2.aruco.detectMarkers(gray,
-                                                     constants.ARUCO_DICT,
-                                                     parameters=constants.ARUCO_PARAMS,
+                                                     aruco_dict,
+                                                     parameters=aruco_params,
                                                     )
     if ids is None:
         return []
