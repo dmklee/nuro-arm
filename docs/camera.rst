@@ -1,7 +1,9 @@
+:github_url: https://github.com/dmklee/nuro-arm
+
 Using Camera
 ============
 
-To use the camera, you need to install openCV. We require the contrib version, which provides support for ArUco tags.
+To use the camera, you need to install `openCV <https://opencv.org/>`_. We require the contrib version, which provides support for ArUco tags.
 
 .. code-block:: bash
 

@@ -1,3 +1,5 @@
+:github_url: https://github.com/dmklee/nuro-arm
+
 Example Scripts
 ===============
 
@@ -44,9 +46,6 @@ Here is an example where we use the state of the gripper to determine whether an
             break
 
         robot.open_gripper()
-
-
-Another example of arm early stoppage to determine object location:
 
 Top-Down Grasping
 -----------------
