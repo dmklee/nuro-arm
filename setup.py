@@ -20,6 +20,7 @@ setup(
     install_requires=[
         "numpy",
         "scipy",
+        "pillow",
         "pybullet>=3.1.7",
         "easyhid;platform_system=='Linux'",
         "hid;platform_system=='Windows'",
