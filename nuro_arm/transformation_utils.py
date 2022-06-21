@@ -1,5 +1,4 @@
 import numpy as np
-import cv2
 from scipy.spatial.transform import Rotation as R
 
 #ToDo: add docstrings
