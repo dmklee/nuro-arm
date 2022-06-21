@@ -48,7 +48,7 @@ robot over the USB connection.
 
 .. code-block:: bash
 
-    pip install nuro-arm
+    sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
 
 If you experience problems connecting to the robot, you may need to run the
 following command (usually everytime you restart the machine).
