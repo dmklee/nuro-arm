@@ -13,7 +13,7 @@ Install the repository using pip.
 
 .. code-block:: bash
 
-    pip install git+https://github.com/dmklee/nuro-arm.git
+    pip install nuro-arm
 
 Windows
 +++++++
@@ -27,15 +27,14 @@ First, install the repository using pip.
 
 .. code-block:: bash
 
-    pip install git+https://github.com/dmklee/nuro-arm.git
+    pip install nuro-arm
 
 Then, install the following libraries which are needed to communicate with the 
 robot over the USB connection.
 
 .. code-block:: bash
 
-    sudo apt-get install libhidapi-hidraw0 libhidapi-libusb0
-
+    pip install nuro-arm
 
 If you experience problems connecting to the robot, you may need to run the
 following command (usually everytime you restart the machine).

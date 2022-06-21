@@ -1,12 +1,19 @@
+import platform
 from setuptools import setup, find_packages
 
 with open("README.md", 'r') as f:
     long_description = f.read()
 
+# figure out what HID repo to use
+hid_library = {'Linux' : 'easyhid',
+               'Windows' : 'hid',
+               'Darwin' : 'hidapi',
+              }[platform.system()]
+
 setup(
     name='nuro-arm',
     version='0.0.1',
-    description='NURO Arm: Accessible Robotics Educational Platform',
+    description='Simple control interface for low-cost robotic arm.',
     license="MIT License",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -22,9 +29,7 @@ setup(
         "scipy",
         "pillow",
         "pybullet>=3.1.7",
-        "easyhid;platform_system=='Linux'",
-        "hid;platform_system=='Windows'",
-        "hidapi;platform_system=='Darwin'",
+        hid_library,
     ],
 
     keywords=[
