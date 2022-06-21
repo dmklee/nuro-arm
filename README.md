@@ -93,4 +93,4 @@ The xarm controller code is an amalgam of the following repos:
 
 
 ## License
-This code is released under MIT License.
+This code is released under the [MIT License](LICENSE).
