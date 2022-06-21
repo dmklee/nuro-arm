@@ -13,8 +13,8 @@ def generate_waypts():
     center = np.array((0.19, 0, 0.025))
     angles = np.linspace(0, 2*np.pi, num=num_waypts)
     waypts = np.zeros((num_waypts, 3)) + center
-    waypts[:,0] += R * np.cos(angles)
-    waypts[:,1] += R * np.sin(angles)
+    waypts[:, 0] += R * np.cos(angles)
+    waypts[:, 1] += R * np.sin(angles)
     return waypts
 
 def follow_waypts_sim(waypts):

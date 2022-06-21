@@ -1,57 +1,21 @@
-NURO Arm: Robotics Educational Platform
-=======================================
+:github_url: https://github.com/dmklee/nuro-arm
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+NURO Arm
+========
 
+*nuro_arm* is a great introduction to programming robots for high school and early-college students.  The API provides intuitive, high-level commands to control a low-cost robotic arm.  For those unable to purchase the robot, we offer a simulator that works on any operating system.  We believe *nuro_arm* is a valuable educational tool for hands-on learning of concepts ranging from writing for-loops to designing reinforcement learning algorithms.  
 
-Getting Started
----------------
-
-* :doc:`/guides/software-installation`
 
 .. toctree::
     :maxdepth: 2
     :hidden:
-    :caption: Getting Started
     
-    /guides/software-installation
-
-Example Projects
-----------------
-We provide several scripts to highlight possible projects that can be done with this platform.  The scripts are minimal, and meant only to convey how to accomplish a task.  We imagine that educators can tailor the projects to their specific needs.
-
-* :doc:`/projects/picking-up-cubes`
-
-.. toctree::
-    :maxdepth: 2
-    :hidden:
-    :caption: Example Projects
-    
-    /projects/picking-up-cubes
-
-API Documentation
------------------
-
-* :doc:`/nuro_arm.robot`
-* :doc:`/nuro_arm.camera`
-
-.. toctree::
-    :maxdepth: 2
-    :hidden:
-    :caption: API Documentation
-    
-    /nuro_arm.robot
-    /nuro_arm.camera
-
-Improving Accessibility
------------------------
-
-Open source
-Suggesting new capabilities/features
-Proposing new projects
-Releasing educational materials
+    /getting_started
+    /robot
+    /camera
+    /examples
+    /projects
+    /contributions
 
 * :ref:`genindex`
 * :ref:`modindex`

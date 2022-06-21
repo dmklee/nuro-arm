@@ -1,4 +1,7 @@
 # NU Robotics Outreach: Robotic Arm
+----------------------------------------------------------------
+**[Documentation]()** | **[Website]()**
+----------------------------------------------------------------
 
 This repository is built to help students learn more about programming and robotics. It aims to provide a high-level interface for performing basic robotic manipulation tasks.  The repo is meant to be accessible: the hardware is low cost; a simulator is provided for those who do not purchase the robot; the api is built to work on Windows, MacOS & Linux.
 
