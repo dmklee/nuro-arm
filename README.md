@@ -29,7 +29,7 @@ pip install nuro-arm
 ```
 
 #### [Windows Only] Add libraries for handling usb-hid commands:
-1. Download this [zip file])https://github.com/libusb/hidapi/releases/download/hidapi-0.10.1/hidapi-win.zip)
+1. Download this [zip file](https://github.com/libusb/hidapi/releases/download/hidapi-0.10.1/hidapi-win.zip)
 2. In File Explorer, navigate into downloaded folder [your downloads location]\hidapi-win\x64
 3. Copy the three files ("hidapi.dll","hidapi.lib","hidapi.pdb")
 4. Paste them in "C:\Users\[username]\Anaconda3\envs\[your-env-name]\"
