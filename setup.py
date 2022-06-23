@@ -12,7 +12,7 @@ hid_library = {'Linux' : 'easyhid',
 
 setup(
     name='nuro-arm',
-    version='0.0.1',
+    version='0.0.2',
     description='Simple control interface for low-cost robotic arm.',
     license="MIT License",
     long_description=long_description,
@@ -31,7 +31,15 @@ setup(
         "pybullet>=3.1.7",
         hid_library,
     ],
-
+    entry_points={
+        'console_scripts': [
+            'calibrate_xarm=nuro_arm.scripts.calibrate_xarm:main',
+            'calibrate_camera=nuro_arm.scripts.calibrate_camera:main',
+            'move_arm_with_gui=nuro_arm.scripts.move_arm_with_gui:main',
+            'record_movements=nuro_arm.scripts.record_movements:main',
+            'generate_aruco_tags=nuro_arm.scripts.generate_aruco_tags:main',
+        ]
+    },
     keywords=[
         'robotics',
         'educational-project',

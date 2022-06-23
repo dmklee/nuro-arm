@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
@@ -303,10 +304,13 @@ class GUI(tk.Frame):
         vscrollbar.grid(row=1,column=1, sticky="ns", pady=5)
         button.grid(row=1, column=2, sticky='n',padx=10, pady=5)
 
-if __name__ == "__main__":
+def main():
     robot = RobotArm()
     root=tk.Tk()
     root.title('Record and Playback Arm Configurations')
     gui = GUI(root, robot)
     gui.pack()
     root.mainloop()
+
+if __name__ == "__main__":
+    main()

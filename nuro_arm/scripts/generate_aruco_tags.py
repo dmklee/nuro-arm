@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # This script is based on the article by Adrian Rosebrock at PyImageSearch
 # https://www.pyimagesearch.com/2020/12/14/generating-aruco-markers-with-opencv-and-python/
 
@@ -105,11 +106,11 @@ def generate_tags(aruco_dict,
         im.save(os.path.join(destination, f"tags{i}-{j}.pdf"),
                 resolution=RESOLUTION)
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description='Generate printable Aruco markers')
     parser.add_argument('--size', '-s', type=float,
                         default=25,
-                        help="size of the tag in mm")
+                        help="size of the tag in millimeters")
     parser.add_argument('--number', '-n', type=int,
                         default=12,
                         help="number of tags to generate")
@@ -132,3 +133,6 @@ if __name__ == "__main__":
 
     tag_ids = range(args.start_id, args.number)
     generate_tags(aruco_dict, tag_ids, args.size, args.destination)
+
+if __name__ == "__main__":
+    main()

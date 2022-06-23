@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import numpy as np
 
 from nuro_arm import Camera
@@ -5,7 +6,7 @@ from nuro_arm.constants import CAMERA_CONFIG_FILE
 from nuro_arm.camera.gui import ShowCheckerboard
 from nuro_arm.tk_utils import Popup, VideoPopup, ImagePopup, Colors
 
-def calibrate_camera():
+def main():
     '''Scans over available cameras, prompting user to select which camera is
     to be used with the robot
     '''
@@ -110,4 +111,4 @@ def calibrate_camera():
     )()
 
 if __name__ == "__main__":
-    calibrate_camera()
+    main()

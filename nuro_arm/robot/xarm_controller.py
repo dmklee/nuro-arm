@@ -195,7 +195,9 @@ class XArmController(BaseController):
                 pass
 
         print('\n[WARNING] Config file for this xarm could not be found. '
-              ' Calibration should be performed.\n')
+              ' Calibration should be performed by running the command:\n'
+              '         $ calibrate_xarm \n\n'
+             )
         self.arm_joint_directions = {i:1. for i in self.arm_joint_ids}
         self.gripper_joint_limits = np.array(((0.9,),(-1.,)))
         self.servo_offsets = {i:0 for i in self.servo_ids}

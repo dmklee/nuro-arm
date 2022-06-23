@@ -1,10 +1,11 @@
+#!/usr/bin/env python
 import numpy as np
 
 from nuro_arm.tk_utils import ImagePopup, Popup, Colors
 from nuro_arm.robot.xarm_controller import XArmController
 from nuro_arm.constants import XARM_CONFIG_FILE, IMAGES_DIR
 
-def calibrate_xarm():
+def main():
     '''Calibrates servos in xArm so that the internal motion planner is accurate
 
     Calibration info is saved to a config file so this only needs to be performed
@@ -161,5 +162,5 @@ def calibrate_xarm():
     )()
 
 if __name__ == "__main__":
-    calibrate_xarm()
+    main()
 

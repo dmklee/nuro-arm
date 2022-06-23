@@ -1,9 +1,9 @@
+#!/usr/bin/env python
 import numpy as np
 import tkinter as tk
 import argparse
 
 from nuro_arm.robot.robot_arm import RobotArm
-from nuro_arm.constants import GRIPPER_CLOSED, GRIPPER_OPENED
 
 class GUI(tk.Frame):
     def __init__(self, parent, robot):
@@ -67,8 +67,8 @@ class GUI(tk.Frame):
         # create scale for gripper
         label = tk.Label(master=self.body, text='gripper:')
         scale = tk.Scale(master=self.body,
-                         from_=GRIPPER_CLOSED,
-                         to=GRIPPER_OPENED,
+                         from_=self.robot.GRIPPER_CLOSED,
+                         to=self.robot.GRIPPER_OPENED,
                          resolution=0.01,
                          orient="horizontal",
                          length=scale_width,
@@ -142,13 +142,19 @@ class GUI(tk.Frame):
         self.after(self.cycle_time, self.update)
 
 
-def move_with_gui(mode):
+def main():
     '''Use GUI to control robot joints
 
     Currently, the gui issues direct commands without performing collision
     detection so the user should be careful about what is in the workplace
     '''
-    robot = RobotArm(mode, headless= mode!='sim')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sim', action="store_true",
+                        help='Use simulator instead of real robot')
+    args = parser.parse_args()
+
+    controller_type = 'sim' if args.sim else 'real'
+    robot = RobotArm(controller_type)
 
     root = tk.Tk()
     root.title('Simple Control of Robot Joints')
@@ -157,13 +163,4 @@ def move_with_gui(mode):
     root.mainloop()
 
 if __name__ == "__main__":
-    #ToDo: rewrite async so it is less laggy on real robot
-    #      there are known issues on Mac
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--sim', action="store_true")
-    args = parser.parse_args()
-
-    mode = 'sim' if args.sim else 'real'
-
-    move_with_gui(mode)
-
+    main()
