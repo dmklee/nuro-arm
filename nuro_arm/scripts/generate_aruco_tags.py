@@ -6,7 +6,6 @@ import argparse
 import os
 import numpy as np
 from PIL import Image
-try:
 import cv2
 
 ARUCO_DICT = {
@@ -91,6 +90,8 @@ def generate_tags(aruco_dict,
     n_cols = int( (PAPER_SHAPE[0] - 2 * PAPER_MARGIN ) / padded_tag_size )
     n_rows = int( (PAPER_SHAPE[1] - 2 * PAPER_MARGIN ) / padded_tag_size )
 
+    files_created = []
+
     n_per_page = n_cols * n_rows
     for i in range(0, len(tags), n_per_page):
         j = min(i+n_per_page, len(tags))
@@ -104,8 +105,11 @@ def generate_tags(aruco_dict,
         page = np.concatenate(page, axis=1)
 
         im = Image.fromarray(page)
-        im.save(os.path.join(destination, f"tags{i}-{j}.pdf"),
-                resolution=RESOLUTION)
+        file_name = os.path.join(destination, f"tags{i}-{j}.pdf")
+        im.save(file_name, resolution=RESOLUTION)
+        files_created.append( file_name )
+
+    print("Generated the following files: \n\t{}\n".format('\n\t'.join(files_created)))
 
 def main():
     parser = argparse.ArgumentParser(description='Generate printable Aruco markers')
