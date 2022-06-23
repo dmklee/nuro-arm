@@ -108,5 +108,5 @@ The robot needs to be calibrated after assembly.  Initiate the calibration proce
 
 .. code-block:: bash
 
-    python -c "import nuro_arm; nuro_arm.calibrate_xarm()"
+    calibrate_xam
 

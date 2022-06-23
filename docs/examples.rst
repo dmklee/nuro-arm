@@ -1,10 +1,25 @@
 :github_url: https://github.com/dmklee/nuro-arm
 
-Example Scripts
+Examples
 ===============
 
+Interactive Windows
+-------------------
+
+Joint Angle Control
++++++++++++++++++++
+
+
+Designing Trajectories
+++++++++++++++++++++++
+
+----------------------------------------------------------------------------
+
+Python Scripts
+--------------
+
 Hardcoded Arm Movements
------------------------
++++++++++++++++++++++++
 create a sequence of arm joint positions and use for loop to go over them
 
 .. code-block:: python
@@ -20,9 +35,12 @@ create a sequence of arm joint positions and use for loop to go over them
 
 
 Using Feedback from Joint Positions
------------------------------------
++++++++++++++++++++++++++++++++++++
 
-Here is an example where we use the state of the gripper to determine whether an object was grasped.  The program keeps attempting to close the gripper until it detects an object in the gripper (i.e. gripper could not be fully closed), at which point it drops the object off at another location.
+Here is an example where we use the state of the gripper to determine whether an
+object was grasped.  The program keeps attempting to close the gripper until it
+detects an object in the gripper (i.e. gripper could not be fully closed), at
+which point it drops the object off at another location.
 
 .. code-block:: python
 
@@ -48,9 +66,9 @@ Here is an example where we use the state of the gripper to determine whether an
         robot.open_gripper()
 
 Top-Down Grasping
------------------
++++++++++++++++++
 show IK solution example
 
 Nudging a Cube
---------------
+++++++++++++++
 show cube detection and movement

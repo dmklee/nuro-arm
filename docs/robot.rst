@@ -9,6 +9,15 @@ Before connecting to the robot, turn it ON using the switch on the control board
 If it makes a beeping noise, then you need to plug in the power cable.  Do **not** run 
 the commands on this page unless you have already :ref:`calibrated the robot<Calibration>`.
 
+To interface with the robot, use the ``RobotArm`` class.  You can choose between
+using the real xArm robot (``controller_type='real'``) or a simulator version of 
+the robot (``controller_type='sim'``) if you do not have the robot.  This is shown
+in the following Python code snippet.  Notice the last two commands, which show
+how to change from **active mode** to **passive mode**.  The robot defaults to
+active mode (all motors are on and will resist movement).  If you plan to move
+the robot by hand (for instance to demonstrate movements), then you must enter
+passive mode.  The robot will automatically disconnect when the script ends.
+
 .. code-block:: python
     
     from nuro_arm import RobotArm
@@ -25,16 +34,25 @@ the commands on this page unless you have already :ref:`calibrated the robot<Cal
 
 Joint Angle Control
 -------------------
-The simplest way to control the robot is to set the angle for each of the five joints in the arm. The names and directions of each joint are shown in the image below.  For instance, by increasing the angle of the elbow joint, then the robot's gripper is moved closer to the ground.  If all joint angles are set to 0, then the robot is in the HOME position (this is what you set during calibration).  The robot expects joint angles in radians.
+The simplest way to control the robot is to set the angle for each of the five
+joints in the arm. The names and directions of each joint are shown in the image
+below.  For instance, by increasing the angle of the elbow joint, then the
+robot's gripper is moved closer to the ground.  If all joint angles are set to 0,
+then the robot is in the HOME position (this is what you set during calibration).
+The robot expects joint angles in radians.
 
-If you want to gain more intuition about the joints of the robot, try running the script: `python nuro_arm/examples/move_arm_with_gui.py`, which allows you to move each joint with a slider.
+If you want to gain more intuition about the joints of the robot, try running
+the script: ``$ move_arm_with_gui`` (use argument ``--sim`` if you don't have real robot),
+which allows you to move each joint with a slider.
 
 .. figure:: ../images/jointangle_control.png
     :width: 400px
     :alt: diagram of robot joints
     :align: center
 
-Here is a brief example of how to set and read the joint angles of the robot using `RobotArm.move_arm_jpos` and `RobotArm.get_arm_jpos`.  The API refers to joint angles as joint positions (or jpos).
+Here is a brief example of how to set and read the joint angles of the robot
+using ``RobotArm.move_arm_jpos`` and ``RobotArm.get_arm_jpos``.  The API refers to
+joint angles as joint positions (or jpos).
 
 .. code-block:: python
     
@@ -47,7 +65,6 @@ Here is a brief example of how to set and read the joint angles of the robot usi
     # see achieved joint angles
     achieved_jpos = robot.get_arm_jpos()
 
-If you plan to read joint angles while you move the robot arm by hand (for instance, to *teach* the  robot a movement), then make sure to enter passive mode first.
 
 End Effector Control
 --------------------
