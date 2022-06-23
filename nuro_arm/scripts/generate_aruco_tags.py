@@ -4,9 +4,10 @@
 
 import argparse
 import os
-import cv2
 import numpy as np
 from PIL import Image
+try:
+import cv2
 
 ARUCO_DICT = {
 	"DICT_4X4_50": cv2.aruco.DICT_4X4_50,
@@ -114,12 +115,12 @@ def main():
     parser.add_argument('--number', '-n', type=int,
                         default=12,
                         help="number of tags to generate")
+    parser.add_argument('--destination', '-d', type=str,
+                        default='./',
+                        help="folder in which to save the pdfs")
     parser.add_argument('--start-id', type=int,
                         default=0,
                         help="tag number to begin with")
-    parser.add_argument('--destination', type=str,
-                        required=True,
-                        help="folder in which to save the pdfs")
     parser.add_argument('--dict-name', type=str,
                         default="DICT_4X4_50",
                         help="aruco tag dictionary name")
