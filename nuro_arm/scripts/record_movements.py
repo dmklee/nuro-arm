@@ -30,8 +30,8 @@ class MovementDispatcher(Thread):
             arm_jpos = full_arm_state[:-1]
             gripper_state = full_arm_state[-1]
 
-            robot.move_arm_jpos(arm_jpos)
-            robot.set_gripper_state(gripper_state)
+            self.robot.move_arm_jpos(arm_jpos)
+            self.robot.set_gripper_state(gripper_state)
             if not self.running:
                 break
 
@@ -50,7 +50,7 @@ class GUI(tk.Frame):
         self.header.grid_columnconfigure(0, weight=1)
         self.footer = tk.Frame(self)
 
-        field_names = list(robot.joint_names)
+        field_names = list(self.robot.joint_names)
         self.table = ttk.Treeview(self,
                              show='headings',
                              columns=list(range(len(field_names))),

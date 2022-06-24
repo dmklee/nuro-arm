@@ -23,7 +23,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     python_requires='>3.6.0',
-    setup_requires="wheel",
+    setup_requires='wheel',
     install_requires=[
         "numpy",
         "scipy",
@@ -31,6 +31,9 @@ setup(
         "pybullet>=3.1.7",
         hid_library,
     ],
+    extras_require={
+        'all': ['opencv-contrib-python']
+    },
     entry_points={
         'console_scripts': [
             'calibrate_xarm=nuro_arm.scripts.calibrate_xarm:main',
