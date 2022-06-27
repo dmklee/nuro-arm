@@ -63,6 +63,11 @@ following command (usually everytime you restart the machine).
 Parts List
 ----------
 
+The full robot kit costs around $250.  The robot and camera can be ordered easily
+on Amazon.  Currently, the camera is mounted to the robot base using custom 
+3D printed parts (`STL files <https://github.com/dmklee/nuro-arm/blob/main/nuro_arm/assets/meshes>`_).
+We are working on sourcing a camera mount that does not require 3D printing.
+
 .. list-table::
     :header-rows: 1
     
@@ -90,10 +95,6 @@ robot, watch the following instructional videos provided by Hiwonder.
 
 The final step is to plug in the robot.  We must plug two things into the controller board on the robot: the power supply and the usb cable.  See the pictures below to understand how to plug things in.  If everything is correct, when you flip the power switch to ON, lights on the motors will turn on.  If you hear a beeping noise, this means the power supply is not plugged in.  Do not leave the robot on for extended periods of time, so make sure to flip the power switch when done.
 
-.. image:: ../images/installation_guide/arm_plugin_parts.png
-	:width: 350px
-	:alt: how to plug in robot
-	:align: center
 
 .. image:: ../images/installation_guide/arm_plugin_with_text.png
 	:width: 500px
