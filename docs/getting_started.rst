@@ -79,9 +79,10 @@ Parts List
 
 Assembly Instructions
 ---------------------
+
 The assembly process takes about 2.5 hours and does not require any additional
- tools. The parts will all be located in the Hiwonder box. To assemble the
- robot, watch the following instructional videos provided by Hiwonder.
+tools. The parts will all be located in the Hiwonder box. To assemble the
+robot, watch the following instructional videos provided by Hiwonder.
 
 	#. `Assembly 01 <https://www.youtube.com/watch?v=68N5oQAYfEI>`_
 	#. `Assembly 02 <https://www.youtube.com/watch?v=BhTdgkRTBoE>`_: self-tapping means the screws will have a pointy end.
