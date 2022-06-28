@@ -106,7 +106,7 @@ Using Gripper
     robot.open_gripper()
 
     # closes_gripper, returns once motion stops
-    robot.open_gripper()
+    robot.close_gripper()
 
     # for more fine-grained gripper control, use float ranging from 
     # 0 (fully closed) to 1 (fully opened)
