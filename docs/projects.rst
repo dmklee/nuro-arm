@@ -11,6 +11,13 @@ Locate, grasp, and place cubes using aruco tags. [Advanced] Impose constraints
 like blue cube must be on red cube, and use planner to determine stacking order
 
 
+Face Tracking
+-------------
+
+Using a camera held by the gripper, write controller that follows someone's face
+around as they move. [Advanced] anticipate person's motion for smoother tracking
+
+
 Throwing Objects into Bin
 -------------------------
 
