@@ -4,11 +4,12 @@ Using Camera
 ============
 
 To use the camera, you need to install `openCV <https://opencv.org/>`_. We
-require the contrib version, which provides support for ArUco tags.
+require the contrib version, which provides support for ArUco tags.  To include
+opencv-contrib-python in the installation, you can use the following command:
 
 .. code-block:: bash
 
-    pip install opencv-contrib-python
+    pip install nuro-arm[all]
 
 Capturing Images
 ----------------
