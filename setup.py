@@ -4,15 +4,9 @@ from setuptools import setup, find_packages
 with open("README.md", 'r') as f:
     long_description = f.read()
 
-# figure out what HID repo to use
-hid_library = {'Linux' : 'easyhid',
-               'Windows' : 'hid',
-               'Darwin' : 'hidapi',
-              }[platform.system()]
-
 setup(
     name='nuro-arm',
-    version='0.0.4',
+    version='0.0.5',
     description='Simple control interface for low-cost robotic arm.',
     license="MIT License",
     long_description=long_description,
@@ -29,7 +23,9 @@ setup(
         "scipy",
         "pillow",
         "pybullet>=3.1.7",
-        hid_library,
+        "easyhid; platform_system=='Linux'",
+        "hid; platform_system=='Windows'",
+        "hidapi; platform_system=='Darwin'",
     ],
     extras_require={
         'all': ['opencv-contrib-python']
