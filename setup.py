@@ -12,7 +12,7 @@ hid_library = {'Linux' : 'easyhid',
 
 setup(
     name='nuro-arm',
-    version='0.0.2',
+    version='0.0.4',
     description='Simple control interface for low-cost robotic arm.',
     license="MIT License",
     long_description=long_description,
