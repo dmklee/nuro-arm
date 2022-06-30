@@ -100,6 +100,11 @@ Once the robot receives the desired end effector position, it performs a calcula
 Using Gripper
 -------------
 
+The gripper is controlled independently from the arm.  Most of the time, it is
+sufficient to either fully open or fully close the gripper.  However, you can
+also specify *how* open/closed you want the gripper to be.  Examples of each
+of these commands are shown here:
+
 .. code-block:: python
     
     # opens gripper, returns once motion stops
@@ -115,13 +120,83 @@ Using Gripper
     # get current gripper state (ranging from 0 to 1)
     gripper_state = robot.get_gripper_state()
 
+Usually, it is not advised to command a movement if you know it will cause a
+collision.  So, *do you have to anticipate an objects size when commanding how
+far to close the gripper when grasping?*  No, instead you can use
+the argument ``backoff`` in ``Robot.set_gripper_state``.  Backoff determines what
+will happen when the gripper tries to move but encounters and object.  If backoff
+is negative, then the gripper will apply some clamping pressure to the grasped
+object, without damaging the motors.  By default, ``RobotArm.close_gripper``
+sets ``backoff=-0.05``.  It is unlikely you will need to change this argument.
+
+Advanced Motions
+----------------
+By default, the motions produced by ``RobotArm.move_arm_jpos`` and ``Robot.move_hand_to``
+are linear in joint space.  The speed can be controlled using the ``speed`` argument,
+which specifies the movement speed in radians per second.  For safety reasons, the
+robot will restrict speed to be in the range of ``0.1`` to ``4.0``.  Here is an
+example showing two ways to adjust the movement speed:
+
+.. code-block:: python
+
+    # by default the speed of all motors is 1.0
+    robot.move_arm_jpos(jpos)
+
+    # increase speed for ALL arm joints
+    robot.move_arm_jpos(jpos, speed=2.0)
+
+    # restrict speed of base joint, keep others at default speed
+    robot.move_arm_jpos(jpos, speed=[0.5, 1, 1, 1, 1])
+
+The ``speed`` argument is also available for ``Robot.set_gripper_state``.
+
+
+So far, all of the movement commands have been **safe**.  Under the hood, the
+``RobotArm`` class monitors all movements to detect and stop unanticipated collisions,
+so even if you tried to break something (*please don't*), you would have a hard time.
+For *most* applications, you should stick to these commands.  However, for applications
+where you need complex or fast motions (for instance drawing or throwing) it is
+better to avoid the monitoring, which requires full stops between movements.
+
+To run a motion without the monitoring, you can send commands directly to the servos
+using ``RobotArm.controller.move_servos(joint_ids: List, jpos: List, duration: int)``.
+The interface is a bit more complicated so we will show some examples uses below
+(see this `script <https://github.com/dmklee/nuro-arm/blob/main/examples/complex_motion.py>`_
+demonstrating how to perform cartesian control).  
+
+.. code-block:: python
+
+    # get ordered list of joints => (base, shoulder, elbow, wrist, wristRotation, gripper)
+    joint_names = robot.joint_names
+
+    # move base and elbow to joint positions of 0 radians over 2000 milliseconds
+    robot.controller.move_servos([0, 2], [0., 0.], duration=2000)
+
+    # to get 'smooth' movements, send new command as old one is about to finish
+    # here we move wristRotation by increments of 0.15 radians
+    import time
+    duration_ms = 100
+    for i in range(10):
+        robot.controller.move_servos([4], [0.15*i], duration=duration_ms)
+        # sleep expects a time in seconds so divide by 1000
+        time.sleep( (0.95 * duration_ms) / 1000 )
+
+    # to get multiple motors to move at different speeds, you can simply run
+    # commands one after the other
+    # here we move elbow twice the speed of wrist (e.g. half the duration)
+    robot.controller.move_servos([2], [0], duration=500)
+    robot.controller.move_servos([3], [0], duration=1000)
+
+Since there is no collision detection, we recommend that you plan out motions using
+the simulated robot.  If an unsafe motion does occur, either terminate the script
+or turn off the robot.  There are no safeguards on the speed of movement so start
+with a large value of ``duration`` (it is in milliseconds), and then reduce as needed.
+
+
 Collision Detection
 -------------------
 Coming soon... 
 
-Advanced Motions
-----------------
-Coming soon... 
 
 Care and Maintenance
 --------------------

@@ -212,7 +212,7 @@ class RobotArm:
             positive value of backoff means the gripper will be more open
             than the acheived position
 
-        backoff : speed
+        speed : float
             joint speed in radians per second
 
         Returns
