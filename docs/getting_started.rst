@@ -110,5 +110,5 @@ The robot needs to be calibrated after assembly.  Initiate the calibration proce
 
 .. code-block:: bash
 
-    calibrate_xam
+    calibrate_xarm
 
