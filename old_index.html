@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+	<title>Home | NURO Arm</title>
+	<link rel="stylesheet" href="css/styles.css">
+	<link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet'>
+	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script>
+	  $(function(){
+		$("#header").load("header.html");
+		$("#footer").load("footer.html");
+	  });
+	</script>
+  </head>
+  <body>
+	  <div id="header"></div>
+	  <div class="row">
+		<div class="bg-media red-bg">
+	  	  <video autoplay="autoplay" loop="loop" muted="muted" playsinline="" width="640" height="480" style="filter:brightness(40%)">
+		    <source src="images/media.mp4" type="video/mp4">
+		  </video>
+		  <div class="text-over-media">
+		    <div data-aos="fade-up" data-aos-duration="1000">
+			  <p class="white-text">Placing robotic manipulation within reach.</p>
+		    </div>
+		  </div>
+		</div>
+	  </div>
+	  <div class="row red-bg" >
+		<div class="mini-banner">
+			<p class="center-aligned white-text">We are offering robotics course for high school students beginning May 2022.</p>
+			<a class="button white-to-red-button" href="education.html">Learn More</a>
+		</div>
+	  </div>
+	  <div class="row white-bg">
+		<div class="container">
+		  <p class="title center-aligned red-text">Our Goal</p>
+		  <p class="body justified-text black-text">
+		  We aim to expand access to robotics.  We believe that hands-on experience is key to cultivating excitement in robotics and STEM. This robotic kit, at only $250, is a great educational platform for students ranging from high school to college level. 
+		  </p>
+		</div>
+	  </div>
+
+	  <div class="row white-bg">
+		<div class="container" style="max-width:1400px">
+		  <div class="columned">
+		    <div class="vsplit">
+			  <div class="capsule shadowed">
+	  		    <img src="images/robotic-kit.jpg" style="filter : brightness(40%)">
+				<div class="text-over-img">
+				  <div class="container justified-text white-text">
+				    <p class="title"> Robot Kit </p>
+				    <p class="sub-title"> 
+				    At under $300, the kit includes a 5-DoF arm with accurate servos and realtime position feedback, and a 1MP camera to locate objects in the workspace.
+				    </p>
+				  </div>
+				</div>
+  		      </div>
+  		    </div>
+		    <div class="vsplit">
+			  <div class="capsule shadowed">
+	  		    <img src="images/simulator.png" style="filter : brightness(40%)">
+				<div class="text-over-img">
+				  <div class="container justified-text white-text">
+				    <p class="title"> Simulator </p>
+				    <p class="sub-title">
+				    The robot kit can be simulated on Windows, Mac and Linux, allowing for virtual teaching experiences at no cost.  
+				    </p>
+				  </div>
+				</div>
+  		      </div>
+  		    </div>
+		  </div>
+		</div>
+	  </div>
+
+	  <div id="footer"></div>
+	  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+	  <script>
+		AOS.init();
+	  </script>
+  </body>
+</html> 

@@ -52,7 +52,7 @@ p a:hover {
 	justify-content : flex-end;
 }
 .header-link a {
-	margin : 0 20px;
+	margin : 0 15px;
 	font-size: 1.2rem;
 	text-transform : uppercase;
 }
