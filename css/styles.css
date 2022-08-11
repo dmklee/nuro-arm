@@ -52,7 +52,7 @@ p a:hover {
 	justify-content : flex-end;
 }
 .header-link a {
-	margin : 0 20px;
+	margin : 0 10px;
 	font-size: 1.2rem;
 	text-transform : uppercase;
 }
@@ -140,14 +140,13 @@ p a:hover {
 	display: flex;
 	flex-direction: row;
 	flex-wrap : wrap;
-	justify-content: flex-start;
+	justify-content: center;
 	margin : 0 auto;
 }
 .mini-banner p {
 	letter-spacing : 1px;
 	font-size : 1.2rem;
-	margin : auto;
-	padding : 15px;
+	margin : auto 30px auto 0;
 }
 .container {
 	width : 90%;
