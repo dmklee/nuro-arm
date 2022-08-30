@@ -7,13 +7,8 @@
 	<link href='https://fonts.googleapis.com/css?family=Nunito' rel='stylesheet'>
 	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+	<script src = "https://d3js.org/d3.v6.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-	<script>
-	  $(function(){
-		$("#header").load("header.html");
-		$("#footer").load("footer.html");
-	  });
-	</script>
   </head>
   <body>
 	  <div id="header"></div>
@@ -32,7 +27,7 @@
 	  <div class="row red-bg" >
 		<div class="mini-banner">
 			<p class="center-aligned white-text">Free robot kit rentals are available for Boston-area students.</p>
-			<a class="button white-to-red-button" style="margin:15px" href="https://forms.gle/qZBiZGJvfozU2ja28">Apply Now</a>
+			<a class="button white-to-red-button" style="margin:15px" href="https://forms.gle/qZBiZGJvfozU2ja28" target="_blank">Apply Now</a>
 		</div>
 	  </div>
 	  <div class="row white-bg">
@@ -76,8 +71,23 @@
 		  </div>
 		</div>
 	  </div>
+	  <div class="row white-bg">
+		<div class="container">
+		  <p class="title center-aligned red-text">News</p>
+		  <ul class="body black-text">
+			  <li> [<em>July 2022</em>] Students from Young Scholars program join the Helping Hands Lab.  They will be developing a robot AI to play ConnectFour.
+			  <li> [<em>June 2022</em>] Official documentation page is released to provide overview of the NURO.Arm API.  The API is now listed in PyPI to allow for a simple installation.
+			  <li> [<em>January 2022</em>] "CS4910: Deep Learning for Robotics" begins, covering reinforcement and supervised learning algorithms applied to manipulation problems using the NURO.Arm platform.
+			  <li> [<em>May 2021</em>] NURO.Arm partners with Northeastern University's Center of STEM Education to launch a six-week robotics outreach program for local high school students.
+		  </ul>
+		  <!--<p >-->
+		</div>
+	  </div>
 
 	  <div id="footer"></div>
+
+	  <script src="js/header.js" type="text/javascript"></script>
+	  <script src="js/footer.js" type="text/javascript"></script>
 	  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
 	  <script>
 		AOS.init();
