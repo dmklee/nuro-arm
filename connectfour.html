@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Projects | NURO Arm</title>
+	<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<style>
+		body {
+			margin: 0 auto;
+			max-width: 800px;
+		   	margin: 0 auto;
+		   	font-size: 0.8rem;
+		}
+		h3 {
+			font-style: italic;
+		}
+		.img_container {
+			width: 80%;
+			margin: 0 auto;
+		}
+	</style>
+  </head>
+  <body style="">
+	  <div class="toc">
+	  </div>
+
+	  <div class="main">
+	  <h1>Playing ConnectFour with AI </h1>
+	  <em>[apologies, site currently under construction]</em>
+	  <br>
+	  <br>
+	  <b>Prerequisites: </b> Introductory Python
+	  <br>
+	  <b>Hardware Requirements: </b> xArm robot, USB Camera (any webcam will work), ConnectFour Board, 3D printed funnel
+	  <br>
+	  <b>Estimated Time: </b> 30 hours
+	  <br>
+	  <b>Skills learned: </b> NumPy, OpenCV, Search Algorithms
+	  <h2>Project Overview</h2>
+	  In this project, you will program the robot to play ConnectFour.  You will write an artificial 
+	  intelligence algorithm that thinks multiple moves ahead and can often beat human opponents.  This
+	  is a great project for beginner programmers that are interested in robotics.  It touches on the
+	  three core functionalities of all robots: sensing, planning, and acting.  Moreover, you will
+	  gain experience with two important Python libraries, NumPy and OpenCV, which are commonly used
+	  in the fields of robotics and artificial intelligence.
+	  <br>
+	  <br>
+	  This document is meant to guide you through programming a ConnectFour-playing robot.  Keep in
+	  mind that the approach we follow here is only one of many possible ways to solve this problem.  
+	  We encourage you to
+	  exercise your creativity and problem solving skills when deciding how to set up the hardware
+	  and write your functions.  For instance, we have had some students use a camera stand, and others
+	  connect the camera to the robot hand.  There were benefits to both approaches, but they ended
+	  up with slightly different code.  If you feel stuck, refer to the solution code that we provide
+	  or reach out to us over email.
+	  <br>
+	  <br>
+	  <!--**insert introductory video here...**-->
+
+	  <h2>Reading Board State with Computer Vision</h2>
+	  The robot needs to understand the state of the game in order to determine what move is best.  While
+	  we humans automatically extract the location of pieces when we look at the board, this process
+	  is more complicated for the computer.  The camera sends the computer images, which are multi-dimensional
+	  arrays with hundreds of thousands of pixels.  The task here is to determine what information
+	  in the image can be used to determine the location of pieces in the 6-by-7 grid.  Before you
+	  move to the next section, think through how you would approach the problem.
+
+	  <h3> Setting Things Up </h3>
+	  The first step is to set up your hardware to capture images of the ConnectFour board.  Position
+	  your camera such that it can see the board fully ( you will be able to double check this in the
+	  next section once we communicate with the camera in Python).  Once you are happy with the camera
+	  's view, we recommend that you fix its position relative to the ConnectFour board (in the below
+	  , a camera stand is used to fix the camera and markings on the table indicate where the board
+	  should be placed).  It is very important that the camera and board do not move when you are creating
+	  your computer vision program.
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/camera_setup.png" height="180px">
+	  </div>
+
+	  <h3> Capturing Images </h3>
+	  Now, let's write some code to capture images with Python.  Fortunately, the OpenCV library provides
+	  a simple interface for communicating with most cameras.  The code snippet below demonstrates
+	  how to capture and visualize images captured by the camera.  Each camera is assigned a unique
+	  integer, so if you are using a laptop with a webcam, you may need to adjust cam_id to 1 or 2.
+
+	  <pre> <code>
+	  import cv2
+
+	  cam_id = 0
+	  cap = cv2.videoCapture(cam_id)
+	  while True:
+	  	ret, frame = cv2.imread(cap)
+		if ret:
+			cv2.imshow('camera feed', frame)
+			cv2.waitKey(10)
+	  </code> </pre>
+	  For this project, there is no need to see a live feed of the camera.  Instead, we need a function
+	  that, given a capture object (e.g. a connected camera), returns an image.  You may notice that
+	  the first image captured is dark, which is caused by the camera auto-adjusting its brightness
+	  levels; this will make it harder to detect pieces so we recommend discarding the first few images
+	  captured.  This phenomena is shown in below: the first two images (t=1 and t=2) are dark whereas
+	  the third is well-illuminated.
+
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/discarding_frames.png" width="640px">
+	  </div>
+
+	  Before moving on, double check that board represents at least 50% of the image and it is mostly
+	  aligned with the grid of the board.  Some webcams have a wide-angle lens causing the grid to 
+	  appear warped, which will complicate things later.  There is a 
+	  <a href="https://automaticaddison.com/how-to-perform-camera-calibration-using-opencv/">process</a>
+	  to undistort the images, but it can be challenging.  A simpler solution is to place more distance
+	  between the camera and the board, which will reduce the warping.
+
+	  <h3> Transforming/Cropping to Board </h3>
+	  The next step is to crop the area of interest, i.e. the board, from the image. The process is
+	  illustrated in the figure below, and is realized by a function that takes the raw image as 
+	  input and returns a smaller image that contains on the grid of the board.  Because the image 
+	  is stored as a multi-dimensional NumPy array, a technique called "slicing" can be used.  Uncover
+	  hints as needed, and remember that Google search and StackOverflow are your bestfriends as a programmer
+	  :).
+
+	  <br>
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/cropping.png" width="640px">
+	  </div>
+	  At this point, it should be clear why fixing the position of the camera and board are 
+	  important.  Nudging either of them will introduce errors in the cropping operation.
+	  
+	  <h3> Detecting Red and Yellow </h3>
+	  Detecting the specific colors in an image is not as straightforward as it appears. 
+	  <br>
+
+	  **show example of different brightnesses**
+
+	  <br>
+	  
+
+	  Now that you have isolated the game board, it is time to identify where game pieces are.  
+	  Fortunately, the pieces are unique colors, red and yellow, that stick out from the blue board. 
+	  Thus, it is possible to identify pieces using the color at each grid cell.  Use the function 
+	  cv2.inRange to classify pixels as yellow or red, in the following section you will read this 
+	  classification at each grid cell location.  We recommend performing the classification from the 
+	  HSV colorspace, where it will be more robust to variations in lighting (use cv2.cvtColor to convert)
+
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/segmentation.png" width="640px">
+	  </div>
+
+	  <h3> Grid Readout </h3>
+	  Write a function that takes the yellow and red- classified images, and outputs the symbolic 
+	  state of the board.  The state of the board should be represented as a 2D numpy array where 0
+	  indicates empty, 1 indicates yellow, and -1 indicates red.  It is recommended to look the a
+	  patch of pixels at each grid cell in case there is some inaccuracy in the color detection.
+
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/readout.png" height="180px">
+	  </div>
+
+	  <h2>Determining Moves with Artificial Intelligence</h2>
+	  <h3>Creating hypothetical boards</h3>
+	  To evaluate the outcome of an action, we need a way to simulate what happens to the board when
+	  different moves are made.  For ConnectFour, every move has a well-understood outcome: a piece is
+	  added to the highest row that is currently empty in the given column.  The figure below shows the
+	  outcome of all 7 possible moves that red can make.  We term these outcomes as hypothetical boards
+	  since they will be generated in the mind of the AI, as opposed to realized in the actual game being
+	  played.  By considering hypothetical boards several steps in the future, the AI can select moves
+	  that are more likely to result in victory in the future and less likely to lead to a loss.
+	  <br>
+	  <br>
+	  Write a function that takes as input a board state, a column number and a piece color, and returns
+	  the board state that would be generated if that move were made. Hint: you should return a copy of the
+	  board state, so as not to affect the data.
+
+
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/hypo_boards.png" width="640px">
+	  </div>
+
+	  <h3>Assigning score to Board States</h3>
+	  For a game like tic-tac-toe, writing the function above to generate hypothetical future
+	  states would be sufficient to create an effective AI.  Simply choose the move that results
+	  in the most future wins and fewest future losses.  However, for more complex games like
+	  ConnectFour, such an approach is computationally infeasible since there are so many possible
+	  future states.  The technical term used is the branching factor of the game, i.e. how many moves
+	  are available at each step. Since ConnectFour has a branching factor of 7, there are up to t^7
+	  hypothetical future states after t moves, so a game that ends after 12 moves would have required
+	  imagining up to 7^12=13.8 billion moves.
+	  <br>
+	  <br>
+	  One way to get around this issue is to approximate the value of a non-terminal game state.  Rather than
+	  simulating until a win or loss is achieved, we can assign some value based on how likely we think that
+	  the state will result in a win or loss.  For instance, we might say that having 3-pieces in a row is
+	  good.  This is known as a heuristic, and is developed by the programmer to guide the AI toward better
+	  behavior.  Much thought and care needs to be put into creating heuristics for AI, since simple
+	  rules can have complex effects on the resulting behavior.
+	  <br>
+	  <br>
+	  Write a function to evaluate the score of a board state.  The input should be a board and the output
+	  should be a score (assume that the AI always plays as yellow, so a more positive score is better for the yellow
+	  player and a more negative score is better for the red player).  Hint: an important intermediate calculation here is
+	  determining the number of pieces in a row that each player has.
+
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/patterns.png" height="140px">
+	  </div>
+	  <h3>One Step Lookahead</h3>
+	  This is called a 'reactive policy'.
+
+	  <br>
+	  <br>
+	  Write a function that selects the move that results in the highest score out
+	  of all hypothetical next boards.  Test
+
+
+
+	  <h3>Recursion Minimax</h3>
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/trap.png" height="140px">
+	  </div>
+	  <h3>Breaking Ties</h3>
+	  It is likely that multiple moves may be be evaluated as producing the same best score. 
+	  The simplest approach is to break ties arbitarily (e.g. select first column that 
+	  achieves the best score).  However, this behavior is not ideal and may be exploitable
+	  by the opponent.  Try avoiding this predictable behavior by breaking ties with randomly.
+	  Hint: use `np.random.choice`.  You may also observe that playing closer to the center
+	  of the board is better; try biasing the selection using the `p` argument of 
+	  `np.random.choice` to assign more probabilities to columns that are closer to the
+	  middle.
+
+	  <h3>Testing and Refining</h3>
+	  The simplest way to test it is to probe its decision at interesting board states,
+	  and start with a small search depth
+	  will it always find winning move?
+	  will it get trapped?
+	  does it block the opponent?
+
+	  <h2>Placing Pieces with Robot Arm</h2>
+	  <h3>Standardizing position</h3>
+	  Just as you did for the camera, it is important to standardize the position
+	  of the robot.  The robot should be placed such that it can reach above the 
+	  funnel along its entire length. We recommend using paper to mark the location
+	  of the robot's suction cups with respect to the board.  You can also mark a location
+	  on the paper for where the robot will pick up the pieces.
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/robot_setup.png" height="140px">
+	  </div>
+	  <h3>Moving Arm</h3>
+	  <a href="https://nuro-arm.readthedocs.io/en/latest/robot.html#joint-angle-control">Joint Control</a>
+	  <a href="https://nuro-arm.readthedocs.io/en/latest/robot.html#end-effector-control">End Effector Control</a>
+	  <div class='img_container'>
+		  <img src="./images/projects/connectfour/movements.png" height="140px">
+	  </div>
+	  <h3>Picking up Piece</h3>
+	  add feedback
+	  <h3>Placing Piece</h3>
+	  parametrize by column
+
+	  <h2> System Integration </h2>
+	  The final step is to integrate all three parts together into a single program.
+	  Ideally, you should test each part individually and work through bugs before
+	  integration.  After all, it is difficult to diagnose the cause of poor performance
+	  when it is unclear whether the board state was read incorrectly, the planning
+	  process is flawed, or the robot moved to the wrong position.
+	  <br>
+	  <br>
+	  <h3> State Machine </h3>
+	  To integrate all three components, you should design a state machine.  While the
+	  ConnectFour AI system may seem simple, it will be beneficial to carefully consider
+	  the control system logic.  To do so, write a flow diagram that captures any core
+	  processing and decision points that must be made.  The diagram should be able to
+	  handle any expected issues that may come up during operation.  For instance, what
+	  happens if the robot fails to grasp the piece during an action or what if the 
+	  opponent takes a long time to make a move.
+	  <br>
+	  <br>
+	  The flow diagram is a great mental exercise for understanding how you expect the
+	  system to operate.  Morever, it is a good visual aid that can help you organize
+	  the implementation of the state machine.
+
+	  <h3> Debugging </h3>
+
+	  <h2> Conclusion and Next Steps </h2>
+	  
+	  Accelerating search by parallelizing branches
+	  Pruning search space using alpha beta pruning
+	  Handling arbitary camera positioning
+
+	  <h2> Implemented Solution </h2>
+	  If you get stuck along the way or want to compare your approach to someone else's,
+	  check out our implementation on <a href="https://github.com/dmklee/nuro-arm-projects/blob/main/connectfourai">Github</a>
+
+
+	  </div>
+
+	  <div id="footer"></div>
+	  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+	  <script>
+		AOS.init();
+	  </script>
+
+	  <!--<script>-->
+		  <!--// generate table of contents-->
+		  <!--const anchors = $('body').find('h2, h3');-->
+			
+		  <!--$(window).scroll(function(){-->
+			  <!--var scrollTop = $(document).scrollTop();-->
+
+			  <!--for (var i=0; i < anchors.length; i++) {-->
+				  <!--$('nav ul li a[href="#' + $(anchors[i]).attr('id')+'"]"').removeClass('active');-->
+			  <!--}-->
+			  <!--for (var i=anchors.length-1; i>=0; i--){-->
+				  <!--if (scrollTop > $(anchors[i]).offset().top - 75) {-->
+					  <!--$('nav ul li a[href="#' + $(anchors[i]).attr('id')+'"]"').addClass('active');-->
+					  <!--break;-->
+				  <!--}-->
+			  <!--}-->
+		  <!--})-->
+	  <!--</script>-->
+  </body>
+</html> 

@@ -17,9 +17,6 @@
 		  <p class="body justified-text white-text">
 		  We aimed to create a platform that is exciting enough to attract new students to STEM yet sophisticated enough to engage more advanced users or hobbyists.  We provide a number of high level graphical interfaces for controlling the arm, and have built in safety measures to prevent damage. For more complex projects, we offer fine-grained control of motor commands and inverse kinematics motion planning.  The physical kit and virtual simulator use a similar interface, which allows you to seamlessly switch from an in-person experience to a virtual setting.  We provide several example projects as inspiration, and are happy to discuss what else is possible.
 		  </p>
-		  <div style="display:flex;justify-content:center;padding-top:20px">
-		    <a class="button white-to-black-button" href="https://github.com/dmklee/nuro-arm/tree/main/nuro_arm/examples">View Examples</a>
-		  </div>
 		</div>
 	  </div>
 
@@ -27,55 +24,40 @@
 	    <div class="capsule white-bg">
 		  <div class="row">
 			<div class="columned">
-			  <div class="vsplit">
-				  <img src="images/motion-planning.png">
+			  <div class="vsplit project-media">
+				  <video autoplay="autoplay" loop="loop" muted="muted" playsinline="" width="640" height="480">
+					<source src="images/projects/connectfour/promo.mp4" type="video/mp4">
+				  </video>
 			  </div>
 			  <div class="vsplit">
-				<div class="container" style="width:80%" data-aos="fade-up">
-				  <p class="small-title">Motion Planning</p>
-				  <p class="body justified-text">
-				  The robot arm can perform accurate movements.  The simulator can be used to plan collision-free motions in joint-space or cartesian space of the end-effector. Such motions can be used in applications ranging from tossing an object to drawing shapes with a marker. 
+				<div class="container" data-aos="fade-up">
+				  <p class="small-title" style="margin-top:0; margin-bottom:0">ConnectFour AI</p>
+				  <p class="body">
+				  <span class="bold">Description: </span> Great introduction to the three main systems of robotics: perception, planning, and actuation.  By the end, you will have an AI that can beat most human players at ConnectFour.
+				  <br>
+				  <span class="bold">Estimated Time: </span> 30 hours
+				  <br>
+				  <span class="bold">Hardware Requirements: </span> xArm robot, webcam, 3D printed funnel
+				  <br>
+				  <span class="bold">Prerequisites: </span> Beginner Python skills
+				  <br>
+				  <div style="display:flex;justify-content:center">
+					  <a class="button black-to-white-button" href="connectfour.html">Project Guide</a>
+				  </div>
 				  </p>
 				</div>
 			  </div>
 			</div>
 		  </div>
 		</div>
-	    <div class="capsule white-bg">
-		  <div class="row">
-			<div class="columned" style="flex-wrap : wrap-reverse;">
-			  <div class="vsplit">
-				<div class="container" style="width:80%" data-aos="fade-up">
-				  <p class="small-title">Computer Vision</p>
-				  <p class="body justified-text">
-				  The kit uses an RGB camera affixed to the robot base, which allows for conversion between camera and robot coordinate frames.  We provide support for camera calibration, pose estimation of Aruco tags, and video recording.  The functionality is built on OpenCV, so extending the capabilities would be straightforward.
-				  </p>
-				</div>
-			  </div>
-			  <div class="vsplit">
-				  <img src="images/cube-pose-estimation.png">
-			  </div>
-			</div>
-		  </div>
+	  </div>
+
+	  <div class="row black-bg">
+		<div class="container">
+		  <p class="body justified-text white-text">
+		  We encourage you to try out your own project ideas.  There is a list of possible project ideas on the <a href="https://github.com/dmklee/nuro-arm#projects" target="_blank" style="color:white">Github Page</a>.  Feel free to reach out for help over email.
+		  </p>
 		</div>
-	    <div class="capsule white-bg">
-		  <div class="row">
-			<div class="columned">
-			  <div class="vsplit">
-				  <img src="images/rl.png">
-			  </div>
-			  <div class="vsplit">
-				<div class="container" style="width:80%" data-aos="fade-up">
-				  <p class="small-title">Reinforcement Learning</p>
-				  <p class="body justified-text">
-				  The simulator can be used to generate thousands of experiences in minutes.  We provide several Gym-style environments to train agents on, and transfering to the real robot is made simple.
-				  </p>
-				</div>
-			  </div>
-			</div>
-		  </div>
-		</div>
-	    </div>
 	  </div>
 
 	  <div id="footer"></div>

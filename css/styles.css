@@ -9,14 +9,6 @@ body {
 p {
 	font-family: "Georgia",serif;
 }
-nav {
-	width : 90%;
-	margin : 0 auto;
-	max-width : 1400px;
-}
-.header-content ul {
-	list-style : none;
-}
 a {
 	text-decoration : none;
 }
@@ -25,6 +17,9 @@ p a {
 }
 p a:hover {
 	text-decoration : underline;
+}
+.bold {
+	font-weight: bold;
 }
 .center-aligned {
 	text-align : center;
@@ -41,27 +36,6 @@ p a:hover {
 	flex-direction: row;
 	justify-content: flex-start;
 	align-items: center;
-}
-.header-menu {
-	margin : 0;
-	padding : 0;
-	border : 0;
-	position : relative;
-	display : flex;
-	width : calc(100% - 300px);
-	justify-content : flex-end;
-}
-.header-link a {
-	margin : 0 10px;
-	font-size: 1.2rem;
-	text-transform : uppercase;
-}
-.header-link a:hover {
-	border-bottom: 1px solid #000;
-    padding-bottom: 2px;
-}
-.header-logo {
-	width : 300px;
 }
 .small-img img { 
 	object-fit : contain;
@@ -146,14 +120,16 @@ p a:hover {
 .mini-banner p {
 	letter-spacing : 1px;
 	font-size : 1.2rem;
-	margin : auto 30px auto 0;
+	margin : auto 0;
+	padding-top : 5px;
+	padding-bottom : 5px;
 }
 .container {
 	width : 90%;
 	max-width : 850px;
 	height : 100%;
 	margin : 0 auto;
-	padding: 40px 0;
+	padding: 20px 0;
 }
 .left-aligned {
 	text-align : left;
@@ -161,7 +137,7 @@ p a:hover {
 }
 .title {
 	font-size : 2.5rem;
-	padding : 0 10px;
+	padding : 0 5px;
 	text-transform : uppercase;
 }
 .big-title {
@@ -232,6 +208,17 @@ p a:hover {
 	border-color : #f0f0f0;
 	color : #f0f0f0;
 	background-color : #1c1c1c;
+}
+.project-media {
+	position : relative;
+	padding : 0;
+}
+
+.project-media video {
+	height : auto;
+	min-width : 100%;
+	position: relative;
+	background-color: black;
 }
 .bg-media {
 	position : relative;
